@@ -37,9 +37,9 @@
     </description>
 
     <scm>
-        <connection>scm:svn:http://svn.apache.org/repos/asf/sling/trunk/bundles/servlets/resolver</connection>
-        <developerConnection>scm:svn:https://svn.apache.org/repos/asf/sling/trunk/bundles/servlets/resolver</developerConnection>
-        <url>http://svn.apache.org/viewvc/sling/trunk/bundles/servlets/resolver</url>
+        <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-servlets-resolver.git</conncetion>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-servlets-resolver.git</developerConnection>
+        <url>https://gitbox.apache.org/repos/asf?p=sling-org-apache-sling-servlets-resolver.git</url>
     </scm>
 
     <properties>
