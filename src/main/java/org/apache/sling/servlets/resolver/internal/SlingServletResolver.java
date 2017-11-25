@@ -89,6 +89,7 @@ import org.apache.sling.servlets.resolver.internal.resource.ServletResourceProvi
 import org.apache.sling.servlets.resolver.internal.resource.ServletResourceProviderFactory;
 import org.apache.sling.servlets.resolver.jmx.SlingServletResolverCacheMBean;
 import org.apache.sling.spi.resource.provider.ResourceProvider;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
@@ -1007,22 +1008,39 @@ public class SlingServletResolver
             return false;
         }
 
-        final BundleContext bundleContext = reference.getBundle().getBundleContext();
-        final List<ServiceRegistration<ResourceProvider<Object>>> regs = new ArrayList<>();
-        for(final String root : provider.getServletPaths()) {
-            @SuppressWarnings("unchecked")
-            final ServiceRegistration<ResourceProvider<Object>> reg = (ServiceRegistration<ResourceProvider<Object>>) bundleContext.registerService(
-                ResourceProvider.class.getName(),
-                provider,
-                createServiceProperties(reference, provider, root));
-            regs.add(reg);
+        boolean registered = false;
+        final Bundle bundle = reference.getBundle();
+        if ( bundle != null ) {
+            final BundleContext bundleContext = bundle.getBundleContext();
+            if ( bundleContext != null ) {
+                final List<ServiceRegistration<ResourceProvider<Object>>> regs = new ArrayList<>();
+                try {
+                    for(final String root : provider.getServletPaths()) {
+                        @SuppressWarnings("unchecked")
+                        final ServiceRegistration<ResourceProvider<Object>> reg = (ServiceRegistration<ResourceProvider<Object>>) bundleContext.registerService(
+                            ResourceProvider.class.getName(),
+                            provider,
+                            createServiceProperties(reference, provider, root));
+                        regs.add(reg);
+                    }
+                    registered = true;
+                } catch ( final IllegalStateException ise ) {
+                    // bundle context not valid anymore - ignore and continue without this
+                }
+                if ( registered ) {
+                    if ( LOGGER.isDebugEnabled() ) {
+                        LOGGER.debug("Registered {}", provider);
+                    }
+                    synchronized (this.servletsByReference) {
+                        servletsByReference.put(reference, new ServletReg(servlet, regs));
+                    }
+                }
+            }
         }
-        if ( LOGGER.isDebugEnabled() ) {
-            LOGGER.debug("Registered {}", provider);
+        if ( !registered ) {
+            LOGGER.debug("bindServlet: servlet has been unregistered in the meantime. Ignoring {}", name);
         }
-        synchronized (this.servletsByReference) {
-            servletsByReference.put(reference, new ServletReg(servlet, regs));
-        }
+
         return true;
     }
 
