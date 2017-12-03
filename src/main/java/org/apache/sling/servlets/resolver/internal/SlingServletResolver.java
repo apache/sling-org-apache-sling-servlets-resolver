@@ -45,6 +45,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.management.NotCompliantMBeanException;
 import javax.management.StandardMBean;
+import javax.script.ScriptEngineFactory;
+import javax.script.ScriptEngineManager;
 import javax.servlet.Servlet;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -187,6 +189,11 @@ public class SlingServletResolver
 
     @Reference(target="("+ServiceUserMapped.SUBSERVICENAME+"=console)")
     private ServiceUserMapped consoleServiceUserMapped;
+
+    @Reference
+    private ScriptEngineManager scriptEngineManager;
+
+    private List<String> scriptEnginesExtensions = new ArrayList<>();
 
     private ResourceResolver sharedScriptResolver;
 
@@ -654,7 +661,7 @@ public class SlingServletResolver
             return scriptServlet;
         }
 
-        final Collection<Resource> candidates = locationUtil.getServlets(resolver);
+        final Collection<Resource> candidates = locationUtil.getServlets(resolver, scriptEnginesExtensions);
 
         if (LOGGER.isDebugEnabled()) {
             if (candidates.isEmpty()) {
@@ -880,6 +887,15 @@ public class SlingServletResolver
                 LOGGER.debug("Unable to register mbean");
             }
         }
+        updateScriptEngineExtensions();
+    }
+
+    private void updateScriptEngineExtensions() {
+        List<String> scriptEnginesExtensions = new ArrayList<>();
+        for (ScriptEngineFactory factory : scriptEngineManager.getEngineFactories()) {
+            scriptEnginesExtensions.addAll(factory.getExtensions());
+        }
+        this.scriptEnginesExtensions = Collections.unmodifiableList(scriptEnginesExtensions);
     }
 
     /**
@@ -1099,6 +1115,7 @@ public class SlingServletResolver
     @Override
     public void handleEvent(final Event event) {
         flushCache();
+        updateScriptEngineExtensions();
     }
 
     private void flushCache() {
@@ -1291,7 +1308,7 @@ public class SlingServletResolver
                                 defaultExtensions,
                                 method,
                                 requestPathInfo.getSelectors());
-                        servlets = locationUtil.getServlets(resourceResolver);
+                        servlets = locationUtil.getServlets(resourceResolver, scriptEnginesExtensions);
                     }
                     tr(pw);
                     tdLabel(pw, "Candidates");

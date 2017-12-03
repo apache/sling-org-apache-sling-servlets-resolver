@@ -30,6 +30,7 @@ import java.util.Dictionary;
 import java.util.List;
 import java.util.Map;
 
+import javax.script.ScriptEngineManager;
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServlet;
 
@@ -133,6 +134,11 @@ public class SlingServletResolverTest {
         final Field resolverField = resolverClass.getDeclaredField("resourceResolverFactory");
         resolverField.setAccessible(true);
         resolverField.set(servletResolver, factory);
+
+        // set script engine manager
+        final Field scriptEngineManagerField = resolverClass.getDeclaredField("scriptEngineManager");
+        scriptEngineManagerField.setAccessible(true);
+        scriptEngineManagerField.set(servletResolver, Mockito.mock(ScriptEngineManager.class));
 
         final Bundle bundle = Mockito.mock(Bundle.class);
         Mockito.when(bundle.getBundleId()).thenReturn(1L);

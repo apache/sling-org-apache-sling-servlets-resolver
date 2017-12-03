@@ -183,7 +183,7 @@ public class ResourceCollector extends AbstractResourceCollector {
     }
 
     @Override
-    protected void getWeightedResources(final Set<Resource> resources,
+    protected void getWeightedResources(final Set<WeightedResource> resources,
             final Resource location) {
 
         final ResourceResolver resolver = location.getResourceResolver();
@@ -283,7 +283,7 @@ public class ResourceCollector extends AbstractResourceCollector {
     private boolean checkScriptName(final String scriptName,
             final String selector, final String parentName,
             final String suffix, final String htmlSuffix,
-            final Set<Resource> resources, final Resource child,
+            final Set<WeightedResource> resources, final Resource child,
             final int selIdx) {
         if (selector != null && matches(scriptName, selector, suffix)) {
             addWeightedResource(resources, child, selIdx + 1,
@@ -333,7 +333,7 @@ public class ResourceCollector extends AbstractResourceCollector {
             && lenScriptName == (lenName + lenSuffix);
     }
 
-    private void addLocationServlet(final Set<Resource> resources,
+    private void addLocationServlet(final Set<WeightedResource> resources,
             final Resource location) {
         final String path = location.getPath()
             + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION;

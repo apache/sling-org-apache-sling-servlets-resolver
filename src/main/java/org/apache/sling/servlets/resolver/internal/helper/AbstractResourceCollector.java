@@ -18,14 +18,20 @@
  */
 package org.apache.sling.servlets.resolver.internal.helper;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.resource.SyntheticResource;
 import org.apache.sling.servlets.resolver.internal.SlingServletResolver;
 
@@ -64,9 +70,32 @@ public abstract class AbstractResourceCollector {
         this.executionPaths = executionPaths;
     }
 
-    public final Collection<Resource> getServlets(final ResourceResolver resolver) {
+    public final Collection<Resource> getServlets(final ResourceResolver resolver, final List<String> scriptExtensions) {
 
-        final SortedSet<Resource> resources = new TreeSet<Resource>();
+        final SortedSet<WeightedResource> resources = new TreeSet<>(new Comparator<WeightedResource>() {
+            @Override
+            public int compare(WeightedResource o1, WeightedResource o2) {
+                if (o1.equals(o2)) {
+                    return 0;
+                }
+                int comparisonResult = o1.compareTo(o2);
+                if (comparisonResult == 0) {
+                    String o1Extension = getScriptExtension(o1.getName());
+                    String o2Extension = getScriptExtension(o2.getName());
+                    if (StringUtils.isNotEmpty(o1Extension) && StringUtils.isNotEmpty(o2Extension)) {
+                        int o1ExtensionIndex = scriptExtensions.indexOf(o1Extension);
+                        int o2ExtensionIndex = scriptExtensions.indexOf(o2Extension);
+                        if (o1ExtensionIndex > o2ExtensionIndex) {
+                            return -1;
+                        } else if (o1ExtensionIndex == o2ExtensionIndex) {
+                            return 0;
+                        }
+                        return 1;
+                    }
+                }
+                return comparisonResult;
+            }
+        });
         final Iterator<String> locations = new LocationIterator(resourceType, resourceSuperType,
                                                                 baseResourceType, resolver);
         while (locations.hasNext()) {
@@ -85,10 +114,12 @@ public abstract class AbstractResourceCollector {
             getWeightedResources(resources, locationRes);
         }
 
-        return resources;
+        List<Resource> result = new ArrayList<>(resources.size());
+        result.addAll(resources);
+        return result;
     }
 
-    abstract protected void getWeightedResources(final Set<Resource> resources,
+    abstract protected void getWeightedResources(final Set<WeightedResource> resources,
                                                  final Resource location);
 
     /**
@@ -104,8 +135,9 @@ public abstract class AbstractResourceCollector {
      *            the name of the resource.
      * @param methodPrefixWeight The method/prefix weight assigned to the
      *            resource according to the resource name.
+     * @param scriptExtensionPriority The priority of the script engine used to run this script
      */
-    protected final void addWeightedResource(final Set<Resource> resources,
+    protected final void addWeightedResource(final Set<WeightedResource> resources,
             final Resource resource,
             final int numSelectors,
             final int methodPrefixWeight) {
@@ -223,6 +255,14 @@ public abstract class AbstractResourceCollector {
         }
 
         return false;
+    }
+
+    private String getScriptExtension(String scriptName) {
+        int lastIndexOf = scriptName.lastIndexOf('.');
+        if (lastIndexOf > -1 && lastIndexOf < scriptName.length() - 1) {
+            return scriptName.substring(lastIndexOf + 1);
+        }
+        return null;
     }
 
 }

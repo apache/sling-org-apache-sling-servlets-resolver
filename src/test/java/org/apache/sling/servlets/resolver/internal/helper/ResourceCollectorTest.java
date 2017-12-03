@@ -18,9 +18,12 @@
  */
 package org.apache.sling.servlets.resolver.internal.helper;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.sling.api.resource.Resource;
@@ -137,6 +140,36 @@ public class ResourceCollectorTest extends HelperTestBase {
         int[] indices = { 10, 9, 3, 4, 1, 2, 0 };
 
         effectiveTest(names, baseIdxs, indices);
+    }
+
+    public void testScriptExtensionsPriority() {
+        String[] names = {".servlet", // 0
+                "/" + label + ".esp", // 1
+                "/GET.esp", // 2
+                "/" + label + ".html.esp", // 3
+                "/html.esp", // 4
+                ".esp", // 5
+                "/image.esp", // 6
+                "/print/other.esp", // 7
+                "/print.other.esp", // 8
+                "/print.html.esp", // 9
+                "/print/a4.html.esp", // 10
+                "/print/a4.html.js", // 11
+                "/print/a4.html.html", // 12
+                "/print/a4.html.jsp", // 13
+                "/print", // resource to enable walking the tree
+                "/print", // resource to enable walking the tree
+        };
+
+        int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1 , 0 , 1, 0};
+        int[] indices = {12, 13, 11, 10, 9, 3, 4, 1, 2, 0};
+
+        effectiveTest(names, baseIdxs, indices, new ArrayList<String>(){{
+            add("esp");
+            add("js");
+            add("jsp");
+            add("html");
+        }});
     }
 
     public void testAnyServlets0() {
@@ -256,6 +289,10 @@ public class ResourceCollectorTest extends HelperTestBase {
     }
 
     protected void effectiveTest(String[] names, int[] baseIdxs, int[] indices) {
+        effectiveTest(names, baseIdxs, indices, null);
+    }
+
+    protected void effectiveTest(String[] names, int[] baseIdxs, int[] indices, List<String> scriptEngineExtensions) {
 
         String[] base = { "/apps/" + resourceTypePath,
             "/libs/" + resourceTypePath };
@@ -271,7 +308,12 @@ public class ResourceCollectorTest extends HelperTestBase {
         }
 
         ResourceCollector lu = ResourceCollector.create(request, null, new String[] {"html"});
-        Collection<Resource> res = lu.getServlets(request.getResourceResolver());
+        Collection<Resource> res;
+        if (scriptEngineExtensions != null) {
+            res = lu.getServlets(request.getResourceResolver(), scriptEngineExtensions);
+        } else {
+            res = lu.getServlets(request.getResourceResolver(), Collections.EMPTY_LIST);
+        }
         Iterator<Resource> rIter = res.iterator();
 
         for (int index : indices) {
