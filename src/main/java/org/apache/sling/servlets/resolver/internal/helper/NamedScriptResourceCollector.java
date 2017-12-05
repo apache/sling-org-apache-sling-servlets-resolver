@@ -84,7 +84,7 @@ public class NamedScriptResourceCollector extends AbstractResourceCollector {
     }
 
     @Override
-    protected void getWeightedResources(final Set<Resource> resources,
+    protected void getWeightedResources(final Set<WeightedResource> resources,
                                         final Resource location) {
         final ResourceResolver resolver = location.getResourceResolver();
         // if extension is set, we first check for an exact script match
