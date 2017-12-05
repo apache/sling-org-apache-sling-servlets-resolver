@@ -71,5 +71,17 @@ public class WeightedResourceTest extends TestCase {
         assertTrue(lr1.compareTo(lr2) < 0);
         assertTrue(lr2.compareTo(lr1) > 0);
     }
+
+    public void testCompareToOrdinal() {
+        WeightedResource lr1 = new WeightedResource(0, null, 0, WeightedResource.WEIGHT_NONE);
+        WeightedResource lr2 = new WeightedResource(1, null, 0, WeightedResource.WEIGHT_NONE);
+
+        // expect the same objects to compare equal
+        assertEquals(0, lr1.compareTo(lr1));
+        assertEquals(0, lr2.compareTo(lr2));
+
+        assertTrue(lr1.compareTo(lr2) < 0);
+        assertTrue(lr2.compareTo(lr1) > 0);
+    }
  
 }
