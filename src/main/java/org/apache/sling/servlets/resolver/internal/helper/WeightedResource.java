@@ -131,6 +131,7 @@ final class WeightedResource extends ResourceWrapper implements
             return 1;
         }
 
-        return 0;
+        // extensions are equal, compare ordinal (lower ordinal wins)
+        return (ordinal < o.ordinal) ? -1 : 1;
     }
 }

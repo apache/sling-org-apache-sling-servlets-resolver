@@ -75,25 +75,19 @@ public abstract class AbstractResourceCollector {
         final SortedSet<WeightedResource> resources = new TreeSet<>(new Comparator<WeightedResource>() {
             @Override
             public int compare(WeightedResource o1, WeightedResource o2) {
-                if (o1.equals(o2)) {
-                    return 0;
-                }
-                int comparisonResult = o1.compareTo(o2);
-                if (comparisonResult == 0) {
-                    String o1Extension = getScriptExtension(o1.getName());
-                    String o2Extension = getScriptExtension(o2.getName());
-                    if (StringUtils.isNotEmpty(o1Extension) && StringUtils.isNotEmpty(o2Extension)) {
-                        int o1ExtensionIndex = scriptExtensions.indexOf(o1Extension);
-                        int o2ExtensionIndex = scriptExtensions.indexOf(o2Extension);
-                        if (o1ExtensionIndex > o2ExtensionIndex) {
-                            return -1;
-                        } else if (o1ExtensionIndex == o2ExtensionIndex) {
-                            return 0;
-                        }
-                        return 1;
+                String o1Extension = getScriptExtension(o1.getName());
+                String o2Extension = getScriptExtension(o2.getName());
+                if (StringUtils.isNotEmpty(o1Extension) && StringUtils.isNotEmpty(o2Extension)) {
+                    int o1ExtensionIndex = scriptExtensions.indexOf(o1Extension);
+                    int o2ExtensionIndex = scriptExtensions.indexOf(o2Extension);
+                    if (o1ExtensionIndex > o2ExtensionIndex) {
+                        return -1;
+                    } else if (o1ExtensionIndex == o2ExtensionIndex) {
+                        return o1.compareTo(o2);
                     }
+                    return 1;
                 }
-                return comparisonResult;
+                return o1.compareTo(o2);
             }
         });
         final Iterator<String> locations = new LocationIterator(resourceType, resourceSuperType,
