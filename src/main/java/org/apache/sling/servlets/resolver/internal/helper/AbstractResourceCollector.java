@@ -80,12 +80,14 @@ public abstract class AbstractResourceCollector {
                 if (StringUtils.isNotEmpty(o1Extension) && StringUtils.isNotEmpty(o2Extension)) {
                     int o1ExtensionIndex = scriptExtensions.indexOf(o1Extension);
                     int o2ExtensionIndex = scriptExtensions.indexOf(o2Extension);
-                    if (o1ExtensionIndex > o2ExtensionIndex) {
-                        return -1;
-                    } else if (o1ExtensionIndex == o2ExtensionIndex) {
+
+                    if (o1ExtensionIndex == o2ExtensionIndex || o1ExtensionIndex == -1 || o2ExtensionIndex == -1) {
                         return o1.compareTo(o2);
+                    } else if (o1ExtensionIndex > o2ExtensionIndex) {
+                        return -1;
+                    } else {
+                        return 1;
                     }
-                    return 1;
                 }
                 return o1.compareTo(o2);
             }
