@@ -75,18 +75,27 @@ public abstract class AbstractResourceCollector {
         final SortedSet<WeightedResource> resources = new TreeSet<>(new Comparator<WeightedResource>() {
             @Override
             public int compare(WeightedResource o1, WeightedResource o2) {
-                String o1Extension = getScriptExtension(o1.getName());
-                String o2Extension = getScriptExtension(o2.getName());
-                if (StringUtils.isNotEmpty(o1Extension) && StringUtils.isNotEmpty(o2Extension)) {
-                    int o1ExtensionIndex = scriptExtensions.indexOf(o1Extension);
-                    int o2ExtensionIndex = scriptExtensions.indexOf(o2Extension);
-
-                    if (o1ExtensionIndex == o2ExtensionIndex || o1ExtensionIndex == -1 || o2ExtensionIndex == -1) {
-                        return o1.compareTo(o2);
-                    } else if (o1ExtensionIndex > o2ExtensionIndex) {
-                        return -1;
-                    } else {
-                        return 1;
+                String o1Parent = ResourceUtil.getParent(o1.getPath());
+                String o2Parent = ResourceUtil.getParent(o2.getPath());
+                if (o1Parent != null && o2Parent != null && o1Parent.equals(o2Parent)) {
+                    String o1ScriptName = o1.getName();
+                    String o2ScriptName = o2.getName();
+                    String o1Extension = getScriptExtension(o1ScriptName);
+                    String o2Extension = getScriptExtension(o2ScriptName);
+                    if (StringUtils.isNotEmpty(o1Extension) && StringUtils.isNotEmpty(o2Extension)) {
+                        String o1ScriptWithoutExtension = o1ScriptName.substring(0, o1ScriptName.lastIndexOf("." + o1Extension));
+                        String o2ScriptWithoutExtension = o2ScriptName.substring(0, o2ScriptName.lastIndexOf("." + o2Extension));
+                        if (o1ScriptWithoutExtension.equals(o2ScriptWithoutExtension)) {
+                            int o1ExtensionIndex = scriptExtensions.indexOf(o1Extension);
+                            int o2ExtensionIndex = scriptExtensions.indexOf(o2Extension);
+                            if (o1ExtensionIndex == o2ExtensionIndex || o1ExtensionIndex == -1 || o2ExtensionIndex == -1) {
+                                return o1.compareTo(o2);
+                            } else if (o1ExtensionIndex > o2ExtensionIndex) {
+                                return -1;
+                            } else {
+                                return 1;
+                            }
+                        }
                     }
                 }
                 return o1.compareTo(o2);

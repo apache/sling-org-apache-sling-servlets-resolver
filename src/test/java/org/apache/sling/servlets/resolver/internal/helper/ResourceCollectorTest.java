@@ -142,7 +142,7 @@ public class ResourceCollectorTest extends HelperTestBase {
         effectiveTest(names, baseIdxs, indices);
     }
 
-    public void testScriptExtensionsPriority() {
+    public void testGetServletsScriptExtensionsPriority() {
         String[] names = {".servlet", // 0
                 "/" + label + ".esp", // 1
                 "/GET.esp", // 2
@@ -153,15 +153,15 @@ public class ResourceCollectorTest extends HelperTestBase {
                 "/print/other.esp", // 7
                 "/print.other.esp", // 8
                 "/print.html.esp", // 9
-                "/print/a4.html.esp", // 10
-                "/print/a4.html.js", // 11
-                "/print/a4.html.html", // 12
-                "/print/a4.html.jsp", // 13
+                "/print/a4.html.esp", // 10    /libs/foo/bar/print/a4.html.esp
+                "/print/a4.html.js", // 11     /libs/foo/bar/print/a4.html.js
+                "/print/a4.html.html", // 12   /apps/foo/bar/print/a4.html.html
+                "/print/a4.html.jsp", // 13    /apps/foo/bar/print/a4.html.jsp
                 "/print", // resource to enable walking the tree
                 "/print", // resource to enable walking the tree
         };
 
-        int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1 , 0 , 1, 0};
+        int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0 , 0 , 1, 0};
         int[] indices = {12, 13, 11, 10, 9, 3, 4, 1, 2, 0};
 
         effectiveTest(names, baseIdxs, indices, new ArrayList<String>(){{
@@ -169,6 +169,64 @@ public class ResourceCollectorTest extends HelperTestBase {
             add("js");
             add("jsp");
             add("html");
+        }});
+    }
+
+    public void testGetServletsScriptExtensionsPriority2() {
+        // scripts with extensions not registered by script engine factories
+        String[] names = {".servlet", // 0
+                "/" + label + ".esp", // 1
+                "/GET.esp", // 2
+                "/" + label + ".html.esp", // 3
+                "/html.esp", // 4
+                ".esp", // 5
+                "/image.esp", // 6
+                "/print/other.esp", // 7
+                "/print.other.esp", // 8
+                "/print.html.esp", // 9
+                "/print/a4.html.esp", // 10    /libs/foo/bar/print/a4.html.esp
+                "/print/a4.html.js", // 11     /libs/foo/bar/print/a4.html.js
+                "/print/a4.html.html", // 12   /apps/foo/bar/print/a4.html.html will win (overlays libs, comes before jsp when iterating)
+                "/print/a4.html.jsp", // 13    /apps/foo/bar/print/a4.html.jsp
+                "/print", // resource to enable walking the tree
+                "/print", // resource to enable walking the tree
+        };
+
+        int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0 , 0 , 1, 0};
+        int[] indices = {12, 13, 11, 10, 9, 3, 4, 1, 2, 0};
+
+        effectiveTest(names, baseIdxs, indices, new ArrayList<String>(){{
+            add("esp");
+            add("js");
+        }});
+    }
+
+    public void testGetServletsScriptExtensionsPriority3() {
+        // scripts with extensions not registered by script engine factories
+        String[] names = {".servlet", // 0
+                "/" + label + ".esp", // 1
+                "/GET.esp", // 2
+                "/" + label + ".html.esp", // 3
+                "/html.esp", // 4
+                ".esp", // 5
+                "/image.esp", // 6
+                "/print/other.esp", // 7
+                "/print.other.esp", // 8
+                "/print.html.esp", // 9
+                "/print/a4.html.esp", // 10    /libs/foo/bar/print/a4.html.esp
+                "/print/a4.html.js", // 11     /libs/foo/bar/print/a4.html.js
+                "/print/a4.html.jsp", // 12    /apps/foo/bar/print/a4.html.jsp will win (overlays libs, comes before html when iterating)
+                "/print/a4.html.html", // 13   /apps/foo/bar/print/a4.html.html
+                "/print", // resource to enable walking the tree
+                "/print", // resource to enable walking the tree
+        };
+
+        int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0 , 0 , 1, 0};
+        int[] indices = {12, 13, 11, 10, 9, 3, 4, 1, 2, 0};
+
+        effectiveTest(names, baseIdxs, indices, new ArrayList<String>(){{
+            add("esp");
+            add("js");
         }});
     }
 
@@ -286,6 +344,39 @@ public class ResourceCollectorTest extends HelperTestBase {
         int[] indices = { 10, 9, 3, 4, 1, 2, 0 };
 
         effectiveTest(names, baseIdxs, indices);
+    }
+
+    public void testAnyServletsScriptExtensionsPriority() {
+        // use a request with another request method "ANY"
+        request.setMethod("ANY");
+
+        String[] names = {".servlet", // 0
+                "/" + label + ".ANY.esp", // 1
+                "/ANY.esp", // 2
+                "/" + label + ".html.ANY.esp", // 3
+                "/html.ANY.esp", // 4
+                ".ANY.esp", // 5
+                "/image.ANY.esp", // 6
+                "/print/other.ANY.esp", // 7
+                "/print.other.ANY.esp", // 8
+                "/print.html.ANY.esp", // 9
+                "/print/a4.html.ANY.esp", // 10    /libs/foo/bar/print/a4.html.ANY.esp
+                "/print/a4.html.ANY.js", // 11     /libs/foo/bar/print/a4.html.ANY.js
+                "/print/a4.html.ANY.html", // 12   /apps/foo/bar/print/a4.html.ANY.html
+                "/print/a4.html.ANY.jsp", // 13    /apps/foo/bar/print/a4.html.ANY.jsp
+                "/print", // resource to enable walking the tree
+                "/print", // resource to enable walking the tree
+        };
+
+        int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0 , 0 , 1, 0};
+        int[] indices = {12, 13, 11, 10, 9, 3, 4, 1, 2, 0};
+
+        effectiveTest(names, baseIdxs, indices, new ArrayList<String>(){{
+            add("esp");
+            add("js");
+            add("jsp");
+            add("html");
+        }});
     }
 
     protected void effectiveTest(String[] names, int[] baseIdxs, int[] indices) {
