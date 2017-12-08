@@ -29,7 +29,7 @@
 
     <artifactId>org.apache.sling.servlets.resolver</artifactId>
     <packaging>bundle</packaging>
-    <version>2.4.22</version>
+    <version>2.4.23-SNAPSHOT</version>
 
     <name>Apache Sling Servlet Resolver</name>
     <description>
@@ -40,7 +40,7 @@
         <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-servlets-resolver.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-servlets-resolver.git</developerConnection>
         <url>https://gitbox.apache.org/repos/asf?p=sling-org-apache-sling-servlets-resolver.git</url>
-      <tag>org.apache.sling.servlets.resolver-2.4.22</tag>
+      <tag>HEAD</tag>
   </scm>
 
     <properties>
