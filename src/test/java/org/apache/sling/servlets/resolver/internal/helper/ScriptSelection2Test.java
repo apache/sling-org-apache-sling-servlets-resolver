@@ -58,10 +58,10 @@ public class ScriptSelection2Test {
          /libs/test
             test.jsp
             sel.jsp
-         /app/test
+         /apps/test
             test.html
             sel.html
-         /app/test2
+         /apps/test2
             [sling:resourceSuperType='test']
             test2.jsp
          */
@@ -117,10 +117,10 @@ public class ScriptSelection2Test {
          /libs/test
             test.jsp
             sel.jsp
-         /app/test
+         /apps/test
             test.html
             sel.html
-         /app/test2
+         /apps/test2
             [sling:resourceSuperType='test']
             test2.jsp
             test2.html
