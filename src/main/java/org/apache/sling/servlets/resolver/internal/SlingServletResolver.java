@@ -96,9 +96,9 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
-import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
@@ -202,7 +202,7 @@ public class SlingServletResolver
     private final List<PendingServlet> pendingServlets = new ArrayList<>();
 
     /** The bundle context. */
-    private BundleContext context;
+    private volatile BundleContext context;
 
     private ServletResourceProviderFactory servletResourceProviderFactory;
 
@@ -215,7 +215,7 @@ public class SlingServletResolver
     private Servlet fallbackErrorServlet;
 
     /** The script resolution cache. */
-    private Map<AbstractResourceCollector, Servlet> cache;
+    private volatile Map<AbstractResourceCollector, Servlet> cache;
 
     /** The cache size. */
     private int cacheSize;
@@ -653,7 +653,9 @@ public class SlingServletResolver
     private Servlet getServletInternal(final AbstractResourceCollector locationUtil,
             final SlingHttpServletRequest request,
             final ResourceResolver resolver) {
-        final Servlet scriptServlet = (this.cache != null ? this.cache.get(locationUtil) : null);
+        // use local variable to avoid race condition with activate
+        final Map<AbstractResourceCollector, Servlet> localCache = this.cache;
+        final Servlet scriptServlet = (localCache != null ? localCache.get(locationUtil) : null);
         if (scriptServlet != null) {
             if ( LOGGER.isDebugEnabled() ) {
                 LOGGER.debug("Using cached servlet {}", RequestUtil.getServletName(scriptServlet));
@@ -683,9 +685,9 @@ public class SlingServletResolver
                 final boolean isOptingServlet = candidate instanceof OptingServlet;
                 boolean servletAcceptsRequest = !isOptingServlet || (request != null && ((OptingServlet) candidate).accepts(request));
                 if (servletAcceptsRequest) {
-                    if (!hasOptingServlet && !isOptingServlet && this.cache != null) {
-                        if ( this.cache.size() < this.cacheSize ) {
-                            this.cache.put(locationUtil, candidate);
+                    if (!hasOptingServlet && !isOptingServlet && localCache != null) {
+                        if ( localCache.size() < this.cacheSize ) {
+                            localCache.put(locationUtil, candidate);
                         } else if ( this.logCacheSizeWarning ) {
                             this.logCacheSizeWarning = false;
                             LOGGER.warn("Script cache has reached its limit of {}. You might want to increase the cache size for the servlet resolver.",
@@ -864,7 +866,7 @@ public class SlingServletResolver
         // and finally register as event listener if we need to flush the cache
         if ( this.cache != null ) {
 
-    		final Dictionary<String, Object> props = new Hashtable<>();
+    		    final Dictionary<String, Object> props = new Hashtable<>();
             props.put("event.topics", new String[] {"javax/script/ScriptEngineFactory/*",
                 "org/apache/sling/api/adapter/AdapterFactory/*","org/apache/sling/scripting/core/BindingsValuesProvider/*" });
             props.put(ResourceChangeListener.PATHS, "/");
@@ -876,7 +878,7 @@ public class SlingServletResolver
         }
 
         this.plugin = new ServletResolverWebConsolePlugin(context);
-        if (this.cacheSize > 0) {
+        if ( this.cache != null ) {
             try {
                 Dictionary<String, String> mbeanProps = new Hashtable<>();
                 mbeanProps.put("jmx.objectname", "org.apache.sling:type=servletResolver,service=SlingServletResolverCache");
@@ -891,17 +893,22 @@ public class SlingServletResolver
     }
 
     private void updateScriptEngineExtensions() {
-        List<String> scriptEnginesExtensions = new ArrayList<>();
-        for (ScriptEngineFactory factory : scriptEngineManager.getEngineFactories()) {
-            scriptEnginesExtensions.addAll(factory.getExtensions());
+        final ScriptEngineManager localScriptEngineManager = scriptEngineManager;
+        // use local variable to avoid racing with deactivate
+        if ( localScriptEngineManager != null ) {
+            final List<String> scriptEnginesExtensions = new ArrayList<>();
+            for (ScriptEngineFactory factory : localScriptEngineManager.getEngineFactories()) {
+                scriptEnginesExtensions.addAll(factory.getExtensions());
+            }
+            this.scriptEnginesExtensions = Collections.unmodifiableList(scriptEnginesExtensions);
         }
-        this.scriptEnginesExtensions = Collections.unmodifiableList(scriptEnginesExtensions);
     }
 
     /**
      * Deactivate this component.
      */
-    protected void deactivate(final ComponentContext context) {
+    @Deactivate
+    protected void deactivate() {
         // stop registering of servlets immediately
         this.context = null;
 
@@ -1114,13 +1121,21 @@ public class SlingServletResolver
      */
     @Override
     public void handleEvent(final Event event) {
+        // return immediately if already deactivated
+        if ( this.context == null ) {
+            return;
+        }
         flushCache();
         updateScriptEngineExtensions();
     }
 
     private void flushCache() {
-        this.cache.clear();
-        this.logCacheSizeWarning = true;
+        // use local variable to avoid racing with deactivate
+        final Map<AbstractResourceCollector, Servlet> localCache = this.cache;
+        if ( localCache != null ) {
+            localCache.clear();
+            this.logCacheSizeWarning = true;
+        }
     }
 
     /** The list of property names checked by {@link #getName(ServiceReference)} */
@@ -1431,7 +1446,9 @@ public class SlingServletResolver
 
         @Override
         public int getCacheSize() {
-            return cache != null ? cache.size() : 0;
+            // use local variable to avoid racing with deactivate
+            final Map<AbstractResourceCollector, Servlet> localCache = cache;
+            return localCache != null ? localCache.size() : 0;
         }
 
         @Override
@@ -1448,6 +1465,10 @@ public class SlingServletResolver
 
     @Override
 	public void onChange(final List<ResourceChange> changes) {
+        // return immediately if already deactivated
+        if ( context == null ) {
+            return;
+        }
         boolean flushCache = false;
         for(final ResourceChange change : changes){
             // if the path of the event is a sub path of a search path
