@@ -18,12 +18,14 @@
  */
 package org.apache.sling.servlets.resolver.internal;
 
-import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Dictionary;
 import java.util.List;
 import java.util.Map;
 
@@ -42,20 +44,22 @@ import org.apache.sling.commons.testing.osgi.MockServiceReference;
 import org.apache.sling.commons.testing.sling.MockResource;
 import org.apache.sling.commons.testing.sling.MockResourceResolver;
 import org.apache.sling.commons.testing.sling.MockSlingHttpServletRequest;
-import org.apache.sling.servlets.resolver.internal.resolution.ResolutionCache;
 import org.apache.sling.servlets.resolver.internal.resource.MockServletResource;
+import org.apache.sling.servlets.resolver.internal.resource.ServletResourceProvider;
+import org.apache.sling.servlets.resolver.internal.resource.ServletResourceProviderFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
+import org.osgi.framework.ServiceReference;
 
-public class SlingServletResolverTest {
+public class ServletMounterTest {
 
     private Servlet servlet;
 
-    private SlingServletResolver servletResolver;
+    private ServletMounter mounter;
 
     public static final String SERVLET_PATH = "/mock";
 
@@ -120,19 +124,14 @@ public class SlingServletResolverTest {
         };
 
         servlet = new MockSlingRequestHandlerServlet();
-        servletResolver = new SlingServletResolver();
+        mounter = new ServletMounter();
 
-        Class<?> resolverClass = servletResolver.getClass();
+        final Class<?> mounterClass = mounter.getClass();
 
         // set resource resolver factory
-        final Field resolverField = resolverClass.getDeclaredField("resourceResolverFactory");
+        final Field resolverField = mounterClass.getDeclaredField("resourceResolverFactory");
         resolverField.setAccessible(true);
-        resolverField.set(servletResolver, factory);
-
-        // set cache
-        final Field cacheField = resolverClass.getDeclaredField("resolutionCache");
-        cacheField.setAccessible(true);
-        cacheField.set(servletResolver, new ResolutionCache());
+        resolverField.set(mounter, factory);
 
         final Bundle bundle = Mockito.mock(Bundle.class);
         Mockito.when(bundle.getBundleId()).thenReturn(1L);
@@ -150,8 +149,8 @@ public class SlingServletResolverTest {
             ServletResolverConstants.SLING_SERVLET_EXTENSIONS,
             SERVLET_EXTENSION);
 
-//        servletResolver.bindServlet(SlingServletResolverTest.this.servlet, serviceReference);
-        servletResolver.activate(bundleContext, new SlingServletResolver.Config() {
+        mounter.bindServlet(ServletMounterTest.this.servlet, serviceReference);
+        mounter.activate(bundleContext, new SlingServletResolver.Config() {
 
             @Override
             public Class<? extends Annotation> annotationType() {
@@ -198,27 +197,43 @@ public class SlingServletResolverTest {
         mockResourceResolver.addChildren(parent, childRes);
     }
 
-    protected String getRequestWorkspaceName() {
-        return "fromRequest";
-    }
 
-    @Test public void testAcceptsRequest() {
-        MockSlingHttpServletRequest secureRequest = new MockSlingHttpServletRequest(
-            SERVLET_PATH, null, SERVLET_EXTENSION, null, null);
-        secureRequest.setResourceResolver(mockResourceResolver);
-        secureRequest.setSecure(true);
-        Servlet result = servletResolver.resolveServlet(secureRequest);
-        assertEquals("Did not resolve to correct servlet", servlet, result);
-    }
+    @Test public void testCreateServiceRegistrationProperties() throws Throwable {
+        MockServiceReference msr = new MockServiceReference(null);
 
-    @Test public void testIgnoreRequest() {
-        MockSlingHttpServletRequest insecureRequest = new MockSlingHttpServletRequest(
-            SERVLET_PATH, null, SERVLET_EXTENSION, null, null);
-        insecureRequest.setResourceResolver(mockResourceResolver);
-        insecureRequest.setSecure(false);
-        Servlet result = servletResolver.resolveServlet(insecureRequest);
-        assertTrue("Did not ignore unwanted request",
-            result.getClass() != MockSlingRequestHandlerServlet.class);
+        msr.setProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES, "sample");
+        msr.setProperty(ServletResolverConstants.SLING_SERVLET_METHODS, "GET");
+
+        Field srpf = ServletMounter.class.getDeclaredField("servletResourceProviderFactory");
+        srpf.setAccessible(true);
+        ServletResourceProviderFactory factory = (ServletResourceProviderFactory) srpf.get(mounter);
+
+        ServletResourceProvider servlet = factory.create(msr, null);
+
+        Method createServiceProperties = ServletMounter.class.getDeclaredMethod("createServiceProperties", ServiceReference.class, ServletResourceProvider.class, String.class);
+        createServiceProperties.setAccessible(true);
+
+        // no ranking
+        assertNull(msr.getProperty(Constants.SERVICE_RANKING));
+        @SuppressWarnings("unchecked")
+        final Dictionary<String, Object> p1 = (Dictionary<String, Object>) createServiceProperties.invoke(mounter, msr, servlet, "/a");
+        assertNull(p1.get(Constants.SERVICE_RANKING));
+
+        // illegal type of ranking
+        Object nonIntValue = "Some Non Integer Value";
+        msr.setProperty(Constants.SERVICE_RANKING, nonIntValue);
+        assertEquals(nonIntValue, msr.getProperty(Constants.SERVICE_RANKING));
+        @SuppressWarnings("unchecked")
+        final Dictionary<String, Object> p2 = (Dictionary<String, Object>) createServiceProperties.invoke(mounter, msr, servlet, "/a");
+        assertNull(p2.get(Constants.SERVICE_RANKING));
+
+        // illegal type of ranking
+        Object intValue = Integer.valueOf(123);
+        msr.setProperty(Constants.SERVICE_RANKING, intValue);
+        assertEquals(intValue, msr.getProperty(Constants.SERVICE_RANKING));
+        @SuppressWarnings("unchecked")
+        final Dictionary<String, Object> p3 = (Dictionary<String, Object>) createServiceProperties.invoke(mounter, msr, servlet, "/a");
+        assertEquals(intValue, p3.get(Constants.SERVICE_RANKING));
     }
 
     /**

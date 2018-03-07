@@ -74,9 +74,8 @@ import org.slf4j.LoggerFactory;
            service = {})
 public class ServletMounter {
 
-
     /** Logger */
-    public final Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private static final String REF_SERVLET = "Servlet";
 
@@ -102,7 +101,7 @@ public class ServletMounter {
      * Activate this component.
      */
     @Activate
-    private void activate(final BundleContext context,
+    protected void activate(final BundleContext context,
             final SlingServletResolver.Config config)
     throws LoginException {
         final Collection<PendingServlet> refs;
