@@ -30,7 +30,6 @@ import java.util.Dictionary;
 import java.util.List;
 import java.util.Map;
 
-import javax.script.ScriptEngineManager;
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServlet;
 
@@ -46,6 +45,7 @@ import org.apache.sling.commons.testing.osgi.MockServiceReference;
 import org.apache.sling.commons.testing.sling.MockResource;
 import org.apache.sling.commons.testing.sling.MockResourceResolver;
 import org.apache.sling.commons.testing.sling.MockSlingHttpServletRequest;
+import org.apache.sling.servlets.resolver.internal.resolution.ResolutionCache;
 import org.apache.sling.servlets.resolver.internal.resource.MockServletResource;
 import org.apache.sling.servlets.resolver.internal.resource.ServletResourceProvider;
 import org.apache.sling.servlets.resolver.internal.resource.ServletResourceProviderFactory;
@@ -135,10 +135,10 @@ public class SlingServletResolverTest {
         resolverField.setAccessible(true);
         resolverField.set(servletResolver, factory);
 
-        // set script engine manager
-        final Field scriptEngineManagerField = resolverClass.getDeclaredField("scriptEngineManager");
-        scriptEngineManagerField.setAccessible(true);
-        scriptEngineManagerField.set(servletResolver, Mockito.mock(ScriptEngineManager.class));
+        // set cache
+        final Field cacheField = resolverClass.getDeclaredField("resolutionCache");
+        cacheField.setAccessible(true);
+        cacheField.set(servletResolver, new ResolutionCache());
 
         final Bundle bundle = Mockito.mock(Bundle.class);
         Mockito.when(bundle.getBundleId()).thenReturn(1L);

@@ -41,12 +41,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
-import javax.management.NotCompliantMBeanException;
-import javax.management.StandardMBean;
-import javax.script.ScriptEngineFactory;
-import javax.script.ScriptEngineManager;
 import javax.servlet.Servlet;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -70,9 +65,6 @@ import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.resource.SyntheticResource;
-import org.apache.sling.api.resource.observation.ExternalResourceChangeListener;
-import org.apache.sling.api.resource.observation.ResourceChange;
-import org.apache.sling.api.resource.observation.ResourceChangeListener;
 import org.apache.sling.api.scripting.SlingScript;
 import org.apache.sling.api.servlets.OptingServlet;
 import org.apache.sling.api.servlets.ServletResolver;
@@ -85,9 +77,9 @@ import org.apache.sling.servlets.resolver.internal.helper.AbstractResourceCollec
 import org.apache.sling.servlets.resolver.internal.helper.NamedScriptResourceCollector;
 import org.apache.sling.servlets.resolver.internal.helper.ResourceCollector;
 import org.apache.sling.servlets.resolver.internal.helper.SlingServletConfig;
+import org.apache.sling.servlets.resolver.internal.resolution.ResolutionCache;
 import org.apache.sling.servlets.resolver.internal.resource.ServletResourceProvider;
 import org.apache.sling.servlets.resolver.internal.resource.ServletResourceProviderFactory;
-import org.apache.sling.servlets.resolver.jmx.SlingServletResolverCacheMBean;
 import org.apache.sling.spi.resource.provider.ResourceProvider;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -100,8 +92,6 @@ import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.event.Event;
-import org.osgi.service.event.EventHandler;
 import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.Designate;
 import org.osgi.service.metatype.annotations.ObjectClassDefinition;
@@ -116,7 +106,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 @Component(name = SlingServletResolver.Config.PID,
-           service = { ServletResolver.class,ErrorHandler.class, SlingRequestListener.class },
+           service = { ServletResolver.class, ErrorHandler.class, SlingRequestListener.class },
            property = {
                    Constants.SERVICE_DESCRIPTION + "=Apache Sling Servlet Resolver and Error Handler",
                    Constants.SERVICE_VENDOR + "=The Apache Software Foundation"
@@ -125,9 +115,7 @@ import org.slf4j.LoggerFactory;
 public class SlingServletResolver
     implements ServletResolver,
                SlingRequestListener,
-               ErrorHandler,
-               EventHandler,
-               ResourceChangeListener,ExternalResourceChangeListener {
+               ErrorHandler {
 
     @ObjectClassDefinition(name = "Apache Sling Servlet/Script Resolver and Error Handler",
             description= "The Sling Servlet and Script Resolver has "+
@@ -190,7 +178,7 @@ public class SlingServletResolver
     private ServiceUserMapped consoleServiceUserMapped;
 
     @Reference
-    private ScriptEngineManager scriptEngineManager;
+    private ResolutionCache resolutionCache;
 
     private List<String> scriptEnginesExtensions = new ArrayList<>();
 
@@ -212,18 +200,6 @@ public class SlingServletResolver
     // the default error handler servlet if no other error servlet applies for
     // a request. This field is set on demand by getDefaultErrorServlet()
     private Servlet fallbackErrorServlet;
-
-    /** The script resolution cache. */
-    private volatile Map<AbstractResourceCollector, Servlet> cache;
-
-    /** The cache size. */
-    private int cacheSize;
-
-    /** Flag to log warning if cache size exceed only once. */
-    private volatile boolean logCacheSizeWarning;
-
-    /** Registration as event handler. */
-    private ServiceRegistration<?> eventHandlerReg;
 
     /**
      * The allowed execution paths.
@@ -500,8 +476,6 @@ public class SlingServletResolver
 
     private final ThreadLocal<ResourceResolver> perThreadScriptResolver = new ThreadLocal<>();
 
-    private ServiceRegistration<SlingServletResolverCacheMBean> mbeanRegistration;
-
     /**
      * @see org.apache.sling.api.request.SlingRequestListener#onEvent(org.apache.sling.api.request.SlingRequestEvent)
      */
@@ -608,8 +582,8 @@ public class SlingServletResolver
             final SlingHttpServletRequest request,
             final ResourceResolver resolver) {
         // use local variable to avoid race condition with activate
-        final Map<AbstractResourceCollector, Servlet> localCache = this.cache;
-        final Servlet scriptServlet = (localCache != null ? localCache.get(locationUtil) : null);
+        final ResolutionCache localCache = this.resolutionCache;
+        final Servlet scriptServlet = localCache.get(locationUtil);
         if (scriptServlet != null) {
             if ( LOGGER.isDebugEnabled() ) {
                 LOGGER.debug("Using cached servlet {}", RequestUtil.getServletName(scriptServlet));
@@ -639,14 +613,8 @@ public class SlingServletResolver
                 final boolean isOptingServlet = candidate instanceof OptingServlet;
                 boolean servletAcceptsRequest = !isOptingServlet || (request != null && ((OptingServlet) candidate).accepts(request));
                 if (servletAcceptsRequest) {
-                    if (!hasOptingServlet && !isOptingServlet && localCache != null) {
-                        if ( localCache.size() < this.cacheSize ) {
-                            localCache.put(locationUtil, candidate);
-                        } else if ( this.logCacheSizeWarning ) {
-                            this.logCacheSizeWarning = false;
-                            LOGGER.warn("Script cache has reached its limit of {}. You might want to increase the cache size for the servlet resolver.",
-                                    this.cacheSize);
-                        }
+                    if (!hasOptingServlet && !isOptingServlet ) {
+                        localCache.put(locationUtil, candidate);
                     }
                     LOGGER.debug("Using servlet provided by candidate resource {}", candidateResource.getPath());
                     return candidate;
@@ -785,57 +753,10 @@ public class SlingServletResolver
         this.executionPaths = AbstractResourceCollector.getExecutionPaths(config.servletresolver_paths());
         this.defaultExtensions = config.servletresolver_defaultExtensions();
 
-        // create cache - if a cache size is configured
-        this.cacheSize = config.servletresolver_cacheSize();
-        if (this.cacheSize > 5) {
-            this.cache = new ConcurrentHashMap<>(cacheSize);
-            this.logCacheSizeWarning = true;
-        } else {
-            this.cacheSize = 0;
-        }
-
         // setup default servlet
         this.getDefaultServlet();
 
-        // and finally register as event listener if we need to flush the cache
-        if ( this.cache != null ) {
-
-    		    final Dictionary<String, Object> props = new Hashtable<>();
-            props.put("event.topics", new String[] {"javax/script/ScriptEngineFactory/*",
-                "org/apache/sling/api/adapter/AdapterFactory/*","org/apache/sling/scripting/core/BindingsValuesProvider/*" });
-            props.put(ResourceChangeListener.PATHS, "/");
-            props.put("service.description", "Apache Sling Servlet Resolver and Error Handler");
-            props.put("service.vendor","The Apache Software Foundation");
-
-            this.eventHandlerReg = context
-                      .registerService(new String[] {ResourceChangeListener.class.getName(), EventHandler.class.getName()}, this, props);
-        }
-
         this.plugin = new ServletResolverWebConsolePlugin(context);
-        if ( this.cache != null ) {
-            try {
-                Dictionary<String, String> mbeanProps = new Hashtable<>();
-                mbeanProps.put("jmx.objectname", "org.apache.sling:type=servletResolver,service=SlingServletResolverCache");
-
-                ServletResolverCacheMBeanImpl mbean = new ServletResolverCacheMBeanImpl();
-                mbeanRegistration = context.registerService(SlingServletResolverCacheMBean.class, mbean, mbeanProps);
-            } catch (Throwable t) {
-                LOGGER.debug("Unable to register mbean");
-            }
-        }
-        updateScriptEngineExtensions();
-    }
-
-    private void updateScriptEngineExtensions() {
-        final ScriptEngineManager localScriptEngineManager = scriptEngineManager;
-        // use local variable to avoid racing with deactivate
-        if ( localScriptEngineManager != null ) {
-            final List<String> scriptEnginesExtensions = new ArrayList<>();
-            for (ScriptEngineFactory factory : localScriptEngineManager.getEngineFactories()) {
-                scriptEnginesExtensions.addAll(factory.getExtensions());
-            }
-            this.scriptEnginesExtensions = Collections.unmodifiableList(scriptEnginesExtensions);
-        }
     }
 
     /**
@@ -848,12 +769,6 @@ public class SlingServletResolver
 
         if (this.plugin != null) {
             this.plugin.dispose();
-        }
-
-        // unregister event handler
-        if (this.eventHandlerReg != null) {
-            this.eventHandlerReg.unregister();
-            this.eventHandlerReg = null;
         }
 
         // Copy the list of servlets first, to minimize the need for
@@ -886,13 +801,7 @@ public class SlingServletResolver
             this.sharedScriptResolver = null;
         }
 
-        this.cache = null;
         this.servletResourceProviderFactory = null;
-
-        if (this.mbeanRegistration != null) {
-            this.mbeanRegistration.unregister();
-            this.mbeanRegistration = null;
-        }
     }
 
     // TODO
@@ -1047,28 +956,6 @@ public class SlingServletResolver
             } catch (Throwable t) {
                 LOGGER.error("unbindServlet: Unexpected problem destroying servlet " + name, t);
             }
-        }
-    }
-
-    /**
-     * @see org.osgi.service.event.EventHandler#handleEvent(org.osgi.service.event.Event)
-     */
-    @Override
-    public void handleEvent(final Event event) {
-        // return immediately if already deactivated
-        if ( this.context == null ) {
-            return;
-        }
-        flushCache();
-        updateScriptEngineExtensions();
-    }
-
-    private void flushCache() {
-        // use local variable to avoid racing with deactivate
-        final Map<AbstractResourceCollector, Servlet> localCache = this.cache;
-        if ( localCache != null ) {
-            localCache.clear();
-            this.logCacheSizeWarning = true;
         }
     }
 
@@ -1370,55 +1257,5 @@ public class SlingServletResolver
             }
         }
 
-    }
-
-    class ServletResolverCacheMBeanImpl extends StandardMBean implements SlingServletResolverCacheMBean {
-
-        ServletResolverCacheMBeanImpl() throws NotCompliantMBeanException {
-            super(SlingServletResolverCacheMBean.class);
-        }
-
-        @Override
-        public int getCacheSize() {
-            // use local variable to avoid racing with deactivate
-            final Map<AbstractResourceCollector, Servlet> localCache = cache;
-            return localCache != null ? localCache.size() : 0;
-        }
-
-        @Override
-        public void flushCache() {
-            SlingServletResolver.this.flushCache();
-        }
-
-        @Override
-        public int getMaximumCacheSize() {
-            return cacheSize;
-        }
-
-    }
-
-    @Override
-	public void onChange(final List<ResourceChange> changes) {
-        // return immediately if already deactivated
-        if ( context == null ) {
-            return;
-        }
-        boolean flushCache = false;
-        for(final ResourceChange change : changes){
-            // if the path of the event is a sub path of a search path
-            // we flush the whole cache
-            final String path = change.getPath();
-            int index = 0;
-            while (!flushCache && index < searchPaths.length) {
-                if (path.startsWith(this.searchPaths[index])) {
-                    flushCache = true;
-                }
-                index++;
-            }
-            if ( flushCache ) {
-                flushCache();
-                break; // we can stop looping
-            }
-        }
     }
 }
