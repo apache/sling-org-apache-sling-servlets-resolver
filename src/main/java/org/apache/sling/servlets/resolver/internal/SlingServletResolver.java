@@ -492,7 +492,7 @@ public class SlingServletResolver
         // path of a servlet (or script)
         if (scriptName.charAt(0) == '/') {
             final String scriptPath = ResourceUtil.normalize(scriptName);
-            if ( this.isPathAllowed(scriptPath) ) {
+            if ( AbstractResourceCollector.isPathAllowed(scriptPath, this.executionPaths) ) {
                 final Resource res = resolver.getResource(scriptPath);
                 servlet = this.getServlet(res);
                 if (servlet != null && LOGGER.isDebugEnabled()) {
@@ -736,10 +736,6 @@ public class SlingServletResolver
         }
     }
 
-    private boolean isPathAllowed(final String path) {
-        return AbstractResourceCollector.isPathAllowed(path, this.executionPaths);
-    }
-
     @SuppressWarnings("serial")
     class ServletResolverWebConsolePlugin extends HttpServlet {
         private static final String PARAMETER_URL = "url";
@@ -786,9 +782,7 @@ public class SlingServletResolver
                     + "<br/>As a workaround, you can replace dots with underline characters, for example, when testing such an URL."
                     + "</em>";
 
-            ResourceResolver resourceResolver = null;
-            try {
-                resourceResolver = resourceResolverFactory.getServiceResourceResolver(Collections.singletonMap(ResourceResolverFactory.SUBSERVICE, (Object)"console"));
+            try (final ResourceResolver resourceResolver = resourceResolverFactory.getServiceResourceResolver(Collections.singletonMap(ResourceResolverFactory.SUBSERVICE, (Object)"console"))) {
 
                 final PrintWriter pw = response.getWriter();
 
@@ -907,12 +901,8 @@ public class SlingServletResolver
 
                 pw.println("</table>");
                 pw.print("</form>");
-            } catch (LoginException e) {
+            } catch (final LoginException e) {
                 throw new ServletException(e);
-            } finally {
-                if (resourceResolver != null) {
-                    resourceResolver.close();
-                }
             }
         }
 
@@ -952,7 +942,7 @@ public class SlingServletResolver
                 Resource candidateResource = iterator.next();
                 Servlet candidate = candidateResource.adaptTo(Servlet.class);
                 if (candidate != null) {
-                    final boolean allowed = isPathAllowed(candidateResource.getPath());
+                    final boolean allowed = AbstractResourceCollector.isPathAllowed(candidateResource.getPath(), SlingServletResolver.this.executionPaths);
                     pw.print("<li>");
                     if ( !allowed ) {
                         pw.print("<del>");
