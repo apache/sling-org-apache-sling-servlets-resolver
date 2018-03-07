@@ -56,7 +56,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.SlingConstants;
-import org.apache.sling.api.SlingException;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.request.RequestPathInfo;
@@ -75,7 +74,6 @@ import org.apache.sling.api.resource.observation.ExternalResourceChangeListener;
 import org.apache.sling.api.resource.observation.ResourceChange;
 import org.apache.sling.api.resource.observation.ResourceChangeListener;
 import org.apache.sling.api.scripting.SlingScript;
-import org.apache.sling.api.scripting.SlingScriptResolver;
 import org.apache.sling.api.servlets.OptingServlet;
 import org.apache.sling.api.servlets.ServletResolver;
 import org.apache.sling.api.servlets.ServletResolverConstants;
@@ -111,15 +109,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The <code>SlingServletResolver</code> has two functions: It resolves scripts
- * by implementing the {@link SlingScriptResolver} interface and it resolves a
+ * The <code>SlingServletResolver</code> resolves a
  * servlet for a request by implementing the {@link ServletResolver} interface.
  *
  * The resolver uses an own session to find the scripts.
  *
  */
-@Component(name = "org.apache.sling.servlets.resolver.SlingServletResolver",
-           service = { ServletResolver.class, SlingScriptResolver.class, ErrorHandler.class, SlingRequestListener.class },
+@Component(name = SlingServletResolver.Config.PID,
+           service = { ServletResolver.class,ErrorHandler.class, SlingRequestListener.class },
            property = {
                    Constants.SERVICE_DESCRIPTION + "=Apache Sling Servlet Resolver and Error Handler",
                    Constants.SERVICE_VENDOR + "=The Apache Software Foundation"
@@ -127,7 +124,6 @@ import org.slf4j.LoggerFactory;
 @Designate(ocd = SlingServletResolver.Config.class)
 public class SlingServletResolver
     implements ServletResolver,
-               SlingScriptResolver,
                SlingRequestListener,
                ErrorHandler,
                EventHandler,
@@ -142,6 +138,9 @@ public class SlingServletResolver
                  "servlets and scripts as is used to resolve request processing servlets and "+
                  "scripts.")
     public @interface Config {
+
+        String PID = "org.apache.sling.servlets.resolver.SlingServletResolver";
+
         /**
          * The default servlet root is the first search path (which is usually /apps)
          */
@@ -371,51 +370,6 @@ public class SlingServletResolver
     }
 
     // ---------- ScriptResolver interface ------------------------------------
-
-    /**
-     * @see org.apache.sling.api.scripting.SlingScriptResolver#findScript(org.apache.sling.api.resource.ResourceResolver, java.lang.String)
-     */
-    @Override
-    public SlingScript findScript(final ResourceResolver resourceResolver, final String name)
-    throws SlingException {
-
-        // is the path absolute
-        SlingScript script = null;
-        if (name.startsWith("/")) {
-
-            final String path = ResourceUtil.normalize(name);
-            if ( this.isPathAllowed(path) ) {
-                final Resource resource = resourceResolver.getResource(path);
-                if ( resource != null ) {
-                    script = resource.adaptTo(SlingScript.class);
-                }
-            }
-        } else {
-
-            // relative script resolution against search path
-            final String[] path = resourceResolver.getSearchPath();
-            for (int i = 0; script == null && i < path.length; i++) {
-                final String scriptPath = ResourceUtil.normalize(path[i] + name);
-                if ( this.isPathAllowed(scriptPath) ) {
-                    final Resource resource = resourceResolver.getResource(scriptPath);
-                    if (resource != null) {
-                        script = resource.adaptTo(SlingScript.class);
-                    }
-                }
-            }
-
-        }
-
-        // some logging
-        if (script != null) {
-            LOGGER.debug("findScript: Using script {} for {}", script.getScriptResource().getPath(), name);
-        } else {
-            LOGGER.info("findScript: No script {} found in path", name);
-        }
-
-        // and finally return the script (null or not)
-        return script;
-    }
 
     // ---------- ErrorHandler interface --------------------------------------
 
@@ -828,27 +782,7 @@ public class SlingServletResolver
         }
         createAllServlets(refs);
 
-        // execution paths
-        this.executionPaths = config.servletresolver_paths();
-        if ( this.executionPaths != null ) {
-            // if we find a string combination that basically allows all paths,
-            // we simply set the array to null
-            if ( this.executionPaths.length == 0 ) {
-                this.executionPaths = null;
-            } else {
-                boolean hasRoot = false;
-                for(int i = 0 ; i < this.executionPaths.length; i++) {
-                    final String path = this.executionPaths[i];
-                    if ( path == null || path.length() == 0 || path.equals("/") ) {
-                        hasRoot = true;
-                        break;
-                    }
-                }
-                if ( hasRoot ) {
-                    this.executionPaths = null;
-                }
-            }
-        }
+        this.executionPaths = AbstractResourceCollector.getExecutionPaths(config.servletresolver_paths());
         this.defaultExtensions = config.servletresolver_defaultExtensions();
 
         // create cache - if a cache size is configured

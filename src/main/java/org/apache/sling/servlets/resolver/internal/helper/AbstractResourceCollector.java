@@ -21,7 +21,6 @@ package org.apache.sling.servlets.resolver.internal.helper;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -260,6 +259,34 @@ public abstract class AbstractResourceCollector {
         }
 
         return false;
+    }
+
+    /**
+     * Calculate the execution paths from the configured execution paths
+     * @param paths The configured paths
+     * @return The execution paths or {@code null} for all paths.
+     */
+    public static String[] getExecutionPaths(final String[] paths) {
+        String[] executionPaths = paths;
+        if ( executionPaths != null ) {
+            // if we find a string combination that basically allows all paths,
+            // we simply set the array to null
+            if ( executionPaths.length == 0 ) {
+                executionPaths = null;
+            } else {
+                boolean hasRoot = false;
+                for(final String path : executionPaths) {
+                    if ( path == null || path.length() == 0 || path.equals("/") ) {
+                        hasRoot = true;
+                        break;
+                    }
+                }
+                if ( hasRoot ) {
+                    executionPaths = null;
+                }
+            }
+        }
+        return executionPaths;
     }
 
     private String getScriptExtension(String scriptName) {
