@@ -767,7 +767,7 @@ public class SlingServletResolver
         @Override
         protected void service(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException {
             final String url = request.getParameter(PARAMETER_URL);
-            final RequestPathInfo requestPathInfo = new DecomposedURL(url).getRequestPathInfo();
+            final RequestPathInfo requestPathInfo = DecomposedURL.getRequestPathInfo(url);
             String method = request.getParameter(PARAMETER_METHOD);
             if (StringUtils.isBlank(method)) {
                 method = "GET";

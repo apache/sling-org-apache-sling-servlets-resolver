@@ -29,14 +29,13 @@ import org.apache.sling.engine.impl.request.SlingRequestPathInfo;
 
 /** Used by the ServletResolverWebConsolePlugin to decompose URLs */
 public class DecomposedURL {
-    final RequestPathInfo requestPathInfo;
 
-    DecomposedURL(String urlString) {
-        
+    public static RequestPathInfo getRequestPathInfo(String urlString) {
+
         if(urlString == null) {
             urlString = "";
         }
-        
+
         // For the path, take everything up to the first dot
         String fullPath = urlString;
         if(urlString.contains("http")) {
@@ -46,15 +45,11 @@ public class DecomposedURL {
             }
         }
         final int firstDot = fullPath.indexOf(".");
-        
+
         final ResourceMetadata metadata = new ResourceMetadata();
         final Resource r = new SyntheticResource(null, metadata, null);
         metadata.setResolutionPath(firstDot < 0 ? fullPath : fullPath.substring(0, firstDot));
         metadata.setResolutionPathInfo(firstDot < 0 ? null : fullPath.substring(firstDot));
-        requestPathInfo = new SlingRequestPathInfo(r);
-    }
-    
-    RequestPathInfo getRequestPathInfo() {
-        return requestPathInfo;
+        return new SlingRequestPathInfo(r);
     }
 }
