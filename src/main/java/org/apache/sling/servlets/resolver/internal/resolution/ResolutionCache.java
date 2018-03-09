@@ -33,12 +33,10 @@ import javax.script.ScriptEngineManager;
 import javax.servlet.Servlet;
 
 import org.apache.sling.api.resource.LoginException;
-import org.apache.sling.api.resource.ResourceResolver;
-import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.resource.observation.ExternalResourceChangeListener;
 import org.apache.sling.api.resource.observation.ResourceChange;
+import org.apache.sling.api.resource.observation.ResourceChangeList;
 import org.apache.sling.api.resource.observation.ResourceChangeListener;
-import org.apache.sling.serviceusermapping.ServiceUserMapped;
 import org.apache.sling.servlets.resolver.internal.SlingServletResolver;
 import org.apache.sling.servlets.resolver.internal.helper.AbstractResourceCollector;
 import org.apache.sling.servlets.resolver.jmx.SlingServletResolverCacheMBean;
@@ -67,12 +65,6 @@ public class ResolutionCache
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Reference
-    private ResourceResolverFactory resourceResolverFactory;
-
-    @Reference(target="("+ServiceUserMapped.SUBSERVICENAME+"=scripts)")
-    private ServiceUserMapped scriptServiceUserMapped;
-
-    @Reference
     private ScriptEngineManager scriptEngineManager;
 
     private volatile List<String> scriptEnginesExtensions = Collections.emptyList();
@@ -85,11 +77,6 @@ public class ResolutionCache
 
     /** Flag to log warning if cache size exceed only once. */
     private volatile boolean logCacheSizeWarning;
-
-    /**
-     * The search paths
-     */
-    private String[] searchPaths;
 
     /** Registration as event handler. */
     private volatile ServiceRegistration<EventHandler> eventHandlerRegistration;
@@ -104,10 +91,6 @@ public class ResolutionCache
     @Activate
     protected void activate(final BundleContext context,
             final SlingServletResolver.Config config) throws LoginException {
-        try ( final ResourceResolver scriptRR = resourceResolverFactory.getServiceResourceResolver(Collections.singletonMap(ResourceResolverFactory.SUBSERVICE, (Object)"scripts"))) {
-            this.searchPaths = scriptRR.getSearchPath();
-        }
-
         // create cache - if a cache size is configured
         this.cacheSize = config.servletresolver_cacheSize();
         if (this.cacheSize > 5) {
@@ -219,14 +202,16 @@ public class ResolutionCache
         if ( resourceListenerRegistration == null ) {
             return;
         }
+        final ResourceChangeList changeList = (ResourceChangeList)changes;
+        final String[] searchPath = changeList.getSearchPath();
         boolean flushCache = false;
         for(final ResourceChange change : changes){
             // if the path of the event is a sub path of a search path
             // we flush the whole cache
             final String path = change.getPath();
             int index = 0;
-            while (!flushCache && index < searchPaths.length) {
-                if (path.startsWith(this.searchPaths[index])) {
+            while (!flushCache && index < searchPath.length) {
+                if (path.startsWith(searchPath[index])) {
                     flushCache = true;
                     break;
                 }
