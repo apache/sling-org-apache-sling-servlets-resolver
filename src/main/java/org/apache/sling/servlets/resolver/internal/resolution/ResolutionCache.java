@@ -105,10 +105,8 @@ public class ResolutionCache
                 ServletResolverCacheMBeanImpl mbean = new ServletResolverCacheMBeanImpl();
                 mbeanRegistration = context.registerService(SlingServletResolverCacheMBean.class, mbean, mbeanProps);
             } catch (final Throwable t) {
-                logger.debug("Unable to register mbean");
+                logger.warn("Unable to register servlets resolver cache MBean", t);
             }
-        } else {
-            this.cacheSize = 0;
         }
 
         // and finally register as event listener
@@ -117,13 +115,17 @@ public class ResolutionCache
         props.put(Constants.SERVICE_DESCRIPTION, "Apache Sling Servlet Resolver Event Handler");
         props.put(Constants.SERVICE_VENDOR,"The Apache Software Foundation");
 
-        props.put(EventConstants.EVENT_TOPIC, new String[] {"javax/script/ScriptEngineFactory/*",
-            "org/apache/sling/api/adapter/AdapterFactory/*","org/apache/sling/scripting/core/BindingsValuesProvider/*" });
+        // the event listener is for updating the script enginge extensions
+        props.put(EventConstants.EVENT_TOPIC, new String[] {
+                "javax/script/ScriptEngineFactory/*",
+                "org/apache/sling/api/adapter/AdapterFactory/*",
+                "org/apache/sling/scripting/core/BindingsValuesProvider/*" });
 
         this.eventHandlerRegistration = context.registerService(EventHandler.class, this, props);
 
         // we need a resource change listener to invalidate the cache
         if ( this.cache != null ) {
+            props.remove(EventConstants.EVENT_TOPIC);
             props.put(ResourceChangeListener.PATHS, "/");
             this.resourceListenerRegistration = context.registerService(ResourceChangeListener.class, this, props);
         }
