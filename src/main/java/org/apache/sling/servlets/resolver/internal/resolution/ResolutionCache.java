@@ -35,8 +35,8 @@ import javax.servlet.Servlet;
 import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.observation.ExternalResourceChangeListener;
 import org.apache.sling.api.resource.observation.ResourceChange;
-import org.apache.sling.api.resource.observation.ResourceChangeList;
 import org.apache.sling.api.resource.observation.ResourceChangeListener;
+import org.apache.sling.api.resource.path.Path;
 import org.apache.sling.servlets.resolver.internal.SlingServletResolver;
 import org.apache.sling.servlets.resolver.internal.helper.AbstractResourceCollector;
 import org.apache.sling.servlets.resolver.jmx.SlingServletResolverCacheMBean;
@@ -125,9 +125,17 @@ public class ResolutionCache
 
         // we need a resource change listener to invalidate the cache
         if ( this.cache != null ) {
-            props.remove(EventConstants.EVENT_TOPIC);
-            props.put(ResourceChangeListener.PATHS, "/");
-            this.resourceListenerRegistration = context.registerService(ResourceChangeListener.class, this, props);
+            final String[] listenerPaths = new String[config.servletresolver_paths().length];
+            for(int i=0; i<config.servletresolver_paths().length; i++) {
+                final Path p = new Path(config.servletresolver_paths()[i]);
+                listenerPaths[i] = p.getPath();
+            }
+
+            final Dictionary<String, Object> listenerProps = new Hashtable<>();
+            listenerProps.put(Constants.SERVICE_DESCRIPTION, "Apache Sling Servlet Resolver Resource Listener");
+            listenerProps.put(Constants.SERVICE_VENDOR,"The Apache Software Foundation");
+            listenerProps.put(ResourceChangeListener.PATHS, listenerPaths);
+            this.resourceListenerRegistration = context.registerService(ResourceChangeListener.class, this, listenerProps);
         }
 
         updateScriptEngineExtensions();
@@ -138,6 +146,8 @@ public class ResolutionCache
      */
     @Deactivate
     protected void deactivate() {
+        this.cache = null;
+
         // unregister mbean
         if ( this.mbeanRegistration != null ) {
             this.mbeanRegistration.unregister();
@@ -155,8 +165,6 @@ public class ResolutionCache
             this.resourceListenerRegistration.unregister();
             this.resourceListenerRegistration = null;
         }
-
-        this.cache = null;
     }
 
 
@@ -201,29 +209,11 @@ public class ResolutionCache
     @Override
 	public void onChange(final List<ResourceChange> changes) {
         // return immediately if already deactivated
-        if ( resourceListenerRegistration == null ) {
+        if ( resourceListenerRegistration == null || changes.isEmpty() ) {
             return;
         }
-        final ResourceChangeList changeList = (ResourceChangeList)changes;
-        final String[] searchPath = changeList.getSearchPath();
-        boolean flushCache = false;
-        for(final ResourceChange change : changes){
-            // if the path of the event is a sub path of a search path
-            // we flush the whole cache
-            final String path = change.getPath();
-            int index = 0;
-            while (!flushCache && index < searchPath.length) {
-                if (path.startsWith(searchPath[index])) {
-                    flushCache = true;
-                    break;
-                }
-                index++;
-            }
-            if ( flushCache ) {
-                flushCache();
-                break; // we can stop looping
-            }
-        }
+        // we invalidate the cache once, regardless of the number of changes
+        flushCache();
     }
 
     class ServletResolverCacheMBeanImpl extends StandardMBean implements SlingServletResolverCacheMBean {
