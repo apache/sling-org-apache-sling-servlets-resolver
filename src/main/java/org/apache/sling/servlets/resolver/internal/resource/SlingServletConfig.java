@@ -16,13 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sling.servlets.resolver.internal.helper;
+package org.apache.sling.servlets.resolver.internal.resource;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
+import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 
@@ -34,7 +35,7 @@ public class SlingServletConfig implements ServletConfig {
     private final ServletContext servletContext;
 
     /** The <code>ServiceReference</code> providing the properties */
-    private final ServiceReference reference;
+    private final ServiceReference<Servlet> reference;
 
     /** The name of this configuration object */
     private final String name;
@@ -49,7 +50,7 @@ public class SlingServletConfig implements ServletConfig {
      * @param name The name of this configuration.
      */
     public SlingServletConfig(final ServletContext servletContext,
-            final ServiceReference reference, final String name) {
+            final ServiceReference<Servlet> reference, final String name) {
         this.servletContext = servletContext;
         this.reference = reference;
         this.name = name;
@@ -59,8 +60,8 @@ public class SlingServletConfig implements ServletConfig {
      * @see javax.servlet.ServletConfig#getInitParameter(java.lang.String)
      */
     @Override
-    public String getInitParameter(String name) {
-        Object prop = reference.getProperty(name);
+    public String getInitParameter(final String name) {
+        final Object prop = reference.getProperty(name);
         return (prop == null) ? null : String.valueOf(prop);
     }
 
@@ -69,7 +70,7 @@ public class SlingServletConfig implements ServletConfig {
      */
     @Override
     public Enumeration<String> getInitParameterNames() {
-        List<String> keys = Arrays.asList(reference.getPropertyKeys());
+        final List<String> keys = Arrays.asList(reference.getPropertyKeys());
         return Collections.enumeration(keys);
     }
 

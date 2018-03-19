@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sling.servlets.resolver.internal;
+package org.apache.sling.servlets.resolver.internal.console;
 
 import static org.junit.Assert.assertEquals;
 
@@ -85,7 +85,7 @@ public class DecomposedURLTest {
     }
 
     public DecomposedURLTest(String input, String path, String extension, String selectors, String suffix) {
-        rpi = DecomposedURL.getRequestPathInfo(input);
+        rpi = WebConsolePlugin.getRequestPathInfo(input);
         this.path = path;
         this.extension = extension;
         this.selectors = selectors;
