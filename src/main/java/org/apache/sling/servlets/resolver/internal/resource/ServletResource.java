@@ -41,35 +41,40 @@ class ServletResource extends AbstractResource {
 
     private final ResourceMetadata metadata;
 
-    ServletResource(ResourceResolver resourceResolver, Servlet servlet,
-            String path) {
+    ServletResource(final ResourceResolver resourceResolver,
+            final Servlet servlet,
+            final String path) {
         this.resourceResolver = resourceResolver;
         this.servlet = servlet;
         this.path = path;
         this.resourceType = ServletResourceProviderFactory.ensureServletNameExtension(path);
 
         this.metadata = new ResourceMetadata();
-        metadata.setResolutionPath(path);
     }
 
+    @Override
     public ResourceMetadata getResourceMetadata() {
         return metadata;
     }
 
+    @Override
     public ResourceResolver getResourceResolver() {
         return resourceResolver;
     }
 
+    @Override
     public String getResourceType() {
         return resourceType;
     }
 
     /** Servlet Resources always returns "sling/bundle/resource" as
      * the super type. */
+    @Override
     public String getResourceSuperType() {
         return "sling/bundle/resource";
     }
 
+    @Override
     public String getPath() {
         return path;
     }
@@ -88,12 +93,13 @@ class ServletResource extends AbstractResource {
         return servletName;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public <AdapterType> AdapterType adaptTo(Class<AdapterType> type) {
         if (type == Servlet.class) {
             return (AdapterType) servlet; // unchecked cast
         } else if ( type == ValueMap.class ) {
-            final Map<String, Object> props = new HashMap<String, Object>();
+            final Map<String, Object> props = new HashMap<>();
             props.put("sling:resourceType", this.getResourceType());
             props.put("sling:resourceSuperType", this.getResourceSuperType());
             props.put("servletName", this.getServletName());
@@ -105,6 +111,7 @@ class ServletResource extends AbstractResource {
         return super.adaptTo(type);
     }
 
+    @Override
     public String toString() {
         return getClass().getSimpleName() + ", servlet=" + this.getServletName()
             + ", path=" + getPath();

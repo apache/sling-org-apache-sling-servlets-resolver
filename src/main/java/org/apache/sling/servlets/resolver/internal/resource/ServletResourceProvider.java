@@ -18,7 +18,6 @@
  */
 package org.apache.sling.servlets.resolver.internal.resource;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -31,22 +30,27 @@ import org.apache.sling.spi.resource.provider.ResourceProvider;
 
 public class ServletResourceProvider extends ResourceProvider<Object> {
 
-    private Servlet servlet;
+    private final Servlet servlet;
 
-    private Set<String> resourcePaths;
+    private final Set<String> resourcePaths;
 
     ServletResourceProvider(final Servlet servlet, final Set<String> resourcePaths) {
         this.servlet = servlet;
         this.resourcePaths = resourcePaths;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public Resource getResource(final ResolveContext<Object> ctx, String path, ResourceContext resourceContext, Resource parent) {
+    public Resource getResource(final ResolveContext<Object> ctx,
+            final String path,
+            final ResourceContext resourceContext,
+            final Resource parent) {
         // only return a resource if the servlet has been assigned
         if (resourcePaths.contains(path)) {
             return new ServletResource(ctx.getResourceResolver(), servlet, path);
         }
 
+        @SuppressWarnings("rawtypes")
         final ResourceProvider parentProvider = ctx.getParentResourceProvider();
         if ( parentProvider != null ) {
             final Resource useParent = (parent instanceof ServletResource ? null : parent);
@@ -55,8 +59,9 @@ public class ServletResourceProvider extends ResourceProvider<Object> {
         return null;
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
-    public Iterator<Resource> listChildren(ResolveContext<Object> ctx, Resource parent) {
+    public Iterator<Resource> listChildren(final ResolveContext<Object> ctx, final Resource parent) {
         final ResourceProvider parentProvider = ctx.getParentResourceProvider();
         if ( parentProvider != null ) {
             return parentProvider.listChildren(ctx.getParentResolveContext(), parent);
@@ -64,16 +69,12 @@ public class ServletResourceProvider extends ResourceProvider<Object> {
         return null;
     }
 
-    Servlet getServlet() {
-        return servlet;
-    }
-
-    Iterator<String> getServletPathIterator() {
-        return resourcePaths.iterator();
-    }
-
-    public String[] getServletPaths() {
-        return resourcePaths.toArray(new String[resourcePaths.size()]);
+    /**
+     * The paths under which this servlet is mounted. Used by the servlet mounter
+     * @return The set of paths
+     */
+    Set<String> getServletPaths() {
+        return resourcePaths;
     }
 
     /** Return suitable info for logging */
@@ -81,6 +82,6 @@ public class ServletResourceProvider extends ResourceProvider<Object> {
     public String toString() {
         return getClass().getSimpleName() + ": servlet="
             + servlet.getClass().getName() + ", paths="
-            + Arrays.toString(getServletPaths());
+            + resourcePaths;
     }
 }

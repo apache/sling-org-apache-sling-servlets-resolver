@@ -39,7 +39,7 @@ import org.osgi.service.component.annotations.Component;
  *
  */
 @Component(service = { SlingScriptResolver.class },
-           configurationPid = SlingServletResolver.Config.PID,
+           configurationPid = ResolverConfig.PID,
            property = {
                    Constants.SERVICE_DESCRIPTION + "=Apache Sling Script Resolver",
                    Constants.SERVICE_VENDOR + "=The Apache Software Foundation"
@@ -53,7 +53,7 @@ public class SlingScriptResolverImpl
     private String[] executionPaths;
 
     @Activate
-    private void activate(final SlingServletResolver.Config config) {
+    private void activate(final ResolverConfig config) {
         this.executionPaths = AbstractResourceCollector.getExecutionPaths(config.servletresolver_paths());
     }
 

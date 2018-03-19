@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sling.servlets.resolver.internal;
+package org.apache.sling.servlets.resolver.internal.resource;
 
 import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_NAME;
 import static org.osgi.framework.Constants.SERVICE_ID;
@@ -24,9 +24,7 @@ import static org.osgi.framework.Constants.SERVICE_PID;
 import static org.osgi.service.component.ComponentConstants.COMPONENT_NAME;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -39,15 +37,11 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 
 import org.apache.sling.api.request.RequestUtil;
-import org.apache.sling.api.resource.LoginException;
-import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.servlets.ServletResolver;
 import org.apache.sling.api.servlets.ServletResolverConstants;
-import org.apache.sling.serviceusermapping.ServiceUserMapped;
+import org.apache.sling.servlets.resolver.internal.ResolverConfig;
 import org.apache.sling.servlets.resolver.internal.helper.SlingServletConfig;
-import org.apache.sling.servlets.resolver.internal.resource.ServletResourceProvider;
-import org.apache.sling.servlets.resolver.internal.resource.ServletResourceProviderFactory;
 import org.apache.sling.spi.resource.provider.ResourceProvider;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -70,7 +64,7 @@ import org.slf4j.LoggerFactory;
  * The resolver uses an own session to find the scripts.
  *
  */
-@Component(configurationPid = SlingServletResolver.Config.PID,
+@Component(configurationPid = ResolverConfig.PID,
            service = {})
 public class ServletMounter {
 
@@ -94,25 +88,20 @@ public class ServletMounter {
     @Reference
     private ResourceResolverFactory resourceResolverFactory;
 
-    @Reference(target="("+ServiceUserMapped.SUBSERVICENAME+"=scripts)")
-    private ServiceUserMapped scriptServiceUserMapped;
-
     /**
      * Activate this component.
      */
     @Activate
     protected void activate(final BundleContext context,
-            final SlingServletResolver.Config config)
-    throws LoginException {
+            final ResolverConfig config) {
         final Collection<PendingServlet> refs;
         synchronized (this.pendingServlets) {
 
             refs = new ArrayList<>(pendingServlets);
             pendingServlets.clear();
 
-            try ( final ResourceResolver scriptRR = resourceResolverFactory.getServiceResourceResolver(Collections.singletonMap(ResourceResolverFactory.SUBSERVICE, (Object)"scripts"))) {
-                servletResourceProviderFactory = new ServletResourceProviderFactory(config.servletresolver_servletRoot(), scriptRR.getSearchPath());
-            }
+            servletResourceProviderFactory = new ServletResourceProviderFactory(config.servletresolver_servletRoot(),
+                    resourceResolverFactory.getSearchPath());
 
             // register servlets immediately from now on
             this.context = context;
@@ -225,7 +214,7 @@ public class ServletMounter {
                         final ServiceRegistration<ResourceProvider<Object>> reg = (ServiceRegistration<ResourceProvider<Object>>) bundleContext.registerService(
                             ResourceProvider.class.getName(),
                             provider,
-                            createServiceProperties(reference, provider, root));
+                            createServiceProperties(reference, root));
                         regs.add(reg);
                     }
                     registered = true;
@@ -250,13 +239,12 @@ public class ServletMounter {
     }
 
     private Dictionary<String, Object> createServiceProperties(final ServiceReference<Servlet> reference,
-            final ServletResourceProvider provider,
             final String root) {
 
         final Dictionary<String, Object> params = new Hashtable<>();
         params.put(ResourceProvider.PROPERTY_ROOT, root);
         params.put(Constants.SERVICE_DESCRIPTION,
-            "ServletResourceProvider for Servlets at " + Arrays.asList(provider.getServletPaths()));
+            "ServletResourceProvider for Servlet at " + root);
 
         // inherit service ranking
         Object rank = reference.getProperty(Constants.SERVICE_RANKING);

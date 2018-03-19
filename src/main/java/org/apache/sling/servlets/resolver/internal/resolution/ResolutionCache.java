@@ -37,7 +37,7 @@ import org.apache.sling.api.resource.observation.ExternalResourceChangeListener;
 import org.apache.sling.api.resource.observation.ResourceChange;
 import org.apache.sling.api.resource.observation.ResourceChangeListener;
 import org.apache.sling.api.resource.path.Path;
-import org.apache.sling.servlets.resolver.internal.SlingServletResolver;
+import org.apache.sling.servlets.resolver.internal.ResolverConfig;
 import org.apache.sling.servlets.resolver.internal.helper.AbstractResourceCollector;
 import org.apache.sling.servlets.resolver.jmx.SlingServletResolverCacheMBean;
 import org.osgi.framework.BundleContext;
@@ -57,7 +57,7 @@ import org.slf4j.LoggerFactory;
  * Cache for script resolution
  *
  */
-@Component(configurationPid = SlingServletResolver.Config.PID,
+@Component(configurationPid = ResolverConfig.PID,
            service = {ResolutionCache.class})
 public class ResolutionCache
     implements EventHandler, ResourceChangeListener, ExternalResourceChangeListener {
@@ -90,7 +90,7 @@ public class ResolutionCache
      */
     @Activate
     protected void activate(final BundleContext context,
-            final SlingServletResolver.Config config) throws LoginException {
+            final ResolverConfig config) throws LoginException {
         // create cache - if a cache size is configured
         this.cacheSize = config.servletresolver_cacheSize();
         if (this.cacheSize > 5) {

@@ -24,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -117,6 +118,11 @@ public class SlingServletResolverTest {
                 // TODO Auto-generated method stub
                 return null;
             }
+
+            @Override
+            public List<String> getSearchPath() {
+                return Collections.singletonList("/");
+            }
         };
 
         servlet = new MockSlingRequestHandlerServlet();
@@ -151,11 +157,11 @@ public class SlingServletResolverTest {
             SERVLET_EXTENSION);
 
 //        servletResolver.bindServlet(SlingServletResolverTest.this.servlet, serviceReference);
-        servletResolver.activate(bundleContext, new SlingServletResolver.Config() {
+        servletResolver.activate(bundleContext, new ResolverConfig() {
 
             @Override
             public Class<? extends Annotation> annotationType() {
-                return SlingServletResolver.Config.class;
+                return ResolverConfig.class;
             }
 
             @Override

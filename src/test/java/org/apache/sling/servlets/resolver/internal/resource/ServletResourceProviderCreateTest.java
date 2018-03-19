@@ -18,6 +18,11 @@
  */
 package org.apache.sling.servlets.resolver.internal.resource;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -29,13 +34,16 @@ import javax.servlet.ServletResponse;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.servlets.HttpConstants;
 import org.apache.sling.api.servlets.ServletResolverConstants;
-import org.apache.sling.commons.testing.osgi.MockServiceReference;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.osgi.framework.Constants;
+import org.osgi.framework.ServiceReference;
 
-import junit.framework.TestCase;
-
-public class ServletResourceProviderCreateTest extends TestCase {
+public class ServletResourceProviderCreateTest {
 
     private static final Servlet TEST_SERVLET = new GenericServlet() {
+        private static final long serialVersionUID = 1L;
+
         @Override
         public void service(ServletRequest req, ServletResponse res) {
         }
@@ -48,20 +56,22 @@ public class ServletResourceProviderCreateTest extends TestCase {
     private static final String RES_TYPE_PATH = ResourceUtil.resourceTypeToPath(RES_TYPE);
 
     private ServletResourceProviderFactory factory = new ServletResourceProviderFactory(
-        ROOT, new String[] {"/apps/"});
+        ROOT, Collections.singletonList("/apps/"));
 
-    public void testCreateMethodsDefault() {
-        MockServiceReference msr = new MockServiceReference(null);
+    @Test public void testCreateMethodsDefault() {
+        @SuppressWarnings("unchecked")
+        final ServiceReference<Servlet> msr = Mockito.mock(ServiceReference.class);
+        Mockito.when(msr.getProperty(Constants.SERVICE_ID))
+           .thenReturn(1L);
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES))
+           .thenReturn(RES_TYPE);
 
-        msr.setProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES,
-            RES_TYPE);
-        // msr.setProperty(ServletResolverConstants.SLING_SERVLET_METHODS, "*");
         ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
         assertNotNull(srp);
 
-        String[] paths = srp.getServletPaths();
+        final Set<String> paths = srp.getServletPaths();
         assertNotNull(paths);
-        assertEquals(2, paths.length);
+        assertEquals(2, paths.size());
 
         Set<String> checkerSet = new HashSet<>();
         checkerSet.add(ROOT + RES_TYPE_PATH + "/" + HttpConstants.METHOD_GET
@@ -76,19 +86,22 @@ public class ServletResourceProviderCreateTest extends TestCase {
         assertTrue(checkerSet.isEmpty());
     }
 
-    public void testCreateMethodsSingle() {
-        MockServiceReference msr = new MockServiceReference(null);
-
-        msr.setProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES,
-            RES_TYPE);
-        msr.setProperty(ServletResolverConstants.SLING_SERVLET_METHODS, "GET");
+    @Test public void testCreateMethodsSingle() {
+        @SuppressWarnings("unchecked")
+        final ServiceReference<Servlet> msr = Mockito.mock(ServiceReference.class);
+        Mockito.when(msr.getProperty(Constants.SERVICE_ID))
+           .thenReturn(1L);
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES))
+           .thenReturn(RES_TYPE);
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_METHODS))
+            .thenReturn("GET");
 
         ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
         assertNotNull(srp);
 
-        String[] paths = srp.getServletPaths();
+        final Set<String> paths = srp.getServletPaths();
         assertNotNull(paths);
-        assertEquals(1, paths.length);
+        assertEquals(1, paths.size());
 
         Set<String> checkerSet = new HashSet<>();
         checkerSet.add(ROOT + RES_TYPE_PATH + "/" + HttpConstants.METHOD_GET
@@ -101,20 +114,22 @@ public class ServletResourceProviderCreateTest extends TestCase {
         assertTrue(checkerSet.isEmpty());
     }
 
-    public void testCreateMethodsMultiple() {
-        MockServiceReference msr = new MockServiceReference(null);
-
-        msr.setProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES,
-            RES_TYPE);
-        msr.setProperty(ServletResolverConstants.SLING_SERVLET_METHODS,
-            new String[] { "GET", "POST", "PUT" });
+    @Test public void testCreateMethodsMultiple() {
+        @SuppressWarnings("unchecked")
+        final ServiceReference<Servlet> msr = Mockito.mock(ServiceReference.class);
+        Mockito.when(msr.getProperty(Constants.SERVICE_ID))
+           .thenReturn(1L);
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES))
+           .thenReturn(RES_TYPE);
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_METHODS))
+            .thenReturn(new String[] { "GET", "POST", "PUT" });
 
         ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
         assertNotNull(srp);
 
-        String[] paths = srp.getServletPaths();
+        final Set<String> paths = srp.getServletPaths();
         assertNotNull(paths);
-        assertEquals(3, paths.length);
+        assertEquals(3, paths.size());
 
         Set<String> checkerSet = new HashSet<>();
         checkerSet.add(ROOT + RES_TYPE_PATH + "/" + HttpConstants.METHOD_GET
@@ -131,19 +146,22 @@ public class ServletResourceProviderCreateTest extends TestCase {
         assertTrue(checkerSet.isEmpty());
     }
 
-    public void testCreateMethodsAll() {
-        MockServiceReference msr = new MockServiceReference(null);
-
-        msr.setProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES,
-            RES_TYPE);
-        msr.setProperty(ServletResolverConstants.SLING_SERVLET_METHODS, "*");
+    @Test public void testCreateMethodsAll() {
+        @SuppressWarnings("unchecked")
+        final ServiceReference<Servlet> msr = Mockito.mock(ServiceReference.class);
+        Mockito.when(msr.getProperty(Constants.SERVICE_ID))
+           .thenReturn(1L);
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES))
+           .thenReturn(RES_TYPE);
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_METHODS))
+            .thenReturn("*");
 
         ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
         assertNotNull(srp);
 
-        String[] paths = srp.getServletPaths();
+        final Set<String> paths = srp.getServletPaths();
         assertNotNull(paths);
-        assertEquals(1, paths.length);
+        assertEquals(1, paths.size());
 
         Set<String> checkerSet = new HashSet<>();
         checkerSet.add(ROOT + RES_TYPE_PATH
@@ -156,24 +174,26 @@ public class ServletResourceProviderCreateTest extends TestCase {
         assertTrue(checkerSet.isEmpty());
     }
 
-    public void testCreateSelectorsExtensions() {
-        MockServiceReference msr = new MockServiceReference(null);
-
-        msr.setProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES,
-            RES_TYPE);
-        msr.setProperty(ServletResolverConstants.SLING_SERVLET_METHODS,
-            new String[] { HttpConstants.METHOD_GET });
-        msr.setProperty(ServletResolverConstants.SLING_SERVLET_SELECTORS,
-            new String[] { "ext" });
-        msr.setProperty(ServletResolverConstants.SLING_SERVLET_EXTENSIONS,
-            new String[] { "json" });
+    @Test public void testCreateSelectorsExtensions() {
+        @SuppressWarnings("unchecked")
+        final ServiceReference<Servlet> msr = Mockito.mock(ServiceReference.class);
+        Mockito.when(msr.getProperty(Constants.SERVICE_ID))
+           .thenReturn(1L);
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES))
+           .thenReturn(RES_TYPE);
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_METHODS))
+            .thenReturn(new String[] { HttpConstants.METHOD_GET });
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_SELECTORS))
+            .thenReturn(new String[] { "ext" });
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_EXTENSIONS))
+            .thenReturn(new String[] { "json" });
 
         ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
         assertNotNull(srp);
 
-        String[] paths = srp.getServletPaths();
+        final Set<String> paths = srp.getServletPaths();
         assertNotNull(paths);
-        assertEquals(1, paths.length);
+        assertEquals(1, paths.size());
 
         Set<String> checkerSet = new HashSet<>();
         checkerSet.add(ROOT + RES_TYPE_PATH + "/ext.json."
@@ -186,22 +206,25 @@ public class ServletResourceProviderCreateTest extends TestCase {
 
         assertTrue(checkerSet.isEmpty());
     }
-    public void testCreateMethodsExtensions() {
-        MockServiceReference msr = new MockServiceReference(null);
 
-        msr.setProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES,
-            RES_TYPE);
-        msr.setProperty(ServletResolverConstants.SLING_SERVLET_METHODS,
-            new String[] { HttpConstants.METHOD_GET, HttpConstants.METHOD_POST });
-        msr.setProperty(ServletResolverConstants.SLING_SERVLET_EXTENSIONS,
-            new String[] { "json", "html" });
+    @Test public void testCreateMethodsExtensions() {
+        @SuppressWarnings("unchecked")
+        final ServiceReference<Servlet> msr = Mockito.mock(ServiceReference.class);
+        Mockito.when(msr.getProperty(Constants.SERVICE_ID))
+           .thenReturn(1L);
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES))
+           .thenReturn(RES_TYPE);
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_METHODS))
+            .thenReturn(new String[] { HttpConstants.METHOD_GET, HttpConstants.METHOD_POST });
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_EXTENSIONS))
+            .thenReturn(new String[] { "json", "html" });
 
         ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
         assertNotNull(srp);
 
-        String[] paths = srp.getServletPaths();
+        final Set<String> paths = srp.getServletPaths();
         assertNotNull(paths);
-        assertEquals(4, paths.length);
+        assertEquals(4, paths.size());
 
         Set<String> checkerSet = new HashSet<>();
         checkerSet.add(ROOT + RES_TYPE_PATH + "/json."

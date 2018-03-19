@@ -28,6 +28,7 @@ import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVL
 import static org.osgi.service.component.ComponentConstants.COMPONENT_NAME;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.servlet.Servlet;
@@ -70,9 +71,9 @@ public class ServletResourceProviderFactory {
     /**
      * The search paths
      */
-    private final String[] searchPaths;
+    private final List<String> searchPath;
 
-    static String ensureServletNameExtension(String servletPath) {
+    static String ensureServletNameExtension(final String servletPath) {
         if (servletPath.endsWith(SERVLET_PATH_EXTENSION)) {
             return servletPath;
         }
@@ -84,35 +85,29 @@ public class ServletResourceProviderFactory {
      * Constructor
      * @param servletRoot The default value for the servlet root
      */
-    public ServletResourceProviderFactory(Object servletRoot, String[] paths) {
-        this.searchPaths = paths;
-        String value = servletRoot.toString();
-        // check if servlet root specifies a number
+    public ServletResourceProviderFactory(String servletRoot, final List<String> searchPath) {
+        this.searchPath = searchPath;
+        // check if servletRoot specifies a number
         boolean isNumber = false;
         int index = -1;
-        if ( servletRoot instanceof Number ) {
-            isNumber = true;
-            index = ((Number)servletRoot).intValue();
-        } else {
-            if (!value.startsWith("/") ) {
-                try {
-                    index = Integer.valueOf(value);
-                    isNumber = true;
-                } catch (NumberFormatException nfe) {
-                    // ignore
-                }
+        if (!servletRoot.startsWith("/") ) {
+            try {
+                index = Integer.valueOf(servletRoot);
+                isNumber = true;
+            } catch (NumberFormatException nfe) {
+                // ignore
             }
         }
         if ( !isNumber ) {
             // ensure the root starts and ends with a slash
-            if (!value.startsWith("/")) {
-                value = "/" + value;
+            if (!servletRoot.startsWith("/")) {
+                servletRoot = "/".concat(servletRoot);
             }
-            if (!value.endsWith("/")) {
-                value += "/";
+            if (!servletRoot.endsWith("/")) {
+                servletRoot = servletRoot.concat("/");
             }
 
-            this.servletRoot = value;
+            this.servletRoot = servletRoot;
             this.servletRootIndex = -1;
         } else {
             this.servletRoot = null;
@@ -120,9 +115,15 @@ public class ServletResourceProviderFactory {
         }
     }
 
+    /**
+     * Create a servlet resource provider for the servlet
+     * @param ref The service reference for the servlet
+     * @param servlet The servlet object itself
+     * @return A servlet resource provider
+     */
     public ServletResourceProvider create(final ServiceReference<Servlet> ref, final Servlet servlet) {
 
-        Set<String> pathSet = new HashSet<>();
+        final Set<String> pathSet = new HashSet<>();
 
         // check whether explicit paths are set
         addByPath(pathSet, ref);
@@ -185,10 +186,10 @@ public class ServletResourceProviderFactory {
                 return s;
             }
         }
-        if ( index == -1 || index >= this.searchPaths.length ) {
-            index = this.searchPaths.length - 1;
+        if ( index == -1 || index >= this.searchPath.size() ) {
+            index = this.searchPath.size() - 1;
         }
-        return this.searchPaths[index];
+        return this.searchPath.get(index);
     }
 
     /**

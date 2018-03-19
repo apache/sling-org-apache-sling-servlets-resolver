@@ -76,9 +76,7 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.Designate;
-import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,60 +87,22 @@ import org.slf4j.LoggerFactory;
  * The resolver uses an own session to find the scripts.
  *
  */
-@Component(name = SlingServletResolver.Config.PID,
+@Component(name = ResolverConfig.PID,
            service = { ServletResolver.class, ErrorHandler.class, SlingRequestListener.class },
            property = {
                    Constants.SERVICE_DESCRIPTION + "=Apache Sling Servlet Resolver and Error Handler",
                    Constants.SERVICE_VENDOR + "=The Apache Software Foundation"
            })
-@Designate(ocd = SlingServletResolver.Config.class)
+@Designate(ocd = ResolverConfig.class)
 public class SlingServletResolver
     implements ServletResolver,
                SlingRequestListener,
                ErrorHandler {
 
-    @ObjectClassDefinition(name = "Apache Sling Servlet/Script Resolver and Error Handler",
-            description= "The Sling Servlet and Script Resolver has "+
-                 "multiple tasks: One it is used as the ServletResolver to select the Servlet "+
-                 "or Script to call to handle the request. Second it acts as the "+
-                 "SlingScriptResolver and finally it manages error handling by implementing "+
-                 "the ErrorHandler interface using the same algorithm to select error handling "+
-                 "servlets and scripts as is used to resolve request processing servlets and "+
-                 "scripts.")
-    public @interface Config {
+    private static final String SERVICE_USER = "scripts";
 
-        String PID = "org.apache.sling.servlets.resolver.SlingServletResolver";
+    private static final String SERVICE_USER_CONSOLE = "console";
 
-        /**
-         * The default servlet root is the first search path (which is usually /apps)
-         */
-        @AttributeDefinition(name="Servlet Registration Root Path",
-                description = "The default root path assumed when "+
-                     "registering a servlet whose servlet registration properties define a relative "+
-                     "resource type/path. It can either be a string starting with \"/\" (specifying a path prefix to be used) "+
-                     "or a number which specifies the resource resolver's search path entry index. The default value "+
-                     "is 0 (usually stands for \"/apps\" in the search paths). The number can be -1 which always "+
-                     "points to the last search path entry.")
-        String servletresolver_servletRoot() default "0";
-
-        /** The default cache size for the script resolution. */
-        @AttributeDefinition(name = "Cache Size",
-                description = "This property configures the size of the " +
-                    "cache used for script resolution. A value lower than 5 disables the cache.")
-        int servletresolver_cacheSize() default 200;
-
-        @AttributeDefinition(name = "Execution Paths",
-                description = "The paths to search for executable scripts. If no path is configured " +
-                     "this is treated like the default (/ = root) which allows to execute all scripts. By configuring some " +
-                     "paths the execution of scripts can be limited. If a configured value ends with a slash, the whole sub tree " +
-                     "is allowed. Without a slash an exact matching script is allowed.")
-        String[] servletresolver_paths() default "/";
-
-        @AttributeDefinition(name = "Default Extensions",
-                description = "The list of extensions for which the default behavior " +
-                    "will be used. This means that the last path segment of the resource type can be used as the script name.")
-        String[] servletresolver_defaultExtensions() default "html";
-    }
 
     /** Servlet resolver logger */
     public static final Logger LOGGER = LoggerFactory.getLogger(SlingServletResolver.class);
@@ -150,10 +110,10 @@ public class SlingServletResolver
     @Reference
     private ResourceResolverFactory resourceResolverFactory;
 
-    @Reference(target="("+ServiceUserMapped.SUBSERVICENAME+"=scripts)")
+    @Reference(target="("+ServiceUserMapped.SUBSERVICENAME+"=" + SERVICE_USER + ")")
     private ServiceUserMapped scriptServiceUserMapped;
 
-    @Reference(target="("+ServiceUserMapped.SUBSERVICENAME+"=console)")
+    @Reference(target="("+ServiceUserMapped.SUBSERVICENAME+"=" + SERVICE_USER_CONSOLE + ")")
     private ServiceUserMapped consoleServiceUserMapped;
 
     @Reference
@@ -697,9 +657,9 @@ public class SlingServletResolver
      * Activate this component.
      */
     @Activate
-    protected void activate(final BundleContext context, final Config config) throws LoginException {
+    protected void activate(final BundleContext context, final ResolverConfig config) throws LoginException {
         this.sharedScriptResolver =
-                resourceResolverFactory.getServiceResourceResolver(Collections.singletonMap(ResourceResolverFactory.SUBSERVICE, (Object)"scripts"));
+                resourceResolverFactory.getServiceResourceResolver(Collections.singletonMap(ResourceResolverFactory.SUBSERVICE, (Object)SERVICE_USER));
 
         this.executionPaths = AbstractResourceCollector.getExecutionPaths(config.servletresolver_paths());
         this.defaultExtensions = config.servletresolver_defaultExtensions();
@@ -782,7 +742,7 @@ public class SlingServletResolver
                     + "<br/>As a workaround, you can replace dots with underline characters, for example, when testing such an URL."
                     + "</em>";
 
-            try (final ResourceResolver resourceResolver = resourceResolverFactory.getServiceResourceResolver(Collections.singletonMap(ResourceResolverFactory.SUBSERVICE, (Object)"console"))) {
+            try (final ResourceResolver resourceResolver = resourceResolverFactory.getServiceResourceResolver(Collections.singletonMap(ResourceResolverFactory.SUBSERVICE, (Object)SERVICE_USER_CONSOLE))) {
 
                 final PrintWriter pw = response.getWriter();
 
