@@ -19,11 +19,9 @@
 package org.apache.sling.servlets.resolver.internal.resource;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 import javax.servlet.GenericServlet;
@@ -66,24 +64,13 @@ public class ServletResourceProviderCreateTest {
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES))
            .thenReturn(RES_TYPE);
 
-        ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
-        assertNotNull(srp);
-
+        final ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
         final Set<String> paths = srp.getServletPaths();
-        assertNotNull(paths);
         assertEquals(2, paths.size());
-
-        Set<String> checkerSet = new HashSet<>();
-        checkerSet.add(ROOT + RES_TYPE_PATH + "/" + HttpConstants.METHOD_GET
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION);
-        checkerSet.add(ROOT + RES_TYPE_PATH + "/" + HttpConstants.METHOD_HEAD
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION);
-
-        for (String path : paths) {
-            assertTrue(path + " not expected", checkerSet.remove(path));
-        }
-
-        assertTrue(checkerSet.isEmpty());
+        assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/" + HttpConstants.METHOD_GET
+            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+        assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/" + HttpConstants.METHOD_HEAD
+            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
     }
 
     @Test public void testCreateMethodsSingle() {
@@ -96,22 +83,11 @@ public class ServletResourceProviderCreateTest {
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_METHODS))
             .thenReturn("GET");
 
-        ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
-        assertNotNull(srp);
-
+        final ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
         final Set<String> paths = srp.getServletPaths();
-        assertNotNull(paths);
         assertEquals(1, paths.size());
-
-        Set<String> checkerSet = new HashSet<>();
-        checkerSet.add(ROOT + RES_TYPE_PATH + "/" + HttpConstants.METHOD_GET
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION);
-
-        for (String path : paths) {
-            assertTrue(path + " not expected", checkerSet.remove(path));
-        }
-
-        assertTrue(checkerSet.isEmpty());
+        assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/" + HttpConstants.METHOD_GET
+            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
     }
 
     @Test public void testCreateMethodsMultiple() {
@@ -124,26 +100,15 @@ public class ServletResourceProviderCreateTest {
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_METHODS))
             .thenReturn(new String[] { "GET", "POST", "PUT" });
 
-        ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
-        assertNotNull(srp);
-
+        final ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
         final Set<String> paths = srp.getServletPaths();
-        assertNotNull(paths);
         assertEquals(3, paths.size());
-
-        Set<String> checkerSet = new HashSet<>();
-        checkerSet.add(ROOT + RES_TYPE_PATH + "/" + HttpConstants.METHOD_GET
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION);
-        checkerSet.add(ROOT + RES_TYPE_PATH + "/" + HttpConstants.METHOD_POST
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION);
-        checkerSet.add(ROOT + RES_TYPE_PATH + "/" + HttpConstants.METHOD_PUT
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION);
-
-        for (String path : paths) {
-            assertTrue(path + " not expected", checkerSet.remove(path));
-        }
-
-        assertTrue(checkerSet.isEmpty());
+        assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/" + HttpConstants.METHOD_GET
+            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+        assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/" + HttpConstants.METHOD_POST
+            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+        assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/" + HttpConstants.METHOD_PUT
+            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
     }
 
     @Test public void testCreateMethodsAll() {
@@ -156,22 +121,11 @@ public class ServletResourceProviderCreateTest {
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_METHODS))
             .thenReturn("*");
 
-        ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
-        assertNotNull(srp);
-
+        final ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
         final Set<String> paths = srp.getServletPaths();
-        assertNotNull(paths);
         assertEquals(1, paths.size());
-
-        Set<String> checkerSet = new HashSet<>();
-        checkerSet.add(ROOT + RES_TYPE_PATH
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION);
-
-        for (String path : paths) {
-            assertTrue(path + " not expected", checkerSet.remove(path));
-        }
-
-        assertTrue(checkerSet.isEmpty());
+        assertTrue(paths.contains(ROOT + RES_TYPE_PATH
+            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
     }
 
     @Test public void testCreateSelectorsExtensions() {
@@ -188,23 +142,12 @@ public class ServletResourceProviderCreateTest {
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_EXTENSIONS))
             .thenReturn(new String[] { "json" });
 
-        ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
-        assertNotNull(srp);
-
+        final ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
         final Set<String> paths = srp.getServletPaths();
-        assertNotNull(paths);
         assertEquals(1, paths.size());
-
-        Set<String> checkerSet = new HashSet<>();
-        checkerSet.add(ROOT + RES_TYPE_PATH + "/ext.json."
+        assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/ext.json."
             + HttpConstants.METHOD_GET
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION);
-
-        for (String path : paths) {
-            assertTrue(path + " not expected", checkerSet.remove(path));
-        }
-
-        assertTrue(checkerSet.isEmpty());
+            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
     }
 
     @Test public void testCreateMethodsExtensions() {
@@ -219,32 +162,21 @@ public class ServletResourceProviderCreateTest {
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_EXTENSIONS))
             .thenReturn(new String[] { "json", "html" });
 
-        ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
-        assertNotNull(srp);
-
+        final ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
         final Set<String> paths = srp.getServletPaths();
-        assertNotNull(paths);
         assertEquals(4, paths.size());
-
-        Set<String> checkerSet = new HashSet<>();
-        checkerSet.add(ROOT + RES_TYPE_PATH + "/json."
+        assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/json."
             + HttpConstants.METHOD_GET
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION);
-        checkerSet.add(ROOT + RES_TYPE_PATH + "/html."
+            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+        assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/html."
             + HttpConstants.METHOD_GET
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION);
-        checkerSet.add(ROOT + RES_TYPE_PATH + "/json."
+            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+        assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/json."
             + HttpConstants.METHOD_POST
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION);
-        checkerSet.add(ROOT + RES_TYPE_PATH + "/html."
+            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+        assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/html."
             + HttpConstants.METHOD_POST
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION);
-
-        for (String path : paths) {
-            assertTrue(path + " not expected", checkerSet.remove(path));
-        }
-
-        assertTrue(checkerSet.isEmpty());
+            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
     }
 
 }
