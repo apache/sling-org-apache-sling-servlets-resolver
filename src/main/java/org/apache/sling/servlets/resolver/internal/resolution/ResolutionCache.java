@@ -46,6 +46,7 @@ import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventConstants;
@@ -73,7 +74,7 @@ public class ResolutionCache
     private volatile Map<AbstractResourceCollector, Servlet> cache;
 
     /** The cache size. */
-    private int cacheSize;
+    private volatile int cacheSize;
 
     /** Flag to log warning if cache size exceed only once. */
     private volatile boolean logCacheSizeWarning;
@@ -115,7 +116,7 @@ public class ResolutionCache
         props.put(Constants.SERVICE_DESCRIPTION, "Apache Sling Servlet Resolver Event Handler");
         props.put(Constants.SERVICE_VENDOR,"The Apache Software Foundation");
 
-        // the event listener is for updating the script enginge extensions
+        // the event listener is for updating the script engine extensions
         props.put(EventConstants.EVENT_TOPIC, new String[] {
                 "javax/script/ScriptEngineFactory/*",
                 "org/apache/sling/api/adapter/AdapterFactory/*",
@@ -139,6 +140,13 @@ public class ResolutionCache
         }
 
         updateScriptEngineExtensions();
+    }
+
+    @Modified
+    protected void modified(final BundleContext context,
+            final ResolverConfig config) throws LoginException {
+        this.deactivate();
+        this.activate(context, config);
     }
 
     /**
@@ -167,7 +175,10 @@ public class ResolutionCache
         }
     }
 
-
+    /**
+     * Get the list of script engine extensions
+     * @return The list of script engine extensions
+     */
     public List<String> getScriptEngineExtensions() {
         return this.scriptEnginesExtensions;
     }
@@ -197,7 +208,7 @@ public class ResolutionCache
         updateScriptEngineExtensions();
     }
 
-    private void flushCache() {
+    public void flushCache() {
         // use local variable to avoid racing with deactivate
         final Map<AbstractResourceCollector, Servlet> localCache = this.cache;
         if ( localCache != null ) {

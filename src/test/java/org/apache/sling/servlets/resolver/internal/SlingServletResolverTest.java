@@ -21,7 +21,6 @@ package org.apache.sling.servlets.resolver.internal;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -67,6 +66,12 @@ public class SlingServletResolverTest {
     private MockResourceResolver mockResourceResolver;
 
     @Before public void setUp() throws Exception {
+        final ResolverConfig config = Mockito.mock(ResolverConfig.class);
+        Mockito.when(config.servletresolver_servletRoot()).thenReturn("0");
+        Mockito.when(config.servletresolver_paths()).thenReturn(new String[] { "/"});
+        Mockito.when(config.servletresolver_defaultExtensions()).thenReturn(new String[] {"html"});
+        Mockito.when(config.servletresolver_cacheSize()).thenReturn(200);
+
         mockResourceResolver = new MockResourceResolver() {
             @Override
             public void close() {
@@ -156,35 +161,7 @@ public class SlingServletResolverTest {
             ServletResolverConstants.SLING_SERVLET_EXTENSIONS,
             SERVLET_EXTENSION);
 
-//        servletResolver.bindServlet(SlingServletResolverTest.this.servlet, serviceReference);
-        servletResolver.activate(bundleContext, new ResolverConfig() {
-
-            @Override
-            public Class<? extends Annotation> annotationType() {
-                return ResolverConfig.class;
-            }
-
-            @Override
-            public String servletresolver_servletRoot() {
-                return "0";
-            }
-
-            @Override
-            public String[] servletresolver_paths() {
-                return new String[] {"/"};
-            }
-
-            @Override
-            public String[] servletresolver_defaultExtensions() {
-                // TODO Auto-generated method stub
-                return new String[] {"html"};
-            }
-
-            @Override
-            public int servletresolver_cacheSize() {
-                return 200;
-            }
-        });
+        servletResolver.activate(config);
 
         String path = "/"
             + MockSlingHttpServletRequest.RESOURCE_TYPE

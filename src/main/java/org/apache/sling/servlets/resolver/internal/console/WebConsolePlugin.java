@@ -53,6 +53,7 @@ import org.apache.sling.servlets.resolver.internal.resolution.ResolutionCache;
 import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 
 @SuppressWarnings("serial")
@@ -85,17 +86,18 @@ public class WebConsolePlugin extends HttpServlet {
     /**
      * The allowed execution paths.
      */
-    private String[] executionPaths;
+    private volatile String[] executionPaths;
 
     /**
      * The default extensions
      */
-    private String[] defaultExtensions;
+    private volatile String[] defaultExtensions;
 
     /**
      * Activate this component.
      */
     @Activate
+    @Modified
     protected void activate(final ResolverConfig config) {
         this.executionPaths = AbstractResourceCollector.getExecutionPaths(config.servletresolver_paths());
         this.defaultExtensions = config.servletresolver_defaultExtensions();

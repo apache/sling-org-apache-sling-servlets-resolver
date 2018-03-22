@@ -59,11 +59,11 @@ import org.apache.sling.servlets.resolver.internal.helper.NamedScriptResourceCol
 import org.apache.sling.servlets.resolver.internal.helper.ResourceCollector;
 import org.apache.sling.servlets.resolver.internal.resolution.ResolutionCache;
 import org.apache.sling.servlets.resolver.internal.resource.SlingServletConfig;
-import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.metatype.annotations.Designate;
 import org.slf4j.Logger;
@@ -102,28 +102,28 @@ public class SlingServletResolver
     @Reference
     private ResolutionCache resolutionCache;
 
-    private ResourceResolver sharedScriptResolver;
-
     @Reference(target="(name=org.apache.sling)")
     private ServletContext servletContext;
 
     // the default servlet if no other servlet applies for a request. This
     // field is set on demand by getDefaultServlet()
-    private Servlet defaultServlet;
+    private volatile Servlet defaultServlet;
 
     // the default error handler servlet if no other error servlet applies for
     // a request. This field is set on demand by getDefaultErrorServlet()
-    private Servlet fallbackErrorServlet;
+    private volatile Servlet fallbackErrorServlet;
+
+    private volatile ResourceResolver sharedScriptResolver;
 
     /**
      * The allowed execution paths.
      */
-    private String[] executionPaths;
+    private volatile String[] executionPaths;
 
     /**
      * The default extensions
      */
-    private String[] defaultExtensions;
+    private volatile String[] defaultExtensions;
 
     // ---------- ServletResolver interface -----------------------------------
 
@@ -638,7 +638,7 @@ public class SlingServletResolver
      * Activate this component.
      */
     @Activate
-    protected void activate(final BundleContext context, final ResolverConfig config) throws LoginException {
+    protected void activate(final ResolverConfig config) throws LoginException {
         this.sharedScriptResolver =
                 resourceResolverFactory.getServiceResourceResolver(Collections.singletonMap(ResourceResolverFactory.SUBSERVICE, (Object)SERVICE_USER));
 
@@ -649,11 +649,18 @@ public class SlingServletResolver
         this.getDefaultServlet();
     }
 
+    @Modified
+    protected void modified(final ResolverConfig config) throws LoginException {
+        this.deactivate();
+        this.activate(config);
+    }
+
     /**
      * Deactivate this component.
      */
     @Deactivate
     protected void deactivate() {
+        this.resolutionCache.flushCache();
         // destroy the fallback error handler servlet
         if (fallbackErrorServlet != null) {
             try {
