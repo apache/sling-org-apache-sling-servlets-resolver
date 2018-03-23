@@ -47,7 +47,7 @@ import org.apache.sling.api.servlets.OptingServlet;
 import org.apache.sling.engine.impl.request.SlingRequestPathInfo;
 import org.apache.sling.serviceusermapping.ServiceUserMapped;
 import org.apache.sling.servlets.resolver.internal.ResolverConfig;
-import org.apache.sling.servlets.resolver.internal.helper.AbstractResourceCollector;
+import org.apache.sling.servlets.resolver.internal.SlingServletResolver;
 import org.apache.sling.servlets.resolver.internal.helper.ResourceCollector;
 import org.apache.sling.servlets.resolver.internal.resolution.ResolutionCache;
 import org.osgi.framework.Constants;
@@ -99,7 +99,7 @@ public class WebConsolePlugin extends HttpServlet {
     @Activate
     @Modified
     protected void activate(final ResolverConfig config) {
-        this.executionPaths = AbstractResourceCollector.getExecutionPaths(config.servletresolver_paths());
+        this.executionPaths = SlingServletResolver.getExecutionPaths(config.servletresolver_paths());
         this.defaultExtensions = config.servletresolver_defaultExtensions();
     }
 
@@ -281,7 +281,7 @@ public class WebConsolePlugin extends HttpServlet {
             Resource candidateResource = iterator.next();
             Servlet candidate = candidateResource.adaptTo(Servlet.class);
             if (candidate != null) {
-                final boolean allowed = AbstractResourceCollector.isPathAllowed(candidateResource.getPath(), this.executionPaths);
+                final boolean allowed = SlingServletResolver.isPathAllowed(candidateResource.getPath(), this.executionPaths);
                 pw.print("<li>");
                 if ( !allowed ) {
                     pw.print("<del>");

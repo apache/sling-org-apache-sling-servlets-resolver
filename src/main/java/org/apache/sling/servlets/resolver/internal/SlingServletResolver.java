@@ -433,7 +433,7 @@ public class SlingServletResolver
         // path of a servlet (or script)
         if (scriptName.charAt(0) == '/') {
             final String scriptPath = ResourceUtil.normalize(scriptName);
-            if ( AbstractResourceCollector.isPathAllowed(scriptPath, this.executionPaths) ) {
+            if ( isPathAllowed(scriptPath, this.executionPaths) ) {
                 final Resource res = resolver.getResource(scriptPath);
                 servlet = this.getServlet(res);
                 if (servlet != null && LOGGER.isDebugEnabled()) {
@@ -642,7 +642,7 @@ public class SlingServletResolver
         this.sharedScriptResolver =
                 resourceResolverFactory.getServiceResourceResolver(Collections.singletonMap(ResourceResolverFactory.SUBSERVICE, (Object)SERVICE_USER));
 
-        this.executionPaths = AbstractResourceCollector.getExecutionPaths(config.servletresolver_paths());
+        this.executionPaths = getExecutionPaths(config.servletresolver_paths());
         this.defaultExtensions = config.servletresolver_defaultExtensions();
 
         // setup default servlet
@@ -676,5 +676,78 @@ public class SlingServletResolver
             this.sharedScriptResolver.close();
             this.sharedScriptResolver = null;
         }
+    }
+
+    /**
+     * This method checks whether a path is allowed to be executed.
+     *
+     * @param path The path to check (must not be {@code null} or empty)
+     * @param executionPaths The path to check against
+     * @return {@code true} if the executionPaths is {@code null} or empty or if
+     *         the path equals one entry or one of the executionPaths entries is
+     *         a prefix to the path. Otherwise or if path is {@code null}
+     *         {@code false} is returned.
+     */
+    public static boolean isPathAllowed(final String path, final String[] executionPaths) {
+        if (executionPaths == null || executionPaths.length == 0) {
+            LOGGER.debug("Accepting servlet at '{}' as there are no configured execution paths.",
+                path);
+            return true;
+        }
+
+        if (path == null || path.length() == 0) {
+            LOGGER.debug("Ignoring servlet with empty path.");
+            return false;
+        }
+
+        for (final String config : executionPaths) {
+            if (config.endsWith("/")) {
+                if (path.startsWith(config)) {
+                    LOGGER.debug(
+                        "Accepting servlet at '{}' as the path is prefixed with configured execution path '{}'.", path,
+                        config);
+                    return true;
+                }
+            } else if (path.equals(config)) {
+                LOGGER.debug(
+                    "Accepting servlet at '{}' as the path equals configured execution path '{}'.", path, config);
+                return true;
+            }
+        }
+
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(
+                "Ignoring servlet at '{}' as the path is not in the configured execution paths.", path);
+        }
+
+        return false;
+    }
+
+    /**
+     * Calculate the execution paths from the configured execution paths
+     * @param paths The configured paths
+     * @return The execution paths or {@code null} for all paths.
+     */
+    public static String[] getExecutionPaths(final String[] paths) {
+        String[] executionPaths = paths;
+        if ( executionPaths != null ) {
+            // if we find a string combination that basically allows all paths,
+            // we simply set the array to null
+            if ( executionPaths.length == 0 ) {
+                executionPaths = null;
+            } else {
+                boolean hasRoot = false;
+                for(final String path : executionPaths) {
+                    if ( path == null || path.length() == 0 || path.equals("/") ) {
+                        hasRoot = true;
+                        break;
+                    }
+                }
+                if ( hasRoot ) {
+                    executionPaths = null;
+                }
+            }
+        }
+        return executionPaths;
     }
 }

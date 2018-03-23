@@ -25,7 +25,6 @@ import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.scripting.SlingScript;
 import org.apache.sling.api.scripting.SlingScriptResolver;
 import org.apache.sling.api.servlets.ServletResolver;
-import org.apache.sling.servlets.resolver.internal.helper.AbstractResourceCollector;
 import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -36,8 +35,9 @@ import org.osgi.service.component.annotations.Component;
  * servlet for a request by implementing the {@link ServletResolver} interface.
  *
  * The resolver uses an own session to find the scripts.
- *
+ * @deprecated The API is deprecated
  */
+@Deprecated
 @Component(service = { SlingScriptResolver.class },
            configurationPid = ResolverConfig.PID,
            property = {
@@ -54,7 +54,7 @@ public class SlingScriptResolverImpl
 
     @Activate
     private void activate(final ResolverConfig config) {
-        this.executionPaths = AbstractResourceCollector.getExecutionPaths(config.servletresolver_paths());
+        this.executionPaths = SlingServletResolver.getExecutionPaths(config.servletresolver_paths());
     }
 
     /**
@@ -69,7 +69,7 @@ public class SlingScriptResolverImpl
         if (name.startsWith("/")) {
 
             final String path = ResourceUtil.normalize(name);
-            if ( AbstractResourceCollector.isPathAllowed(path, this.executionPaths) ) {
+            if ( SlingServletResolver.isPathAllowed(path, this.executionPaths) ) {
                 final Resource resource = resourceResolver.getResource(path);
                 if ( resource != null ) {
                     script = resource.adaptTo(SlingScript.class);
@@ -81,7 +81,7 @@ public class SlingScriptResolverImpl
             final String[] path = resourceResolver.getSearchPath();
             for (int i = 0; script == null && i < path.length; i++) {
                 final String scriptPath = ResourceUtil.normalize(path[i] + name);
-                if ( AbstractResourceCollector.isPathAllowed(scriptPath, this.executionPaths) ) {
+                if ( SlingServletResolver.isPathAllowed(scriptPath, this.executionPaths) ) {
                     final Resource resource = resourceResolver.getResource(scriptPath);
                     if (resource != null) {
                         script = resource.adaptTo(SlingScript.class);

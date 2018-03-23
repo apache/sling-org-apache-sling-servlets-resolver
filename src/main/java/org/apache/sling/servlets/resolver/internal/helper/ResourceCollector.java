@@ -28,6 +28,7 @@ import org.apache.sling.api.request.RequestPathInfo;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.servlets.ServletResolverConstants;
+import org.apache.sling.servlets.resolver.internal.SlingServletResolver;
 import org.apache.sling.servlets.resolver.internal.resource.ServletResourceProviderFactory;
 
 /**
@@ -201,7 +202,7 @@ public class ResourceCollector extends AbstractResourceCollector {
             while (children.hasNext()) {
                 Resource child = children.next();
 
-                if (!this.isPathAllowed(child.getPath())) {
+                if (!SlingServletResolver.isPathAllowed(child.getPath(), this.executionPaths)) {
                     continue;
                 }
                 String scriptName = child.getName();
@@ -337,7 +338,7 @@ public class ResourceCollector extends AbstractResourceCollector {
             final Resource location) {
         final String path = location.getPath()
             + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION;
-        if (this.isPathAllowed(path)) {
+        if (SlingServletResolver.isPathAllowed(path, this.executionPaths)) {
             final Resource servlet = location.getResourceResolver().getResource(
                 path);
             if (servlet != null) {

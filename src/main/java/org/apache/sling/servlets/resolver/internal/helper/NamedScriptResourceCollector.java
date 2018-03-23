@@ -25,6 +25,7 @@ import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.servlets.ServletResolverConstants;
+import org.apache.sling.servlets.resolver.internal.SlingServletResolver;
 
 /**
  * The <code>ResourceCollector</code> class provides a single public method -
@@ -90,7 +91,7 @@ public class NamedScriptResourceCollector extends AbstractResourceCollector {
         // if extension is set, we first check for an exact script match
         if ( this.extension != null ) {
             final String path = ResourceUtil.normalize(location.getPath() + '/' + this.scriptName);
-            if ( this.isPathAllowed(path) ) {
+            if ( SlingServletResolver.isPathAllowed(path, this.executionPaths) ) {
                 final Resource current = resolver.getResource(path);
                 if ( current != null ) {
                     this.addWeightedResource(resources, current, 0, WeightedResource.WEIGHT_EXTENSION);
@@ -113,7 +114,7 @@ public class NamedScriptResourceCollector extends AbstractResourceCollector {
         while (children.hasNext()) {
             final Resource child = children.next();
 
-            if ( !this.isPathAllowed(child.getPath()) ) {
+            if ( !SlingServletResolver.isPathAllowed(child.getPath(), this.executionPaths) ) {
                 continue;
             }
             final String currentScriptName = child.getName();
