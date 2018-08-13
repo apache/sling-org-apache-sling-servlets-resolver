@@ -24,9 +24,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
@@ -37,6 +34,8 @@ import org.apache.sling.jcr.resource.JcrResourceConstants;
 import org.apache.sling.testing.mock.sling.junit.SlingContext;
 import org.apache.sling.testing.mock.sling.servlet.MockRequestPathInfo;
 import org.apache.sling.testing.mock.sling.servlet.MockSlingHttpServletRequest;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -191,9 +190,9 @@ public class ScriptSelection2Test {
         }
     }
 
-    @Nonnull
-    private SlingHttpServletRequest prepareRequest(@Nullable String method, @Nonnull Resource resource, @Nullable String selectorString,
-                                                   @Nonnull String extension) {
+    @NotNull
+    private SlingHttpServletRequest prepareRequest(@Nullable String method, @NotNull Resource resource, @Nullable String selectorString,
+                                                   @NotNull String extension) {
         MockSlingHttpServletRequest request = new MockSlingHttpServletRequest(context.resourceResolver(), context.bundleContext());
         if (StringUtils.isEmpty(method)) {
             request.setMethod("GET");
