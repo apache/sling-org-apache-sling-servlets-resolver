@@ -96,7 +96,8 @@ public class SlingServletResolver
     @Reference
     private ResourceResolverFactory resourceResolverFactory;
 
-    @Reference(target="("+ServiceUserMapped.SUBSERVICENAME+"=" + SERVICE_USER + ")")
+    @Reference(target = "(|(" + ServiceUserMapped.SUBSERVICENAME + "=" + SERVICE_USER + ")(!("
+            + ServiceUserMapped.SUBSERVICENAME + "=*)))")
     private ServiceUserMapped scriptServiceUserMapped;
 
     @Reference
