@@ -16,7 +16,7 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-package org.apache.sling.scripting.resolver.internal;
+package org.apache.sling.scripting.bundle.tracker.internal;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -40,7 +40,7 @@ import org.apache.sling.scripting.api.BindingsValuesProvider;
 import org.apache.sling.scripting.api.BindingsValuesProvidersByContext;
 import org.apache.sling.scripting.api.resource.ScriptingResourceResolverProvider;
 import org.apache.sling.scripting.core.ScriptHelper;
-import org.apache.sling.scripting.resolver.BundledRenderUnit;
+import org.apache.sling.scripting.bundle.tracker.BundledRenderUnit;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;

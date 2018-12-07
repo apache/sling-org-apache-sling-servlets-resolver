@@ -16,20 +16,7 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-package org.apache.sling.scripting.resolver.internal;
+@Version("0.1.0")
+package org.apache.sling.scripting.bundle.tracker;
 
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-
-public class JavaEscapeUtilsTest {
-
-    @Test
-    public void testMakeJavaPackage() {
-        assertEquals("apps.projects.script_html", JavaEscapeUtils.makeJavaPackage("/apps/projects/script.html"));
-        // test also with windows path names
-        assertEquals("apps.projects.script_html", JavaEscapeUtils.makeJavaPackage("\\apps\\projects\\script.html"));
-        assertEquals("apps.projects.my__002d__script_html", JavaEscapeUtils.makeJavaPackage("/apps/projects/my-script.html"));
-    }
-
-}
+import org.osgi.annotation.versioning.Version;

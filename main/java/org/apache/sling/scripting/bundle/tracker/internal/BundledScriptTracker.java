@@ -16,7 +16,7 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-package org.apache.sling.scripting.resolver.internal;
+package org.apache.sling.scripting.bundle.tracker.internal;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -83,7 +83,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     private static final Logger LOGGER = LoggerFactory.getLogger(BundledScriptTracker.class);
     private static final String AT_SLING_SELECTORS = "sling.resourceType.selectors";
     private static final String AT_SLING_EXTENSIONS = "sling.resourceType.extensions";
-    private static final String REGISTERING_BUNDLE = "org.apache.sling.scripting.resolver.internal.BundledScriptTracker.registering_bundle";
+    private static final String REGISTERING_BUNDLE = "org.apache.sling.scripting.bundle.tracker.internal.BundledScriptTracker.registering_bundle";
     static final String AT_VERSION = "version";
     private static final String AT_EXTENDS = "extends";
 
