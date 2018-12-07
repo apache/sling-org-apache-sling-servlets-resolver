@@ -16,7 +16,12 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-@Version("0.1.0")
-package org.apache.sling.scripting.resolver;
+package org.apache.sling.scripting.bundle.tracker.internal;
 
-import org.osgi.annotation.versioning.Version;
+import org.apache.sling.scripting.bundle.tracker.BundledRenderUnit;
+
+interface Executable extends BundledRenderUnit {
+
+    void releaseDependencies();
+
+}

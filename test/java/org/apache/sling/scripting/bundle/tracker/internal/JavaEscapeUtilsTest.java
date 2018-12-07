@@ -16,12 +16,20 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-package org.apache.sling.scripting.resolver.internal;
+package org.apache.sling.scripting.bundle.tracker.internal;
 
-import org.apache.sling.scripting.resolver.BundledRenderUnit;
+import org.junit.Test;
 
-interface Executable extends BundledRenderUnit {
+import static org.junit.Assert.assertEquals;
 
-    void releaseDependencies();
+public class JavaEscapeUtilsTest {
+
+    @Test
+    public void testMakeJavaPackage() {
+        assertEquals("apps.projects.script_html", JavaEscapeUtils.makeJavaPackage("/apps/projects/script.html"));
+        // test also with windows path names
+        assertEquals("apps.projects.script_html", JavaEscapeUtils.makeJavaPackage("\\apps\\projects\\script.html"));
+        assertEquals("apps.projects.my__002d__script_html", JavaEscapeUtils.makeJavaPackage("/apps/projects/my-script.html"));
+    }
 
 }

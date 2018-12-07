@@ -16,7 +16,7 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-package org.apache.sling.scripting.resolver;
+package org.apache.sling.scripting.bundle.tracker;
 
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
@@ -34,7 +34,7 @@ import org.osgi.framework.Bundle;
  * </p>
  * <p>
  * If the current {@link org.apache.sling.api.SlingHttpServletRequest} is served by a {@code BundledRenderUnit}, the
- * {@code org.apache.sling.scripting.resolver} will set the {@code BundledRenderUnit} in the {@link javax.script.Bindings} map associated to the request,
+ * {@code org.apache.sling.scripting.bundle.tracker} will set the {@code BundledRenderUnit} in the {@link javax.script.Bindings} map associated to the request,
  * under the {@link #VARIABLE} key.
  * </p>
  */
