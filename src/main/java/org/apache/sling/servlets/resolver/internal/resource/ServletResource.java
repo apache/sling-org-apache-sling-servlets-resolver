@@ -23,6 +23,7 @@ import java.util.Map;
 
 import javax.servlet.Servlet;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.AbstractResource;
 import org.apache.sling.api.resource.ResourceMetadata;
 import org.apache.sling.api.resource.ResourceResolver;
@@ -38,17 +39,23 @@ class ServletResource extends AbstractResource {
     private final String path;
 
     private final String resourceType;
+    private final String resourceSuperType;
 
     private final ResourceMetadata metadata;
 
+    public ServletResource(ResourceResolver resourceResolver, Servlet servlet, String path) {
+        this(resourceResolver, servlet, path, null);
+    }
+
     ServletResource(final ResourceResolver resourceResolver,
-            final Servlet servlet,
-            final String path) {
+                    final Servlet servlet,
+                    final String path,
+                    final String resourceSuperType) {
         this.resourceResolver = resourceResolver;
         this.servlet = servlet;
         this.path = path;
         this.resourceType = ServletResourceProviderFactory.ensureServletNameExtension(path);
-
+        this.resourceSuperType = StringUtils.isEmpty(resourceSuperType) ? "sling/bundle/resource" : resourceSuperType;
         this.metadata = new ResourceMetadata();
     }
 
@@ -71,7 +78,7 @@ class ServletResource extends AbstractResource {
      * the super type. */
     @Override
     public String getResourceSuperType() {
-        return "sling/bundle/resource";
+        return resourceSuperType;
     }
 
     @Override
