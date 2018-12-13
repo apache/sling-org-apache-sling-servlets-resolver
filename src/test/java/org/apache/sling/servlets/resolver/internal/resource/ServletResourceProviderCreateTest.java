@@ -19,6 +19,7 @@
 package org.apache.sling.servlets.resolver.internal.resource;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Collections;
@@ -29,10 +30,15 @@ import javax.servlet.Servlet;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
+import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.servlets.HttpConstants;
 import org.apache.sling.api.servlets.ServletResolverConstants;
+import org.apache.sling.resourceresolver.impl.helper.ResourceResolverContext;
+import org.apache.sling.spi.resource.provider.ResolveContext;
+import org.apache.sling.spi.resource.provider.ResourceContext;
 import org.junit.Test;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
@@ -177,6 +183,26 @@ public class ServletResourceProviderCreateTest {
         assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/html."
             + HttpConstants.METHOD_POST
             + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+    }
+
+    @Test
+    public void testCreateWithResourceSuperType() {
+        final ServiceReference<Servlet> msr = Mockito.mock(ServiceReference.class);
+        Mockito.when(msr.getProperty(Constants.SERVICE_ID)).thenReturn(1L);
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES)).thenReturn(RES_TYPE);
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_EXTENSIONS)).thenReturn(new String[] {"html"});
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_SUPER_TYPE)).thenReturn(new String[] {"this/is/a" +
+                "/test", "resource/two"});
+        final ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
+        final Set<String> paths = srp.getServletPaths();
+        assertEquals(2, paths.size());
+        assertTrue(paths.contains(ROOT + RES_TYPE_PATH));
+        assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/html" + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+        Resource servletResource = srp.getResource(Mockito.mock(ResolveContext.class), "/apps/sling/sample",
+                Mockito.mock(ResourceContext.class), Mockito.mock(Resource.class));
+        assertNotNull(servletResource);
+        assertEquals("this/is/a/test", servletResource.getResourceSuperType());
+
     }
 
 }

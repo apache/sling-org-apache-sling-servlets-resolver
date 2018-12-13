@@ -33,10 +33,12 @@ public class ServletResourceProvider extends ResourceProvider<Object> {
     private final Servlet servlet;
 
     private final Set<String> resourcePaths;
+    private final String resourceSuperType;
 
-    ServletResourceProvider(final Servlet servlet, final Set<String> resourcePaths) {
+    ServletResourceProvider(final Servlet servlet, final Set<String> resourcePaths, final String resourceSuperType) {
         this.servlet = servlet;
         this.resourcePaths = resourcePaths;
+        this.resourceSuperType = resourceSuperType;
     }
 
     @SuppressWarnings("unchecked")
@@ -47,7 +49,7 @@ public class ServletResourceProvider extends ResourceProvider<Object> {
             final Resource parent) {
         // only return a resource if the servlet has been assigned
         if (resourcePaths.contains(path)) {
-            return new ServletResource(ctx.getResourceResolver(), servlet, path);
+            return new ServletResource(ctx.getResourceResolver(), servlet, path, resourceSuperType);
         }
 
         @SuppressWarnings("rawtypes")
