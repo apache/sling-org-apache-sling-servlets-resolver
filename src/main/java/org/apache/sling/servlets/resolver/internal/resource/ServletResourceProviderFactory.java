@@ -27,6 +27,7 @@ import javax.servlet.Servlet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.servlets.HttpConstants;
+import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.commons.osgi.PropertiesUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.Constants;
@@ -146,16 +147,18 @@ public class ServletResourceProviderFactory {
             log.debug("create({}): Registering servlet for paths {}",
                     getServiceReferenceInfo(ref), pathSet);
         }
-        String resourceSuperType = PropertiesUtil.toString(ref.getProperty(SLING_SERVLET_RESOURCE_SUPER_TYPE), "");
+        String resourceSuperType = PropertiesUtil.toString(ref.getProperty(SLING_SERVLET_RESOURCE_SUPER_TYPE), null);
+        Set<String> resourceSuperTypeMarkers = new HashSet<>();
         if (StringUtils.isNotEmpty(resourceSuperType)) {
             for (String rt : PropertiesUtil.toStringArray(ref.getProperty(SLING_SERVLET_RESOURCE_TYPES))) {
                 if (!rt.startsWith("/")) {
                     rt = getPrefix(ref).concat(ResourceUtil.resourceTypeToPath(rt));
                 }
+                resourceSuperTypeMarkers.add(rt);
                 pathSet.add(rt);
             }
         }
-        return new ServletResourceProvider(servlet, pathSet, resourceSuperType);
+        return new ServletResourceProvider(servlet, pathSet, resourceSuperTypeMarkers, resourceSuperType);
     }
 
     /**

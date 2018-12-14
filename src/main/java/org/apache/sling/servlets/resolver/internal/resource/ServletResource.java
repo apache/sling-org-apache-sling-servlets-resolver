@@ -88,14 +88,16 @@ class ServletResource extends AbstractResource {
 
     private String getServletName() {
         String servletName = null;
-        if (servlet.getServletConfig() != null) {
-            servletName = servlet.getServletConfig().getServletName();
-        }
-        if (servletName == null) {
-            servletName = servlet.getServletInfo();
-        }
-        if (servletName == null) {
-            servletName = servlet.getClass().getName();
+        if (servlet != null) {
+            if (servlet.getServletConfig() != null) {
+                servletName = servlet.getServletConfig().getServletName();
+            }
+            if (servletName == null) {
+                servletName = servlet.getServletInfo();
+            }
+            if (servletName == null) {
+                servletName = servlet.getClass().getName();
+            }
         }
         return servletName;
     }
@@ -103,14 +105,16 @@ class ServletResource extends AbstractResource {
     @Override
     @SuppressWarnings("unchecked")
     public <AdapterType> AdapterType adaptTo(Class<AdapterType> type) {
-        if (type == Servlet.class) {
+        if (type == Servlet.class && servlet != null) {
             return (AdapterType) servlet; // unchecked cast
         } else if ( type == ValueMap.class ) {
             final Map<String, Object> props = new HashMap<>();
             props.put("sling:resourceType", this.getResourceType());
             props.put("sling:resourceSuperType", this.getResourceSuperType());
-            props.put("servletName", this.getServletName());
-            props.put("servletClass", this.servlet.getClass().getName());
+            if (servlet != null) {
+                props.put("servletName", this.getServletName());
+                props.put("servletClass", this.servlet.getClass().getName());
+            }
 
             return (AdapterType) new ValueMapDecorator(props); // unchecked cast
         }

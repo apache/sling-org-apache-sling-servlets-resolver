@@ -20,6 +20,7 @@ package org.apache.sling.servlets.resolver.internal.resource;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Collections;
@@ -198,11 +199,17 @@ public class ServletResourceProviderCreateTest {
         assertEquals(2, paths.size());
         assertTrue(paths.contains(ROOT + RES_TYPE_PATH));
         assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/html" + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
-        Resource servletResource = srp.getResource(Mockito.mock(ResolveContext.class), "/apps/sling/sample",
+        Resource superTypeMarkingResource = srp.getResource(Mockito.mock(ResolveContext.class), "/apps/sling/sample",
+                Mockito.mock(ResourceContext.class), Mockito.mock(Resource.class));
+        assertNotNull(superTypeMarkingResource);
+        assertEquals("this/is/a/test", superTypeMarkingResource.getResourceSuperType());
+        assertNull(superTypeMarkingResource.adaptTo(Servlet.class));
+
+        Resource servletResource = srp.getResource(Mockito.mock(ResolveContext.class), "/apps/sling/sample/html.servlet",
                 Mockito.mock(ResourceContext.class), Mockito.mock(Resource.class));
         assertNotNull(servletResource);
         assertEquals("this/is/a/test", servletResource.getResourceSuperType());
-
+        assertEquals(TEST_SERVLET, servletResource.adaptTo(Servlet.class));
     }
 
 }
