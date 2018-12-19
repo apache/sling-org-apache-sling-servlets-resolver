@@ -179,10 +179,9 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         Version wireResourceTypeVersion = (Version) wireCapabilityAttributes.get(AT_VERSION);
                         String wireResourceTypeString = wireResourceType + (wireResourceTypeVersion != null ? "/" +
                                 wireResourceTypeVersion.toString() : "");
-
                         wiredProviders.add(new TypeProvider(wireResourceType, providerBundle));
                         wiredProviders.add(new TypeProvider(wireResourceTypeString, providerBundle));
-
+                        properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_SUPER_TYPE, wireResourceTypeString);
                     }
                     populateWiredProviders(wiredProviders);
                     regs.add(
