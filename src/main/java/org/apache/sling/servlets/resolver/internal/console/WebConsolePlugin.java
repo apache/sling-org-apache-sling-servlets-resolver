@@ -224,7 +224,7 @@ public class WebConsolePlugin extends HttpServlet {
                     // check for non-existing resources
                     if (ResourceUtil.isNonExistingResource(resource)) {
                         pw.println("The resource given by path '");
-                        pw.println(resource.getPath());
+                        pw.println(ResponseUtil.escapeXml(resource.getPath()));
                         pw.println("' does not exist. Therefore no resource type could be determined!<br/>");
                     }
                     pw.print("Candidate servlets and scripts in order of preference for method ");
