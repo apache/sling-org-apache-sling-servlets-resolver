@@ -18,23 +18,6 @@
  */
 package org.apache.sling.servlets.resolver.internal.resource;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.servlet.Servlet;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.sling.api.resource.ResourceUtil;
-import org.apache.sling.api.servlets.HttpConstants;
-import org.apache.sling.api.servlets.ServletResolverConstants;
-import org.apache.sling.commons.osgi.PropertiesUtil;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.Constants;
-import org.osgi.framework.ServiceReference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_EXTENSIONS;
 import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_METHODS;
 import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_NAME;
@@ -44,6 +27,22 @@ import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVL
 import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES;
 import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_SELECTORS;
 import static org.osgi.service.component.ComponentConstants.COMPONENT_NAME;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.servlet.Servlet;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.sling.api.resource.ResourceUtil;
+import org.apache.sling.api.servlets.HttpConstants;
+import org.apache.sling.commons.osgi.PropertiesUtil;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.Constants;
+import org.osgi.framework.ServiceReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ServletResourceProviderFactory {
 

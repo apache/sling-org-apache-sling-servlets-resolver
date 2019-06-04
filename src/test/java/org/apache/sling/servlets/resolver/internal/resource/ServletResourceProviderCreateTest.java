@@ -35,11 +35,9 @@ import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.servlets.HttpConstants;
 import org.apache.sling.api.servlets.ServletResolverConstants;
-import org.apache.sling.resourceresolver.impl.helper.ResourceResolverContext;
 import org.apache.sling.spi.resource.provider.ResolveContext;
 import org.apache.sling.spi.resource.provider.ResourceContext;
 import org.junit.Test;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
@@ -188,6 +186,7 @@ public class ServletResourceProviderCreateTest {
 
     @Test
     public void testCreateWithResourceSuperType() {
+        @SuppressWarnings("unchecked")
         final ServiceReference<Servlet> msr = Mockito.mock(ServiceReference.class);
         Mockito.when(msr.getProperty(Constants.SERVICE_ID)).thenReturn(1L);
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES)).thenReturn(RES_TYPE);
@@ -199,12 +198,14 @@ public class ServletResourceProviderCreateTest {
         assertEquals(2, paths.size());
         assertTrue(paths.contains(ROOT + RES_TYPE_PATH));
         assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/html" + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+        @SuppressWarnings("unchecked")
         Resource superTypeMarkingResource = srp.getResource(Mockito.mock(ResolveContext.class), "/apps/sling/sample",
                 Mockito.mock(ResourceContext.class), Mockito.mock(Resource.class));
         assertNotNull(superTypeMarkingResource);
         assertEquals("this/is/a/test", superTypeMarkingResource.getResourceSuperType());
         assertNull(superTypeMarkingResource.adaptTo(Servlet.class));
 
+        @SuppressWarnings("unchecked")
         Resource servletResource = srp.getResource(Mockito.mock(ResolveContext.class), "/apps/sling/sample/html.servlet",
                 Mockito.mock(ResourceContext.class), Mockito.mock(Resource.class));
         assertNotNull(servletResource);
