@@ -28,7 +28,6 @@ import java.util.Collection;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -72,40 +71,24 @@ public class ServletMounter {
 
     private static final String REF_SERVLET = "Servlet";
 
-    @Reference(target="(name=org.apache.sling)")
-    private ServletContext servletContext;
+    private final ServletContext servletContext;
 
     private final Map<ServiceReference<Servlet>, ServletReg> servletsByReference = new HashMap<>();
 
-    private final List<PendingServlet> pendingServlets = new ArrayList<>();
+    private volatile boolean active = true;
 
-    /** The bundle context. */
-    private volatile BundleContext context;
-
-    private volatile ServletResourceProviderFactory servletResourceProviderFactory;
-
-    @Reference
-    private ResourceResolverFactory resourceResolverFactory;
+    private final ServletResourceProviderFactory servletResourceProviderFactory;
 
     /**
      * Activate this component.
      */
     @Activate
-    protected void activate(final BundleContext context,
+    public ServletMounter(final BundleContext context, @Reference final ResourceResolverFactory resourceResolverFactory,
+            @Reference(target = "(name=org.apache.sling)") ServletContext servletContext,
             final ResolverConfig config) {
-        final Collection<PendingServlet> refs;
-        synchronized (this.pendingServlets) {
-
-            refs = new ArrayList<>(pendingServlets);
-            pendingServlets.clear();
-
-            servletResourceProviderFactory = new ServletResourceProviderFactory(config.servletresolver_servletRoot(),
-                    resourceResolverFactory.getSearchPath());
-
-            // register servlets immediately from now on
-            this.context = context;
-        }
-        createAllServlets(refs);
+        this.servletContext = servletContext;
+        servletResourceProviderFactory = new ServletResourceProviderFactory(config.servletresolver_servletRoot(),
+                resourceResolverFactory.getSearchPath());
     }
 
     /**
@@ -113,9 +96,7 @@ public class ServletMounter {
      */
     @Deactivate
     protected void deactivate() {
-        // stop registering of servlets immediately
-        this.context = null;
-
+        this.active = false;
         // Copy the list of servlets first, to minimize the need for
         // synchronization
         final Collection<ServiceReference<Servlet>> refs;
@@ -129,13 +110,8 @@ public class ServletMounter {
         synchronized ( this.servletsByReference ) {
             this.servletsByReference.clear();
         }
-
-        this.servletResourceProviderFactory = null;
     }
 
-    // TODO
-    // This can be simplified once we can use DS from R7 with constructor injection
-    // as we can inject the bundle context through the constructor
     @Reference(
             name = REF_SERVLET,
             service = Servlet.class,
@@ -143,40 +119,14 @@ public class ServletMounter {
             policy = ReferencePolicy.DYNAMIC,
             target="(|(" + ServletResolverConstants.SLING_SERVLET_PATHS + "=*)(" + ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES + "=*))")
     protected void bindServlet(final Servlet servlet, final ServiceReference<Servlet> reference) {
-        boolean directCreate = true;
-        if (context == null) {
-            synchronized ( pendingServlets ) {
-                if (context == null) {
-                    pendingServlets.add(new PendingServlet(servlet, reference));
-                    directCreate = false;
-                }
-            }
-        }
-        if ( directCreate ) {
+        if (this.active) {
             createServlet(servlet, reference);
         }
     }
 
     protected void unbindServlet(final ServiceReference<Servlet> reference) {
-        synchronized ( pendingServlets ) {
-            final Iterator<PendingServlet> iter = pendingServlets.iterator();
-            while ( iter.hasNext() ) {
-                final PendingServlet ps = iter.next();
-                if ( ps.reference.compareTo(reference) == 0 ) {
-                    iter.remove();
-                    break;
-                }
-            }
-        }
         destroyServlet(reference);
     }
-
-    private void createAllServlets(final Collection<PendingServlet> pendingServlets) {
-        for (final PendingServlet ps : pendingServlets) {
-            createServlet(ps.servlet, ps.reference);
-        }
-    }
-
 
     private boolean createServlet(final Servlet servlet, final ServiceReference<Servlet> reference) {
         // check for a name, this is required
@@ -314,16 +264,6 @@ public class ServletMounter {
         public ServletReg(final Servlet s, final List<ServiceRegistration<ResourceProvider<Object>>> srs) {
             this.servlet = s;
             this.registrations = srs;
-        }
-    }
-
-    private static final class PendingServlet {
-        public final Servlet servlet;
-        public final ServiceReference<Servlet> reference;
-
-        public PendingServlet(final Servlet s, final ServiceReference<Servlet> ref) {
-            this.servlet = s;
-            this.reference = ref;
         }
     }
 }

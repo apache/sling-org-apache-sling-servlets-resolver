@@ -22,7 +22,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Dictionary;
@@ -56,14 +55,6 @@ public class ServletMounterTest {
         final ResourceResolverFactory factory = Mockito.mock(ResourceResolverFactory.class);
         Mockito.when(factory.getSearchPath()).thenReturn(Collections.singletonList("/"));
 
-        // create mounter
-        this.mounter = new ServletMounter();
-
-        // set resource resolver factory
-        final Field resolverField = ServletMounter.class.getDeclaredField("resourceResolverFactory");
-        resolverField.setAccessible(true);
-        resolverField.set(mounter, factory);
-
         // create mock bundle
         final Bundle bundle = Mockito.mock(Bundle.class);
         Mockito.when(bundle.getBundleId()).thenReturn(1L);
@@ -72,8 +63,8 @@ public class ServletMounterTest {
         final BundleContext bundleContext = Mockito.mock(BundleContext.class);
         Mockito.when(bundle.getBundleContext()).thenReturn(bundleContext);
 
-        // activate mounter
-        this.mounter.activate(bundleContext, config);
+        // create mounter
+        this.mounter = new ServletMounter(bundleContext, factory, null, config);
     }
 
 
