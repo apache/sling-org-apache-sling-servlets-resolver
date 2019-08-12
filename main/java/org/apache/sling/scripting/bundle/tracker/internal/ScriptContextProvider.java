@@ -74,6 +74,7 @@ public class ScriptContextProvider {
             throws IOException {
         // prepare the SlingBindings
         Bindings bindings = new SimpleBindings();
+        bindings.put("properties", request.getResource().getValueMap());
         bindings.put(SlingBindings.REQUEST, request);
         bindings.put(SlingBindings.RESPONSE, response);
         bindings.put(SlingBindings.READER, request.getReader());
