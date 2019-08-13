@@ -43,6 +43,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.request.RequestDispatcherOptions;
@@ -382,7 +383,16 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
 
                 RequestDispatcher dispatcher = slingRequest.getRequestDispatcher(slingRequest.getResource(), options);
                 if (dispatcher != null) {
-                    dispatcher.forward(req, res);
+                    if (slingRequest.getAttribute(SlingConstants.ATTR_INCLUDE_SERVLET_PATH) == null) {
+                        final String contentType = slingRequest.getResponseContentType();
+                        if (contentType != null) {
+                            res.setContentType(contentType);
+                            if (contentType.startsWith("text/")) {
+                                res.setCharacterEncoding("UTF-8");
+                            }
+                        }
+                    }
+                    dispatcher.include(req, res);
                 } else {
                     ((SlingHttpServletResponse) res).sendError(HttpServletResponse.SC_NOT_FOUND);
                 }
