@@ -83,7 +83,7 @@ abstract class AbstractBundledRenderUnit implements Executable {
     @Override
     @Nullable
     @SuppressWarnings("unchecked")
-    public <ServiceType> ServiceType[] getServices(@NotNull String className, @NotNull String filter) {
+    public <ServiceType> ServiceType[] getServices(@NotNull String className, @Nullable String filter) {
         ServiceType[] result = null;
         try {
             final ServiceReference[] refs = this.bundleContext.getServiceReferences(className, filter);

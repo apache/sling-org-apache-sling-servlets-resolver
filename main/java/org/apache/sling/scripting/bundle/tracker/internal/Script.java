@@ -33,6 +33,7 @@ import javax.script.ScriptException;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.sling.scripting.core.ScriptNameAwareReader;
+import org.jetbrains.annotations.NotNull;
 import org.osgi.framework.Bundle;
 
 class Script extends AbstractBundledRenderUnit {
@@ -65,18 +66,20 @@ class Script extends AbstractBundledRenderUnit {
         return sourceCode;
     }
 
+    @NotNull
     @Override
     public String getName() {
         return url.getPath();
     }
 
+    @NotNull
     @Override
     public ScriptEngine getScriptEngine() {
         return scriptEngine;
     }
 
     @Override
-    public void eval(ScriptContext context) throws ScriptException {
+    public void eval(@NotNull ScriptContext context) throws ScriptException {
         try {
             if (scriptEngine instanceof Compilable && compiledScript == null) {
                 compilationLock.lock();
