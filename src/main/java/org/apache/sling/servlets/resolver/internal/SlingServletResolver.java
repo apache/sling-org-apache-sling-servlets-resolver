@@ -140,7 +140,7 @@ public class SlingServletResolver
         final String timerName = "resolveServlet(" + resource.getPath() + ")";
         tracker.startTimer(timerName);
 
-        final String type = resource.getResourceType();
+        final String resourceType = resource.getResourceType();
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("resolveServlet called for resource {}", resource);
         }
@@ -148,8 +148,8 @@ public class SlingServletResolver
         final ResourceResolver scriptResolver = this.getScriptResourceResolver();
         Servlet servlet = null;
 
-        if ( type != null && type.length() > 0 ) {
-            servlet = resolveServletInternal(request, null, type, scriptResolver);
+        if ( resourceType != null && resourceType.length() > 0 ) {
+            servlet = resolveServletInternal(request, null, resourceType, scriptResolver);
         }
 
         // last resort, use the core bundle default servlet
@@ -426,26 +426,26 @@ public class SlingServletResolver
      */
     private Servlet resolveServletInternal(final SlingHttpServletRequest request,
             final Resource resource,
-            final String scriptName,
+            final String scriptNameOrResourceType,
             final ResourceResolver resolver) {
         Servlet servlet = null;
 
         // first check whether the type of a resource is the absolute
         // path of a servlet (or script)
-        if (scriptName.charAt(0) == '/') {
-            final String scriptPath = ResourceUtil.normalize(scriptName);
+        if (scriptNameOrResourceType.charAt(0) == '/') {
+            final String scriptPath = ResourceUtil.normalize(scriptNameOrResourceType);
             if ( isPathAllowed(scriptPath, this.executionPaths) ) {
                 final Resource res = resolver.getResource(scriptPath);
                 servlet = this.getServlet(res);
                 if (servlet != null && LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Servlet {} found using absolute resource type {}", RequestUtil.getServletName(servlet),
-                                    scriptName);
+                                    scriptNameOrResourceType);
                 }
             } else {
                 if ( request != null ) {
                     request.getRequestProgressTracker().log(
                             "Will not look for a servlet at {0} as it is not in the list of allowed paths",
-                            scriptName
+                            scriptNameOrResourceType
                             );
                 }
             }
@@ -456,7 +456,7 @@ public class SlingServletResolver
             if ( request != null ) {
                 locationUtil = ResourceCollector.create(request, this.executionPaths, this.defaultExtensions);
             } else {
-                locationUtil = NamedScriptResourceCollector.create(scriptName, resource, this.executionPaths);
+                locationUtil = NamedScriptResourceCollector.create(scriptNameOrResourceType, resource, this.executionPaths);
             }
             servlet = getServletInternal(locationUtil, request, resolver);
 
