@@ -20,16 +20,21 @@ package org.apache.sling.servlets.resolver.it;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.servlethelpers.MockSlingHttpServletRequest;
 import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.junit.PaxExam;
@@ -42,12 +47,18 @@ import org.osgi.framework.ServiceReference;
 @ExamReactorStrategy(PerClass.class)
 public class DefaultServletIT extends ServletResolverTestSupport {
 
+    private final static int STARTUP_WAIT_SECONDS = 30;
+
     @Inject
     private BundleContext bundleContext;
 
-    private String getContent(String path) throws Exception {
-        final ResourceResolver TODO_NEED_ONE = null;
-        final MockSlingHttpServletRequest request = new MockSlingHttpServletRequest(TODO_NEED_ONE);
+    @Inject
+    private ResourceResolverFactory resourceResolverFactory;
+
+    private MockSlingHttpServletResponse executeRequest(String path) throws Exception {
+        final ResourceResolver resourceResolver = resourceResolverFactory.getAdministrativeResourceResolver(null);
+        final MockSlingHttpServletRequest request = new MockSlingHttpServletRequest(resourceResolver);
+        request.setPathInfo(path);
         final MockSlingHttpServletResponse response = new MockSlingHttpServletResponse();
 
         // Get SlingRequestProcessor.processRequest method and execute request
@@ -70,13 +81,32 @@ public class DefaultServletIT extends ServletResolverTestSupport {
             bundleContext.ungetService(ref);
         }
 
-        return response.getOutputAsString();
+        return response;
+    }
+
+    @Before
+    public void waitForStableSling() throws Exception {
+        final int expectedStatus = 200;
+        final List<Integer> statuses = new ArrayList<>();
+        final String path = "/starter.html";
+        final long endTime = System.currentTimeMillis() + STARTUP_WAIT_SECONDS * 1000;
+        while(System.currentTimeMillis() < endTime) {
+            final int status = executeRequest(path).getStatus();
+            statuses.add(status);
+            if(status == expectedStatus) {
+                return;
+            }
+            Thread.sleep(250);
+        }
+        fail("Did not get a 200 status at " + path + " got " + statuses);
     }
 
     @Test
     public void testDefaultServlet() throws Exception {
+        final MockSlingHttpServletResponse response = executeRequest("/starter.html");
+        assertEquals(200, response.getStatus());
         final String TODO_SHOULD_NOT_BE_EMPTY = "";
-        assertEquals(TODO_SHOULD_NOT_BE_EMPTY, getContent("/.json"));
+        assertEquals(TODO_SHOULD_NOT_BE_EMPTY, response.getOutputAsString());
     }
 
 }

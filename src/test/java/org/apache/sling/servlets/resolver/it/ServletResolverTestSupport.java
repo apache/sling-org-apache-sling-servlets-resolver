@@ -25,6 +25,7 @@ import org.ops4j.pax.exam.Option;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.CoreOptions.wrappedBundle;
+import static org.ops4j.pax.exam.cm.ConfigurationAdminOptions.newConfiguration;
 import static org.apache.sling.testing.paxexam.SlingOptions.slingQuickstartOakTar;
 
 public class ServletResolverTestSupport extends TestSupport {
@@ -37,7 +38,10 @@ public class ServletResolverTestSupport extends TestSupport {
             slingQuickstartOakTar(workingDirectory(), httpPort),
             testBundle("bundle.filename"),
             wrappedBundle(mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.servlet-helpers").versionAsInProject()),
-            junitBundles()
+            junitBundles(),
+            newConfiguration("org.apache.sling.jcr.base.internal.LoginAdminWhitelist")
+                .put("whitelist.bundles.regexp", "^PAXEXAM.*$")
+                .asOption(),
         };
     }
 }
