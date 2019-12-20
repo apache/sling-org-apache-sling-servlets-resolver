@@ -38,12 +38,6 @@ import org.ops4j.pax.exam.spi.reactors.PerClass;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
-/**
- * Using the SlingRequestProcessor for testing requests would be better, but
- * this module is using an older version of the sling.engine module that does not
- * have that, along with a number of specific settings for that module, so I prefer
- * not touching those now as I'm just adding these tests.
- */
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerClass.class)
 public class DefaultServletIT extends ServletResolverTestSupport {
