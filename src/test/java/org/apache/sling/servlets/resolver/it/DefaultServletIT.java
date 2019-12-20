@@ -18,32 +18,71 @@
  */
 package org.apache.sling.servlets.resolver.it;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import java.lang.reflect.Method;
 
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
+import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.servlethelpers.MockSlingHttpServletRequest;
+import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerClass;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
 
-/** Using the SlingRequestProcessor for testing requests would be
- *  better, but this module has a number of specific settings
- *  in its pom for the sling.engine module that I prefer not touching
- *  now as I'm just adding these tests.
+/**
+ * Using the SlingRequestProcessor for testing requests would be better, but
+ * this module is using an older version of the sling.engine module that does not
+ * have that, along with a number of specific settings for that module, so I prefer
+ * not touching those now as I'm just adding these tests.
  */
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerClass.class)
 public class DefaultServletIT extends ServletResolverTestSupport {
+
     @Inject
     private BundleContext bundleContext;
 
+    private String getContent(String path) throws Exception {
+        final ResourceResolver TODO_NEED_ONE = null;
+        final MockSlingHttpServletRequest request = new MockSlingHttpServletRequest(TODO_NEED_ONE);
+        final MockSlingHttpServletResponse response = new MockSlingHttpServletResponse();
+
+        // Get SlingRequestProcessor.processRequest method and execute request
+        // This module depends on an older version of the sling.engine module and I don't want
+        // to change it just for these tests, so using reflection to get the processor, as we're
+        // running with a more recent version of sling.engine in the pax exam environment
+        final String slingRequestProcessorClassName = "org.apache.sling.engine.SlingRequestProcessor";
+        final ServiceReference<?> ref = bundleContext.getServiceReference(slingRequestProcessorClassName);
+        assertNotNull("Expecting service:" + slingRequestProcessorClassName, ref);
+
+        final Object processor = bundleContext.getService(ref);
+        try {
+            // void processRequest(javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse resource, ResourceResolver resourceResolver)
+            final Method processMethod = processor.getClass().getMethod(
+                "processRequest", 
+                HttpServletRequest.class, HttpServletResponse.class, ResourceResolver.class);
+            assertNotNull("Expecting processRequest method", processMethod);
+            processMethod.invoke(processor, request, response, null);
+        } finally {
+            bundleContext.ungetService(ref);
+        }
+
+        return response.getOutputAsString();
+    }
+
     @Test
-    public void testDefaultServlet() {
-        // TODO for now this just tests the pax exam setup
-        assertTrue(bundleContext.getBundles().length > 0);
+    public void testDefaultServlet() throws Exception {
+        final String TODO_SHOULD_NOT_BE_EMPTY = "";
+        assertEquals(TODO_SHOULD_NOT_BE_EMPTY, getContent("/.json"));
     }
 
 }
