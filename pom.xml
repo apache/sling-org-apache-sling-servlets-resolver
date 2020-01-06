@@ -22,13 +22,12 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.apache.sling</groupId>
-        <artifactId>sling</artifactId>
-        <version>33</version>
+        <artifactId>sling-bundle-parent</artifactId>
+        <version>35</version>
         <relativePath />
     </parent>
 
     <artifactId>org.apache.sling.servlets.resolver</artifactId>
-    <packaging>bundle</packaging>
     <version>2.5.9-SNAPSHOT</version>
 
     <name>Apache Sling Servlets Resolver</name>
