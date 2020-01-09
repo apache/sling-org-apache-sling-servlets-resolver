@@ -20,6 +20,7 @@ package org.apache.sling.servlets.resolver.it;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.lang.reflect.Method;
@@ -45,7 +46,7 @@ import org.osgi.framework.ServiceReference;
 
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerClass.class)
-public class DefaultServletIT extends ServletResolverTestSupport {
+public class ServletSelectionIT extends ServletResolverTestSupport {
 
     private final static int STARTUP_WAIT_SECONDS = 30;
 
@@ -55,8 +56,9 @@ public class DefaultServletIT extends ServletResolverTestSupport {
     @Inject
     private ResourceResolverFactory resourceResolverFactory;
 
-    private MockSlingHttpServletResponse executeRequest(String path) throws Exception {
+    private MockSlingHttpServletResponse executeRequest(String path, int expectedStatus) throws Exception {
         final ResourceResolver resourceResolver = resourceResolverFactory.getAdministrativeResourceResolver(null);
+        assertNotNull("Expecting ResourceResolver", resourceResolver);
         final MockSlingHttpServletRequest request = new MockSlingHttpServletRequest(resourceResolver);
         request.setPathInfo(path);
         final MockSlingHttpServletResponse response = new MockSlingHttpServletResponse();
@@ -76,9 +78,13 @@ public class DefaultServletIT extends ServletResolverTestSupport {
                 "processRequest", 
                 HttpServletRequest.class, HttpServletResponse.class, ResourceResolver.class);
             assertNotNull("Expecting processRequest method", processMethod);
-            processMethod.invoke(processor, request, response, null);
+            processMethod.invoke(processor, request, response, resourceResolver);
         } finally {
             bundleContext.ungetService(ref);
+        }
+
+        if(expectedStatus > 0) {
+            assertEquals("Expected status " + expectedStatus + " at " + path, expectedStatus, response.getStatus());
         }
 
         return response;
@@ -88,10 +94,10 @@ public class DefaultServletIT extends ServletResolverTestSupport {
     public void waitForStableSling() throws Exception {
         final int expectedStatus = 200;
         final List<Integer> statuses = new ArrayList<>();
-        final String path = "/starter.html";
+        final String path = "/.json";
         final long endTime = System.currentTimeMillis() + STARTUP_WAIT_SECONDS * 1000;
         while(System.currentTimeMillis() < endTime) {
-            final int status = executeRequest(path).getStatus();
+            final int status = executeRequest(path, -1).getStatus();
             statuses.add(status);
             if(status == expectedStatus) {
                 return;
@@ -102,11 +108,17 @@ public class DefaultServletIT extends ServletResolverTestSupport {
     }
 
     @Test
-    public void testDefaultServlet() throws Exception {
-        final MockSlingHttpServletResponse response = executeRequest("/starter.html");
-        assertEquals(200, response.getStatus());
-        final String TODO_SHOULD_NOT_BE_EMPTY = "";
-        assertEquals(TODO_SHOULD_NOT_BE_EMPTY, response.getOutputAsString());
+    public void testDefaultJsonServlet() throws Exception {
+        final MockSlingHttpServletResponse response = executeRequest("/.json", 200);
+        final String content = response.getOutputAsString();
+        final String [] expected = {
+            "jcr:primaryType\":\"rep:root",
+            "jcr:mixinTypes\":[\"rep:AccessControllable\"]"
+        };
+        for(String s : expected) {
+            assertTrue("Expecting in output: " + s + ", got " + content, content.contains(s));
+        }
+
     }
 
 }
