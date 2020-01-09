@@ -45,6 +45,8 @@
 
     <properties>
         <site.jira.version.id>12314292</site.jira.version.id>
+        <!-- To debug the pax process, override this with -D -->
+        <pax.vm.options>-Xmx256M -XX:MaxPermSize=256m</pax.vm.options>
     </properties>
 
     <build>
@@ -132,6 +134,7 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <argLine>${pax.vm.options}</argLine>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <systemProperties>
                         <property>
