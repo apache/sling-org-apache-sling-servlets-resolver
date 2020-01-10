@@ -19,6 +19,7 @@
 package org.apache.sling.servlets.resolver.it;
 
 import org.apache.sling.testing.paxexam.TestSupport;
+import org.junit.Before;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
 
@@ -28,8 +29,36 @@ import static org.ops4j.pax.exam.CoreOptions.wrappedBundle;
 import static org.ops4j.pax.exam.cm.ConfigurationAdminOptions.newConfiguration;
 import static org.apache.sling.testing.paxexam.SlingOptions.slingQuickstartOakTar;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.api.resource.ResourceResolverFactory;
+import org.apache.sling.servlethelpers.MockSlingHttpServletRequest;
+import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+
 public class ServletResolverTestSupport extends TestSupport {
+    @Inject
+    private ResourceResolverFactory resourceResolverFactory;
+
+    @Inject
+    protected BundleContext bundleContext;
+
     protected final int httpPort = findFreePort();
+
+    private final static int STARTUP_WAIT_SECONDS = 30;
 
     @Configuration
     public Option[] configuration() {
@@ -43,5 +72,65 @@ public class ServletResolverTestSupport extends TestSupport {
                 .put("whitelist.bundles.regexp", "^PAXEXAM.*$")
                 .asOption(),
         };
+    }
+
+    @Before
+    public void waitForSling() throws Exception {
+        final int expectedStatus = 200;
+        final List<Integer> statuses = new ArrayList<>();
+        final String path = "/.json";
+        final long endTime = System.currentTimeMillis() + STARTUP_WAIT_SECONDS * 1000;
+
+        while(System.currentTimeMillis() < endTime) {
+            final int status = executeRequest(path, -1).getStatus();
+            statuses.add(status);
+            if(status == expectedStatus) {
+                return;
+            }
+            Thread.sleep(250);
+        }
+
+        fail("Did not get a " + expectedStatus + " status at " + path + " got " + statuses);
+    }
+
+
+    protected MockSlingHttpServletResponse executeRequest(final String path, final int expectedStatus) throws Exception {
+        final ResourceResolver resourceResolver = resourceResolverFactory.getAdministrativeResourceResolver(null);
+        assertNotNull("Expecting ResourceResolver", resourceResolver);
+        final MockSlingHttpServletRequest request = new MockSlingHttpServletRequest(resourceResolver);
+        request.setPathInfo(path);
+        final MockSlingHttpServletResponse response = new MockSlingHttpServletResponse();
+
+        // Get SlingRequestProcessor.processRequest method and execute request
+        // This module depends on an older version of the sling.engine module and I don't want
+        // to change it just for these tests, so using reflection to get the processor, as we're
+        // running with a more recent version of sling.engine in the pax exam environment
+        final String slingRequestProcessorClassName = "org.apache.sling.engine.SlingRequestProcessor";
+        final ServiceReference<?> ref = bundleContext.getServiceReference(slingRequestProcessorClassName);
+        assertNotNull("Expecting service:" + slingRequestProcessorClassName, ref);
+
+        final Object processor = bundleContext.getService(ref);
+        try {
+            // void processRequest(javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse resource, ResourceResolver resourceResolver)
+            final Method processMethod = processor.getClass().getMethod(
+                "processRequest", 
+                HttpServletRequest.class, HttpServletResponse.class, ResourceResolver.class);
+            assertNotNull("Expecting processRequest method", processMethod);
+            processMethod.invoke(processor, request, response, resourceResolver);
+        } finally {
+            bundleContext.ungetService(ref);
+        }
+
+        if(expectedStatus > 0) {
+            assertEquals("Expected status " + expectedStatus + " at " + path, expectedStatus, response.getStatus());
+        }
+
+        return response;
+    }
+
+    protected void assertTestServlet(final String path, final String servletName) throws Exception {
+        final String output = executeRequest(path, 200).getOutputAsString();
+        final String expected = TestServlet.SERVED_BY_PREFIX + servletName;
+        assertTrue("Expecting output to contain " + expected + ", got " + output, output.contains(expected));
     }
 }

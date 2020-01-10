@@ -18,22 +18,8 @@
  */
 package org.apache.sling.servlets.resolver.it;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.sling.api.resource.ResourceResolver;
-import org.apache.sling.api.resource.ResourceResolverFactory;
-import org.apache.sling.servlethelpers.MockSlingHttpServletRequest;
 import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,70 +27,30 @@ import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerClass;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
 
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerClass.class)
 public class ServletSelectionIT extends ServletResolverTestSupport {
 
-    private final static int STARTUP_WAIT_SECONDS = 30;
-
-    @Inject
-    private BundleContext bundleContext;
-
-    @Inject
-    private ResourceResolverFactory resourceResolverFactory;
-
-    private MockSlingHttpServletResponse executeRequest(String path, int expectedStatus) throws Exception {
-        final ResourceResolver resourceResolver = resourceResolverFactory.getAdministrativeResourceResolver(null);
-        assertNotNull("Expecting ResourceResolver", resourceResolver);
-        final MockSlingHttpServletRequest request = new MockSlingHttpServletRequest(resourceResolver);
-        request.setPathInfo(path);
-        final MockSlingHttpServletResponse response = new MockSlingHttpServletResponse();
-
-        // Get SlingRequestProcessor.processRequest method and execute request
-        // This module depends on an older version of the sling.engine module and I don't want
-        // to change it just for these tests, so using reflection to get the processor, as we're
-        // running with a more recent version of sling.engine in the pax exam environment
-        final String slingRequestProcessorClassName = "org.apache.sling.engine.SlingRequestProcessor";
-        final ServiceReference<?> ref = bundleContext.getServiceReference(slingRequestProcessorClassName);
-        assertNotNull("Expecting service:" + slingRequestProcessorClassName, ref);
-
-        final Object processor = bundleContext.getService(ref);
-        try {
-            // void processRequest(javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse resource, ResourceResolver resourceResolver)
-            final Method processMethod = processor.getClass().getMethod(
-                "processRequest", 
-                HttpServletRequest.class, HttpServletResponse.class, ResourceResolver.class);
-            assertNotNull("Expecting processRequest method", processMethod);
-            processMethod.invoke(processor, request, response, resourceResolver);
-        } finally {
-            bundleContext.ungetService(ref);
-        }
-
-        if(expectedStatus > 0) {
-            assertEquals("Expected status " + expectedStatus + " at " + path, expectedStatus, response.getStatus());
-        }
-
-        return response;
-    }
-
     @Before
-    public void waitForStableSling() throws Exception {
-        final int expectedStatus = 200;
-        final List<Integer> statuses = new ArrayList<>();
-        final String path = "/.json";
-        final long endTime = System.currentTimeMillis() + STARTUP_WAIT_SECONDS * 1000;
-        while(System.currentTimeMillis() < endTime) {
-            final int status = executeRequest(path, -1).getStatus();
-            statuses.add(status);
-            if(status == expectedStatus) {
-                return;
-            }
-            Thread.sleep(250);
-        }
-        fail("Did not get a 200 status at " + path + " got " + statuses);
+    public void setupTestServlets() throws Exception {
+
+        new TestServlet("FooPathServlet")
+        .with("sling.servlet.paths", "/foo")
+        .register(bundleContext);
+
+        new TestServlet("ExtServlet")
+        .with("sling.servlet.resourceTypes", "sling/servlet/default")
+        .with("sling.servlet.methods", "GET")
+        .with("sling.servlet.extensions", "testext")
+        .register(bundleContext);
+
+        new TestServlet("ExtSelServlet")
+        .with("sling.servlet.resourceTypes", "sling/servlet/default")
+        .with("sling.servlet.methods", "GET")
+        .with("sling.servlet.extensions", "testext")
+        .with("sling.servlet.selectors", "testsel")
+        .register(bundleContext);
     }
 
     @Test
@@ -115,10 +61,41 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
             "jcr:primaryType\":\"rep:root",
             "jcr:mixinTypes\":[\"rep:AccessControllable\"]"
         };
-        for(String s : expected) {
+        for(final String s : expected) {
             assertTrue("Expecting in output: " + s + ", got " + content, content.contains(s));
         }
 
     }
 
+    @Test
+    public void testFooPathServlet() throws Exception {
+        assertTestServlet("/foo", "FooPathServlet");
+    }
+
+    @Test
+    public void testFooPathServletWithSelectorAndExtension() throws Exception {
+        assertTestServlet("/foo.someExtension", "FooPathServlet");
+        assertTestServlet("/foo.someSelector.someExtension", "FooPathServlet");
+        assertTestServlet("/foo.anotherSelector.someSelector.someExtension", "FooPathServlet");
+    }
+
+    @Test
+    public void testFooPathServletWithPathSuffix() throws Exception {
+        executeRequest("/foo/path/suffix", 404);
+    }
+
+    @Test
+    public void testExtServlet() throws Exception {
+        assertTestServlet("/.testext", "ExtServlet");
+    }
+
+    @Test
+    public void testExtSelServlet() throws Exception {
+        assertTestServlet("/.testsel.testext", "ExtSelServlet");
+    }
+
+    @Test
+    public void testNoServletForExtension() throws Exception {
+        executeRequest("/.yapas", 404);
+    }
 }
