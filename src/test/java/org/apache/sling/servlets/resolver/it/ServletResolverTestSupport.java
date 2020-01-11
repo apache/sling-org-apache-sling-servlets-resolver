@@ -25,9 +25,11 @@ import org.ops4j.pax.exam.Option;
 
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
+import static org.ops4j.pax.exam.CoreOptions.options;
 import static org.ops4j.pax.exam.CoreOptions.wrappedBundle;
 import static org.ops4j.pax.exam.cm.ConfigurationAdminOptions.newConfiguration;
 import static org.apache.sling.testing.paxexam.SlingOptions.slingQuickstartOakTar;
+import static org.apache.sling.testing.paxexam.SlingOptions.versionResolver;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -36,6 +38,8 @@ import static org.junit.Assert.fail;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -46,6 +50,7 @@ import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.servlethelpers.MockSlingHttpServletRequest;
 import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
+import org.ops4j.pax.exam.options.CompositeOption;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
@@ -62,16 +67,26 @@ public class ServletResolverTestSupport extends TestSupport {
 
     @Configuration
     public Option[] configuration() {
-        return new Option[]{
-            baseConfiguration(),
-            slingQuickstartOakTar(workingDirectory(), httpPort),
-            testBundle("bundle.filename"),
-            wrappedBundle(mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.servlet-helpers").versionAsInProject()),
-            junitBundles(),
-            newConfiguration("org.apache.sling.jcr.base.internal.LoginAdminWhitelist")
-                .put("whitelist.bundles.regexp", "^PAXEXAM.*$")
-                .asOption(),
-        };
+        return remove(
+            options(
+                baseConfiguration(),
+                slingQuickstartOakTar(workingDirectory(), httpPort),
+                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.api").versionAsInProject(),
+                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.resourceresolver").version("1.6.16"), // compatible with API 2.22.0
+                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.scripting.core").version("2.1.1-SNAPSHOT"), // compatible with API 2.22.0
+                mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.converter").version("1.0.12"), // new Sling API dependency
+                testBundle("bundle.filename"),
+                wrappedBundle(mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.servlet-helpers").versionAsInProject()),
+                junitBundles(),
+                newConfiguration("org.apache.sling.jcr.base.internal.LoginAdminWhitelist")
+                    .put("whitelist.bundles.regexp", "^PAXEXAM.*$")
+                    .asOption()
+            ),
+            mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.api").version(versionResolver),
+            mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.resourceresolver").version(versionResolver),
+            mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.scripting.core").version(versionResolver),
+            mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.servlets.resolver").version(versionResolver) // remove bundle from slingQuickstartOakTar, added via testBundle in current version
+        );
     }
 
     @Before
@@ -133,4 +148,35 @@ public class ServletResolverTestSupport extends TestSupport {
         final String expected = TestServlet.SERVED_BY_PREFIX + servletName;
         assertTrue("Expecting output to contain " + expected + ", got " + output, output.contains(expected));
     }
+
+    // move below helpers for deep removal to Pax Exam
+
+    private static List<Option> expand(final Option[] options) {
+        final List<Option> expanded = new ArrayList<>();
+        if (options != null) {
+            for (final Option option : options) {
+                if (option != null) {
+                    if (option instanceof CompositeOption) {
+                        expanded.addAll(Arrays.asList(((CompositeOption) option).getOptions()));
+                    } else {
+                        expanded.add(option);
+                    }
+                }
+            }
+        }
+        return expanded;
+    }
+
+    private static Option[] remove(final Option[] options, final Option... removables) {
+        final List<Option> expanded = expand(options);
+        for (final Option removable : removables) {
+            if (removable instanceof CompositeOption) {
+                expanded.removeAll(Arrays.asList(((CompositeOption) removable).getOptions()));
+            } else {
+                expanded.removeAll(Collections.singleton(removable));
+            }
+        }
+        return expanded.toArray(new Option[0]);
+    }
+
 }
