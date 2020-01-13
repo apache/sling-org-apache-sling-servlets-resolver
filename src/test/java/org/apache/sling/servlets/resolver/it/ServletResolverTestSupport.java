@@ -73,7 +73,7 @@ public class ServletResolverTestSupport extends TestSupport {
                 slingQuickstartOakTar(workingDirectory(), httpPort),
                 mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.api").versionAsInProject(),
                 mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.resourceresolver").version("1.6.16"), // compatible with API 2.22.0
-                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.scripting.core").version("2.1.1-SNAPSHOT"), // compatible with API 2.22.0
+                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.scripting.core").versionAsInProject(), // compatible with API 2.22.0
                 mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.converter").version("1.0.12"), // new Sling API dependency
                 testBundle("bundle.filename"),
                 wrappedBundle(mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.servlet-helpers").versionAsInProject()),
