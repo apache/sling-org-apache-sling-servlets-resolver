@@ -89,6 +89,7 @@ public class ServletResolverTestSupport extends TestSupport {
         );
     }
 
+    /** Injecting the appropriate services to wait for would be more elegant but this is very reliable.. */
     @Before
     public void waitForSling() throws Exception {
         final int expectedStatus = 200;
