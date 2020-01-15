@@ -123,9 +123,13 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
     @Test
     public void testAllExceptPathsIgnored() throws Exception {
         assertTestServlet("/allprops", "AllExceptPathsIgnored");
+        assertTestServlet("/allprops.zero", "AllExceptPathsIgnored");
         assertTestServlet("/allprops.one.two", "AllExceptPathsIgnored");
+        assertTestServlet("POST", "/allprops", "AllExceptPathsIgnored");
+        assertTestServlet("POST", "/allprops.ext", "AllExceptPathsIgnored");
         assertTestServlet("POST", "/allprops.three.four", "AllExceptPathsIgnored");
         assertTestServlet("/allprops.five.six/suffix", "AllExceptPathsIgnored");
         assertTestServlet("POST", "/allprops.seven.eight/suffix", "AllExceptPathsIgnored");
+        assertTestServlet("POST", "/allprops.nine/suffix", "AllExceptPathsIgnored");
     }
 }
