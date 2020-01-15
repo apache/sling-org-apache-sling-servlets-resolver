@@ -109,11 +109,19 @@ public class ServletResolverTestSupport extends TestSupport {
         fail("Did not get a " + expectedStatus + " status at " + path + " got " + statuses);
     }
 
-
     protected MockSlingHttpServletResponse executeRequest(final String path, final int expectedStatus) throws Exception {
+        return executeRequest("GET", path, expectedStatus);
+    }
+
+    protected MockSlingHttpServletResponse executeRequest(final String method, final String path, final int expectedStatus) throws Exception {
         final ResourceResolver resourceResolver = resourceResolverFactory.getAdministrativeResourceResolver(null);
         assertNotNull("Expecting ResourceResolver", resourceResolver);
-        final MockSlingHttpServletRequest request = new MockSlingHttpServletRequest(resourceResolver);
+        final MockSlingHttpServletRequest request = new MockSlingHttpServletRequest(resourceResolver) {
+            @Override
+            public String getMethod() {
+                return method;
+            }
+        };
         request.setPathInfo(path);
         final MockSlingHttpServletResponse response = new MockSlingHttpServletResponse();
 
@@ -144,8 +152,12 @@ public class ServletResolverTestSupport extends TestSupport {
         return response;
     }
 
-    protected void assertTestServlet(final String path, final String servletName) throws Exception {
-        final String output = executeRequest(path, 200).getOutputAsString();
+    protected void assertTestServlet(String path, String servletName) throws Exception {
+        assertTestServlet("GET", path, servletName);
+    }
+
+    protected void assertTestServlet(final String method, final String path, final String servletName) throws Exception {
+        final String output = executeRequest(method, path, 200).getOutputAsString();
         final String expected = TestServlet.SERVED_BY_PREFIX + servletName;
         assertTrue("Expecting output to contain " + expected + ", got " + output, output.contains(expected));
     }

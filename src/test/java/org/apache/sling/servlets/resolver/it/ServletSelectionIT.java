@@ -39,9 +39,23 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
         .with("sling.servlet.paths", "/foo")
         .register(bundleContext);
 
+        new TestServlet("AllExceptPathsIgnored")
+        .with("sling.servlet.paths", "/allprops")
+        .with("sling.servlet.resourceTypes", "allresource")
+        .with("sling.servlet.methods", "allmethod")
+        .with("sling.servlet.extensions", "allext")
+        .with("sling.servlet.selectors", "allsel")
+        .register(bundleContext);
+
         new TestServlet("ExtServlet")
         .with("sling.servlet.resourceTypes", "sling/servlet/default")
         .with("sling.servlet.methods", "GET")
+        .with("sling.servlet.extensions", "testext")
+        .register(bundleContext);
+
+        new TestServlet("ExtPostServlet")
+        .with("sling.servlet.resourceTypes", "sling/servlet/default")
+        .with("sling.servlet.methods", "POST")
         .with("sling.servlet.extensions", "testext")
         .register(bundleContext);
 
@@ -99,5 +113,19 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
     @Test
     public void testNoServletForExtension() throws Exception {
         executeRequest("/.yapas", 404);
+    }
+
+    @Test
+    public void testExtPostServlet() throws Exception {
+        assertTestServlet("POST", "/.testext", "ExtPostServlet");
+    }
+
+    @Test
+    public void testAllExceptPathsIgnored() throws Exception {
+        assertTestServlet("/allprops", "AllExceptPathsIgnored");
+        assertTestServlet("/allprops.one.two", "AllExceptPathsIgnored");
+        assertTestServlet("POST", "/allprops.three.four", "AllExceptPathsIgnored");
+        assertTestServlet("/allprops.five.six/suffix", "AllExceptPathsIgnored");
+        assertTestServlet("POST", "/allprops.seven.eight/suffix", "AllExceptPathsIgnored");
     }
 }

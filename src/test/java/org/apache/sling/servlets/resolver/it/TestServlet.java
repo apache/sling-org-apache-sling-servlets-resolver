@@ -46,6 +46,11 @@ public class TestServlet extends HttpServlet {
         resp.getWriter().write(SERVED_BY_PREFIX + name);
     }
 
+    @Override
+    public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        doGet(req, resp);
+    }
+
     TestServlet with(String key, Object value) {
         properties.put(key, value);
         return this;
