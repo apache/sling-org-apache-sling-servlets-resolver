@@ -82,6 +82,8 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
     @Test
     public void testFooPathServletWithPathSuffix() throws Exception {
         executeRequest("/foo/path/suffix", 404);
+        assertTestServlet("/foo.someExtensions/path/suffix", "FooPathServlet");
+        assertTestServlet("/foo.someSelector.someExtension/path/suffix", "FooPathServlet");
     }
 
     @Test
