@@ -109,6 +109,8 @@
                 <configuration>
                     <argLine>${pax.vm.options}</argLine>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                    <!-- pax exam bug, often times out at exit -->
+                    <forkedProcessExitTimeoutInSeconds>1</forkedProcessExitTimeoutInSeconds>
                     <systemProperties>
                         <property>
                         <name>bundle.filename</name>
