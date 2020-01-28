@@ -36,34 +36,34 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
     public void setupTestServlets() throws Exception {
 
         new TestServlet("FooPathServlet")
-        .with("sling.servlet.paths", "/foo")
+        .with(P_PATHS, "/foo")
         .register(bundleContext);
 
         new TestServlet("AllExceptPathsIgnored")
-        .with("sling.servlet.paths", "/allprops")
-        .with("sling.servlet.resourceTypes", "allresource")
-        .with("sling.servlet.methods", "allmethod")
-        .with("sling.servlet.extensions", "allext")
-        .with("sling.servlet.selectors", "allsel")
+        .with(P_PATHS, "/allprops")
+        .with(P_RESOURCE_TYPES, "allresource")
+        .with(P_METHODS, "allmethod")
+        .with(P_EXTENSIONS, "allext")
+        .with(P_SELECTORS, "allsel")
         .register(bundleContext);
 
         new TestServlet("ExtServlet")
-        .with("sling.servlet.resourceTypes", "sling/servlet/default")
-        .with("sling.servlet.methods", "GET")
-        .with("sling.servlet.extensions", "testext")
+        .with(P_RESOURCE_TYPES, RT_DEFAULT)
+        .with(P_METHODS, M_GET)
+        .with(P_EXTENSIONS, "testext")
         .register(bundleContext);
 
         new TestServlet("ExtPostServlet")
-        .with("sling.servlet.resourceTypes", "sling/servlet/default")
-        .with("sling.servlet.methods", "POST")
-        .with("sling.servlet.extensions", "testext")
+        .with(P_RESOURCE_TYPES, RT_DEFAULT)
+        .with(P_METHODS, M_POST)
+        .with(P_EXTENSIONS, "testext")
         .register(bundleContext);
 
         new TestServlet("ExtSelServlet")
-        .with("sling.servlet.resourceTypes", "sling/servlet/default")
-        .with("sling.servlet.methods", "GET")
-        .with("sling.servlet.extensions", "testext")
-        .with("sling.servlet.selectors", "testsel")
+        .with(P_RESOURCE_TYPES, RT_DEFAULT)
+        .with(P_METHODS, M_GET)
+        .with(P_EXTENSIONS, "testext")
+        .with(P_SELECTORS, "testsel")
         .register(bundleContext);
     }
 
@@ -117,7 +117,7 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
 
     @Test
     public void testExtPostServlet() throws Exception {
-        assertTestServlet("POST", "/.testext", "ExtPostServlet");
+        assertTestServlet(M_POST, "/.testext", "ExtPostServlet");
     }
 
     @Test
@@ -125,11 +125,11 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
         assertTestServlet("/allprops", "AllExceptPathsIgnored");
         assertTestServlet("/allprops.zero", "AllExceptPathsIgnored");
         assertTestServlet("/allprops.one.two", "AllExceptPathsIgnored");
-        assertTestServlet("POST", "/allprops", "AllExceptPathsIgnored");
-        assertTestServlet("POST", "/allprops.ext", "AllExceptPathsIgnored");
-        assertTestServlet("POST", "/allprops.three.four", "AllExceptPathsIgnored");
+        assertTestServlet(M_POST, "/allprops", "AllExceptPathsIgnored");
+        assertTestServlet(M_POST, "/allprops.ext", "AllExceptPathsIgnored");
+        assertTestServlet(M_POST, "/allprops.three.four", "AllExceptPathsIgnored");
         assertTestServlet("/allprops.five.six/suffix", "AllExceptPathsIgnored");
-        assertTestServlet("POST", "/allprops.seven.eight/suffix", "AllExceptPathsIgnored");
-        assertTestServlet("POST", "/allprops.nine/suffix", "AllExceptPathsIgnored");
+        assertTestServlet(M_POST, "/allprops.seven.eight/suffix", "AllExceptPathsIgnored");
+        assertTestServlet(M_POST, "/allprops.nine/suffix", "AllExceptPathsIgnored");
     }
 }

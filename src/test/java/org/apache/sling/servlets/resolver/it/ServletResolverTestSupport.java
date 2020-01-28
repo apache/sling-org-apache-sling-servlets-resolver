@@ -65,6 +65,15 @@ public class ServletResolverTestSupport extends TestSupport {
 
     private final static int STARTUP_WAIT_SECONDS = 30;
 
+    public static final String P_PATHS = "sling.servlet.paths";
+    public static final String P_RESOURCE_TYPES = "sling.servlet.resourceTypes";
+    public static final String P_METHODS = "sling.servlet.methods";
+    public static final String P_EXTENSIONS = "sling.servlet.extensions";
+    public static final String P_SELECTORS = "sling.servlet.selectors";
+    public static final String RT_DEFAULT = "sling/servlet/default";
+    public static final String M_GET = "GET";
+    public static final String M_POST = "POST";
+
     @Configuration
     public Option[] configuration() {
         return remove(
