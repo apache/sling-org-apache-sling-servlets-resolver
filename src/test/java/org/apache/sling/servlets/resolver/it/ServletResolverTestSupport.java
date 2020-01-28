@@ -51,6 +51,7 @@ import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.servlethelpers.MockSlingHttpServletRequest;
 import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
 import org.ops4j.pax.exam.options.CompositeOption;
+import static org.ops4j.pax.exam.CoreOptions.vmOption;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
@@ -70,14 +71,18 @@ public class ServletResolverTestSupport extends TestSupport {
     public static final String P_METHODS = "sling.servlet.methods";
     public static final String P_EXTENSIONS = "sling.servlet.extensions";
     public static final String P_SELECTORS = "sling.servlet.selectors";
+    public static final String P_EXTPATHS = "sling.servlet.extpaths";
     public static final String RT_DEFAULT = "sling/servlet/default";
     public static final String M_GET = "GET";
     public static final String M_POST = "POST";
 
     @Configuration
     public Option[] configuration() {
+        final String vmOpt = System.getProperty("pax.vm.options");
+        assertNotNull("Expecting non-null VM options", vmOpt);
         return remove(
             options(
+                vmOption(vmOpt),
                 baseConfiguration(),
                 slingQuickstartOakTar(workingDirectory(), httpPort),
                 mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.api").versionAsInProject(),
@@ -155,24 +160,29 @@ public class ServletResolverTestSupport extends TestSupport {
         }
 
         if(expectedStatus > 0) {
-            assertEquals("Expected status " + expectedStatus + " at " + path, expectedStatus, response.getStatus());
+            assertEquals("Expected status " + expectedStatus + " for " + method
+                + " at " + path, expectedStatus, response.getStatus());
         }
 
         return response;
     }
 
+    protected void assertTestServlet(final String path, int expectedStatus) throws Exception {
+        assertTestServlet(M_GET, path, expectedStatus);
+    }
+
+    protected void assertTestServlet(final String method, final String path, int expectedStatus) throws Exception {
+        executeRequest(method, path, expectedStatus);
+    }
+
     protected void assertTestServlet(String path, String servletName) throws Exception {
-        assertTestServlet("GET", path, servletName);
+        assertTestServlet(M_GET, path, servletName);
     }
 
     protected void assertTestServlet(final String method, final String path, final String servletName) throws Exception {
-        if(servletName == null) {
-            executeRequest(method, path, 404);
-        } else {
-            final String output = executeRequest(method, path, 200).getOutputAsString();
-            final String expected = TestServlet.SERVED_BY_PREFIX + servletName;
-            assertTrue("Expecting output to contain " + expected + ", got " + output, output.contains(expected));
-        }
+        final String output = executeRequest(method, path, 200).getOutputAsString();
+        final String expected = TestServlet.SERVED_BY_PREFIX + servletName;
+        assertTrue("Expecting output to contain " + expected + ", got " + output, output.contains(expected));
     }
 
     // move below helpers for deep removal to Pax Exam

@@ -89,4 +89,18 @@ public class SlingServletConfig implements ServletConfig {
     public String getServletName() {
         return this.name;
     }
+
+    /** @return the value of an OSGi service property of this servlet
+     *  (which can be an array that getInitParameter* messes up)
+     */
+    public Object getServiceProperty(String key) {
+        return reference.getProperty(key);
+    }
+
+    /** @return the OSGi service property keys of this servlet
+     *  (which can be an array that getInitParameter* messes up)
+    */
+    public String [] getServicePropertyKeys() {
+        return reference.getPropertyKeys();
+    }
 }

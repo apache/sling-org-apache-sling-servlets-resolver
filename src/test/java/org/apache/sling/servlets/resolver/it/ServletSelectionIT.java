@@ -20,6 +20,8 @@ package org.apache.sling.servlets.resolver.it;
 
 import static org.junit.Assert.assertTrue;
 
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
 import org.junit.Before;
 import org.junit.Test;
@@ -65,6 +67,14 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
         .with(P_EXTENSIONS, "testext")
         .with(P_SELECTORS, "testsel")
         .register(bundleContext);
+
+        new TestServlet("ExtPaths")
+        .with(P_PATHS, "/extpaths")
+        .with(P_EXTPATHS, "true")
+        .with(P_METHODS, "POST")
+        .with(P_EXTENSIONS, "extPathsExt")
+        .with(P_SELECTORS, "extPathsSel")
+        .register(bundleContext);
     }
 
     @Test
@@ -95,7 +105,7 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
 
     @Test
     public void testFooPathServletWithPathSuffix() throws Exception {
-        assertTestServlet("/foo/path/suffix", null);
+        assertTestServlet("/foo/path/suffix", HttpServletResponse.SC_NOT_FOUND);
         assertTestServlet("/foo.someExtensions/path/suffix", "FooPathServlet");
         assertTestServlet("/foo.someSelector.someExtension/path/suffix", "FooPathServlet");
     }
@@ -112,7 +122,7 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
 
     @Test
     public void testNoServletForExtension() throws Exception {
-        assertTestServlet("/.yapas", null);
+        assertTestServlet("/.yapas", HttpServletResponse.SC_NOT_FOUND);
     }
 
     @Test
@@ -131,5 +141,16 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
         assertTestServlet("/allprops.five.six/suffix", "AllExceptPathsIgnored");
         assertTestServlet(M_POST, "/allprops.seven.eight/suffix", "AllExceptPathsIgnored");
         assertTestServlet(M_POST, "/allprops.nine/suffix", "AllExceptPathsIgnored");
+    }
+
+    @Test
+    public void testExtPathsServlet() throws Exception {
+        // We just check that the "extpaths" feature is wired in,
+        // the details of its logic are verified in unit tests
+        assertTestServlet("/extpaths", HttpServletResponse.SC_FORBIDDEN);
+        assertTestServlet(M_POST, "/extpaths", HttpServletResponse.SC_FORBIDDEN);
+        assertTestServlet(M_POST, "/extpaths.extPathsExt", HttpServletResponse.SC_FORBIDDEN);
+        assertTestServlet(M_GET, "/extpaths.extPathsSel.extPathsExt", HttpServletResponse.SC_FORBIDDEN);
+        assertTestServlet(M_POST, "/extpaths.extPathsSel.extPathsExt", "ExtPaths");
     }
 }

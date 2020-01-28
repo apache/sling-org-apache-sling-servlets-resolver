@@ -31,6 +31,7 @@ import java.util.Collections;
 import javax.servlet.Servlet;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -125,6 +126,17 @@ public class SlingServletResolver
      * The default extensions
      */
     private volatile String[] defaultExtensions;
+
+    private final PathBasedServletAcceptor pathBasedServletAcceptor = new PathBasedServletAcceptor();
+
+    private static final Servlet forbiddenPathServlet = new HttpServlet() {
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public void service(HttpServletRequest request, HttpServletResponse response) throws IOException {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+        }
+    };
 
     // ---------- ServletResolver interface -----------------------------------
 
@@ -437,7 +449,11 @@ public class SlingServletResolver
             if ( isPathAllowed(scriptPath, this.executionPaths) ) {
                 final Resource res = resolver.getResource(scriptPath);
                 servlet = this.getServlet(res);
-                if (servlet != null && LOGGER.isDebugEnabled()) {
+                if(!pathBasedServletAcceptor.accept(request, servlet)) {
+                    LOGGER.debug("Servlet {} rejected by {} returning FORBIDDEN status", RequestUtil.getServletName(servlet),
+                        pathBasedServletAcceptor.getClass().getSimpleName());
+                    servlet = forbiddenPathServlet;
+                } else if (servlet != null && LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Servlet {} found using absolute resource type {}", RequestUtil.getServletName(servlet),
                                     scriptNameOrResourceType);
                 }

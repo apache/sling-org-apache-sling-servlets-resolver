@@ -107,14 +107,17 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <argLine>${pax.vm.options}</argLine>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <!-- pax exam bug, often times out at exit -->
                     <forkedProcessExitTimeoutInSeconds>1</forkedProcessExitTimeoutInSeconds>
                     <systemProperties>
                         <property>
-                        <name>bundle.filename</name>
-                        <value>${basedir}/target/${project.build.finalName}.jar</value>
+                            <name>bundle.filename</name>
+                            <value>${basedir}/target/${project.build.finalName}.jar</value>
+                        </property>
+                        <property>
+                            <name>pax.vm.options</name>
+                            <value>${pax.vm.options}</value>
                         </property>
                     </systemProperties>
                 </configuration>
