@@ -166,9 +166,13 @@ public class ServletResolverTestSupport extends TestSupport {
     }
 
     protected void assertTestServlet(final String method, final String path, final String servletName) throws Exception {
-        final String output = executeRequest(method, path, 200).getOutputAsString();
-        final String expected = TestServlet.SERVED_BY_PREFIX + servletName;
-        assertTrue("Expecting output to contain " + expected + ", got " + output, output.contains(expected));
+        if(servletName == null) {
+            executeRequest(method, path, 404);
+        } else {
+            final String output = executeRequest(method, path, 200).getOutputAsString();
+            final String expected = TestServlet.SERVED_BY_PREFIX + servletName;
+            assertTrue("Expecting output to contain " + expected + ", got " + output, output.contains(expected));
+        }
     }
 
     // move below helpers for deep removal to Pax Exam
