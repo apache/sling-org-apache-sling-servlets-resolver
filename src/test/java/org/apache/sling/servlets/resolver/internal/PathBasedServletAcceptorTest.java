@@ -128,6 +128,30 @@ public class PathBasedServletAcceptorTest {
     }
 
     @Test
+    public void extensionNone() {
+        new TestCase()
+        .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, "sp")
+        .assertAccept(false);
+    }
+
+    @Test
+    public void extensionNoMatchInN() {
+        new TestCase()
+        .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, "one", "two")
+        .withExtension("somethingElse")
+        .assertAccept(false);
+    }
+
+    @Test
+    public void extensionMatchOneInN() {
+        new TestCase()
+        // test various ways of setting multiple properties
+        .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, (Object)new String[] { "one", "two" })
+        .withExtension("one")
+        .assertAccept(true);
+    }
+
+    @Test
     public void extensionPropertyNotSet() {
         new TestCase()
         .withExtension("somethingElse")
@@ -151,12 +175,26 @@ public class PathBasedServletAcceptorTest {
     }
 
     @Test
-    public void selectorOneAmongSeveral() {
+    public void selectorOneFromNInN() {
         new TestCase()
-        .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, "one")
-        .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, "two")
-        .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, "three")
-        .withSelector("three")
+        .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, "one", "two", "three")
+        .withSelectors("three", "and", "somethingElse")
+        .assertAccept(true);
+    }
+
+    @Test
+    public void selectorZeroInN() {
+        new TestCase()
+        .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, "one", "two", "three")
+        .withExtension("three")
+        .assertAccept(false);
+    }
+
+    @Test
+    public void selectorOneInN() {
+        new TestCase()
+        .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, "one", "two", "42")
+        .withSelectors("42")
         .assertAccept(true);
     }
 
@@ -195,6 +233,15 @@ public class PathBasedServletAcceptorTest {
     public void testStringFalseStrict() {
         new TestCase()
         .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, "false")
+        .withServiceProperty(ServletResolverTestSupport.P_METHODS, "meth")
+        .withMethod("somethingElse")
+        .assertAccept(true);
+    }
+
+    @Test
+    public void testBooleanFalseStrict() {
+        new TestCase()
+        .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, false)
         .withServiceProperty(ServletResolverTestSupport.P_METHODS, "meth")
         .withMethod("somethingElse")
         .assertAccept(true);

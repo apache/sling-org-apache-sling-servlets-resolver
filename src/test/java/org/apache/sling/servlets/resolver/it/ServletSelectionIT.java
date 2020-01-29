@@ -75,6 +75,12 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
         .with(P_EXTENSIONS, "extPathsExt")
         .with(P_SELECTORS, "extPathsSel")
         .register(bundleContext);
+
+        new TestServlet("ExtPathsMultipleSelectors")
+        .with(P_PATHS, "/extpaths_multiple")
+        .with(P_STRICT_PATHS, "true")
+        .with(P_SELECTORS, new String[] { "one", "two" })
+        .register(bundleContext);
     }
 
     @Test
@@ -144,7 +150,7 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
     }
 
     @Test
-    public void testExtPathsServlet() throws Exception {
+    public void testExtPaths() throws Exception {
         // We just check that the "extpaths" feature is wired in,
         // the details of its logic are verified in unit tests
         assertTestServlet("/extpaths", HttpServletResponse.SC_FORBIDDEN);
@@ -152,5 +158,16 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
         assertTestServlet(M_POST, "/extpaths.extPathsExt", HttpServletResponse.SC_FORBIDDEN);
         assertTestServlet(M_GET, "/extpaths.extPathsSel.extPathsExt", HttpServletResponse.SC_FORBIDDEN);
         assertTestServlet(M_POST, "/extpaths.extPathsSel.extPathsExt", "ExtPaths");
+        assertTestServlet(M_POST, "/extpaths.extPathsSel.extPathsExt/with/some/suffix", "ExtPaths");
+    }
+
+    @Test
+    public void testExtPathsMultipleSelectors() throws Exception {
+        assertTestServlet("/extpaths_multiple", HttpServletResponse.SC_FORBIDDEN);
+        assertTestServlet("/extpaths_multiple.one.html", "ExtPathsMultipleSelectors");
+        assertTestServlet("/extpaths_multiple.one.two.html", "ExtPathsMultipleSelectors");
+        assertTestServlet("/extpaths_multiple.two.three.html", "ExtPathsMultipleSelectors");
+        assertTestServlet("/extpaths_multiple.two.html", "ExtPathsMultipleSelectors");
+        assertTestServlet("/extpaths_multiple.three.html", HttpServletResponse.SC_FORBIDDEN);
     }
 }

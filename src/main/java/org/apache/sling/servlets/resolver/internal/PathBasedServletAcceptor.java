@@ -18,6 +18,8 @@
  */
 package org.apache.sling.servlets.resolver.internal;
 
+import java.util.Arrays;
+
 import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
 
@@ -51,8 +53,8 @@ class PathBasedServletAcceptor {
 
         // If the servlet properties have the "extpaths" option, check extension, selector etc.
         boolean accepted = true;
-        final Object extpaths = config.getServiceProperty(STRICT_PATHS_SERVICE_PROPERTY);
-        if(extpaths != null && Boolean.valueOf(extpaths.toString())) {
+        final Object strictPaths = config.getServiceProperty(STRICT_PATHS_SERVICE_PROPERTY);
+        if(strictPaths != null && Boolean.valueOf(strictPaths.toString())) {
             accepted = 
                 accept(servletName, config, ServletResolverConstants.SLING_SERVLET_EXTENSIONS, request.getRequestPathInfo().getExtension())
                 && accept(servletName, config, ServletResolverConstants.SLING_SERVLET_SELECTORS, request.getRequestPathInfo().getSelectors())
@@ -90,6 +92,9 @@ class PathBasedServletAcceptor {
             return new String[] { (String)value };
         } else if(value instanceof String []) {
             return (String[]) value;
+        } else if(value instanceof Object []) {
+            final Object [] objArray = (Object[])value;
+            return Arrays.copyOf(objArray, objArray.length, String[].class);
         }
         return null;
     }
