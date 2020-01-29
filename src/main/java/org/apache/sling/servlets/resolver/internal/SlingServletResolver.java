@@ -450,8 +450,10 @@ public class SlingServletResolver
                 final Resource res = resolver.getResource(scriptPath);
                 servlet = this.getServlet(res);
                 if(!pathBasedServletAcceptor.accept(request, servlet)) {
-                    LOGGER.debug("Servlet {} rejected by {} returning FORBIDDEN status", RequestUtil.getServletName(servlet),
+                    if(LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Servlet {} rejected by {} returning FORBIDDEN status", RequestUtil.getServletName(servlet),
                         pathBasedServletAcceptor.getClass().getSimpleName());
+                    }
                     servlet = forbiddenPathServlet;
                 } else if (servlet != null && LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Servlet {} found using absolute resource type {}", RequestUtil.getServletName(servlet),
