@@ -70,7 +70,7 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
 
         new TestServlet("ExtPaths")
         .with(P_PATHS, "/extpaths")
-        .with(P_EXTPATHS, "true")
+        .with(P_STRICT_PATHS, "true")
         .with(P_METHODS, "POST")
         .with(P_EXTENSIONS, "extPathsExt")
         .with(P_SELECTORS, "extPathsSel")

@@ -37,7 +37,7 @@ class PathBasedServletAcceptor {
     public static final Logger LOGGER = LoggerFactory.getLogger(PathBasedServletAcceptor.class);
 
     // TODO should be in ServletResolverConstants
-    public static final String EXTPATHS_SERVICE_PROPERTY = "sling.servlet.extpaths";
+    private static final String STRICT_PATHS_SERVICE_PROPERTY = "sling.servlet.paths.strict";
 
     boolean accept(SlingHttpServletRequest request, Servlet servlet) {
         // Get OSGi service properties from the SlingServletConfig
@@ -51,7 +51,7 @@ class PathBasedServletAcceptor {
 
         // If the servlet properties have the "extpaths" option, check extension, selector etc.
         boolean accepted = true;
-        final Object extpaths = config.getServiceProperty(EXTPATHS_SERVICE_PROPERTY);
+        final Object extpaths = config.getServiceProperty(STRICT_PATHS_SERVICE_PROPERTY);
         if(extpaths != null && Boolean.valueOf(extpaths.toString())) {
             accepted = 
                 accept(servletName, config, ServletResolverConstants.SLING_SERVLET_EXTENSIONS, request.getRequestPathInfo().getExtension())

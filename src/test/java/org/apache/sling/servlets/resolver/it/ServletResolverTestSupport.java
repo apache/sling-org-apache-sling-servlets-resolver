@@ -71,7 +71,7 @@ public class ServletResolverTestSupport extends TestSupport {
     public static final String P_METHODS = "sling.servlet.methods";
     public static final String P_EXTENSIONS = "sling.servlet.extensions";
     public static final String P_SELECTORS = "sling.servlet.selectors";
-    public static final String P_EXTPATHS = "sling.servlet.extpaths";
+    public static final String P_STRICT_PATHS = "sling.servlet.paths.strict";
     public static final String RT_DEFAULT = "sling/servlet/default";
     public static final String M_GET = "GET";
     public static final String M_POST = "POST";
