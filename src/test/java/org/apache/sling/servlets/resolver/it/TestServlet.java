@@ -37,13 +37,18 @@ public class TestServlet extends HttpServlet {
 
     public static final String SERVED_BY_PREFIX = "SERVED_BY_";
 
+    // Use a specific HTTP status to identify this servlet.
+    // I've waited all my career to find a good use for status 418, and
+    // interestingly it's not part of the HttpServletResponse constants.
+    public static final int IM_A_TEAPOT = 418;
+
     public TestServlet(String name) {
         this.name = name;
     }
 
     @Override
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        resp.getWriter().write(SERVED_BY_PREFIX + name);
+        resp.sendError(IM_A_TEAPOT, SERVED_BY_PREFIX + name);
     }
 
     @Override

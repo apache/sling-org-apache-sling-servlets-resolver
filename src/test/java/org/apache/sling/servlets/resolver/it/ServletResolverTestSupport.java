@@ -180,7 +180,7 @@ public class ServletResolverTestSupport extends TestSupport {
     }
 
     protected void assertTestServlet(final String method, final String path, final String servletName) throws Exception {
-        final String output = executeRequest(method, path, 200).getOutputAsString();
+        final String output = executeRequest(method, path, TestServlet.IM_A_TEAPOT).getOutputAsString();
         final String expected = TestServlet.SERVED_BY_PREFIX + servletName;
         assertTrue("Expecting output to contain " + expected + ", got " + output, output.contains(expected));
     }
