@@ -52,6 +52,8 @@ import org.apache.sling.servlethelpers.MockSlingHttpServletRequest;
 import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
 import org.ops4j.pax.exam.options.CompositeOption;
 import static org.ops4j.pax.exam.CoreOptions.vmOption;
+import static org.ops4j.pax.exam.CoreOptions.keepCaches;
+import static org.ops4j.pax.exam.CoreOptions.repository;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
@@ -83,6 +85,11 @@ public class ServletResolverTestSupport extends TestSupport {
         return remove(
             options(
                 vmOption(vmOpt),
+                failOnUnresolvedBundles(),
+                keepCaches(),
+                localMavenRepo(),
+                repository("https://repository.apache.org/snapshots/").id("apache-snapshots").allowSnapshots(),
+                repository("https://repo1.maven.org/maven2").id("central"),
                 baseConfiguration(),
                 slingQuickstartOakTar(workingDirectory(), httpPort),
                 mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.api").versionAsInProject(),
