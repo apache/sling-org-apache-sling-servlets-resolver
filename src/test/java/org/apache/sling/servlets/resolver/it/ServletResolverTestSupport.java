@@ -53,7 +53,8 @@ import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
 import org.ops4j.pax.exam.options.CompositeOption;
 import static org.ops4j.pax.exam.CoreOptions.vmOption;
 import static org.ops4j.pax.exam.CoreOptions.keepCaches;
-import static org.ops4j.pax.exam.CoreOptions.repository;
+import static org.ops4j.pax.exam.CoreOptions.systemProperty;
+import static org.ops4j.pax.exam.CoreOptions.when;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
@@ -81,15 +82,26 @@ public class ServletResolverTestSupport extends TestSupport {
     @Configuration
     public Option[] configuration() {
         final String vmOpt = System.getProperty("pax.vm.options");
+        final String localRepo = System.getProperty("maven.repo.local", "");
+
+        // workaround for https support, and pax's RepositoryOptionImpl adds a +
+        // in front of each URL, cannot use several instances of that option
+        final String repositoriesURL =
+            "+"
+            + "https://repository.apache.org/content/groups/snapshots/@snapshots@id=apache-snapshots"
+            + ",https://repo1.maven.org/maven2@id=central"
+        ;
+
         assertNotNull("Expecting non-null VM options", vmOpt);
         return remove(
             options(
                 vmOption(vmOpt),
                 failOnUnresolvedBundles(),
                 keepCaches(),
-                localMavenRepo(),
-                repository("https://repository.apache.org/snapshots/").id("apache-snapshots").allowSnapshots(),
-                repository("https://repo1.maven.org/maven2").id("central"),
+                systemProperty("org.ops4j.pax.url.mvn.repositories").value(repositoriesURL),
+                when(localRepo.length() > 0).useOptions(
+                    systemProperty("org.ops4j.pax.url.mvn.localRepository").value(localRepo)
+                ),
                 baseConfiguration(),
                 slingQuickstartOakTar(workingDirectory(), httpPort),
                 mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.api").versionAsInProject(),
