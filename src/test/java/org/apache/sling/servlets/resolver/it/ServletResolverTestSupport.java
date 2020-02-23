@@ -48,6 +48,7 @@ import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.CoreOptions.options;
 import static org.ops4j.pax.exam.CoreOptions.vmOption;
+import static org.ops4j.pax.exam.CoreOptions.when;
 import static org.ops4j.pax.exam.CoreOptions.wrappedBundle;
 import static org.ops4j.pax.exam.cm.ConfigurationAdminOptions.newConfiguration;
 
@@ -74,14 +75,15 @@ public class ServletResolverTestSupport extends TestSupport {
     @Configuration
     public Option[] configuration() {
         final String vmOpt = System.getProperty("pax.vm.options");
-        assertNotNull("Expecting non-null VM options", vmOpt);
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.api");
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.resourceresolver");
         // adding Scripting Core to POM breaks ScriptSelection2Test
         versionResolver.setVersion("org.apache.sling", "org.apache.sling.scripting.core", "2.2.0-SNAPSHOT");
         return options(
             composite(
-                vmOption(vmOpt),
+                when(vmOpt != null).useOptions(
+                    vmOption(vmOpt)
+                ),
                 baseConfiguration(),
                 slingQuickstart(),
                 mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.converter").version("1.0.12"), // new Sling API dependency
