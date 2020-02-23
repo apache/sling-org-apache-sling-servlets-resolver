@@ -18,28 +18,8 @@
  */
 package org.apache.sling.servlets.resolver.it;
 
-import org.apache.sling.testing.paxexam.TestSupport;
-import org.junit.Before;
-import org.ops4j.pax.exam.Configuration;
-import org.ops4j.pax.exam.Option;
-
-import static org.ops4j.pax.exam.CoreOptions.junitBundles;
-import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
-import static org.ops4j.pax.exam.CoreOptions.options;
-import static org.ops4j.pax.exam.CoreOptions.wrappedBundle;
-import static org.ops4j.pax.exam.cm.ConfigurationAdminOptions.newConfiguration;
-import static org.apache.sling.testing.paxexam.SlingOptions.slingQuickstartOakTar;
-import static org.apache.sling.testing.paxexam.SlingOptions.versionResolver;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -50,22 +30,34 @@ import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.servlethelpers.MockSlingHttpServletRequest;
 import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
-import org.ops4j.pax.exam.options.CompositeOption;
-import static org.ops4j.pax.exam.CoreOptions.vmOption;
-import static org.ops4j.pax.exam.CoreOptions.keepCaches;
-import static org.ops4j.pax.exam.CoreOptions.systemProperty;
-import static org.ops4j.pax.exam.CoreOptions.when;
+import org.apache.sling.testing.paxexam.TestSupport;
+import org.junit.Before;
+import org.ops4j.pax.exam.Configuration;
+import org.ops4j.pax.exam.Option;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
+import static org.apache.sling.testing.paxexam.SlingOptions.slingQuickstartOakTar;
+import static org.apache.sling.testing.paxexam.SlingOptions.versionResolver;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.ops4j.pax.exam.CoreOptions.composite;
+import static org.ops4j.pax.exam.CoreOptions.junitBundles;
+import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
+import static org.ops4j.pax.exam.CoreOptions.options;
+import static org.ops4j.pax.exam.CoreOptions.vmOption;
+import static org.ops4j.pax.exam.CoreOptions.wrappedBundle;
+import static org.ops4j.pax.exam.cm.ConfigurationAdminOptions.newConfiguration;
+
 public class ServletResolverTestSupport extends TestSupport {
+
     @Inject
     private ResourceResolverFactory resourceResolverFactory;
 
     @Inject
     protected BundleContext bundleContext;
-
-    protected final int httpPort = findFreePort();
 
     private final static int STARTUP_WAIT_SECONDS = 30;
 
@@ -82,31 +74,16 @@ public class ServletResolverTestSupport extends TestSupport {
     @Configuration
     public Option[] configuration() {
         final String vmOpt = System.getProperty("pax.vm.options");
-        final String localRepo = System.getProperty("maven.repo.local", "");
-
-        // workaround for https support, and pax's RepositoryOptionImpl adds a +
-        // in front of each URL, cannot use several instances of that option
-        final String repositoriesURL =
-            "+"
-            + "https://repository.apache.org/content/groups/snapshots/@snapshots@id=apache-snapshots"
-            + ",https://repo1.maven.org/maven2@id=central"
-        ;
-
         assertNotNull("Expecting non-null VM options", vmOpt);
-        return remove(
-            options(
+        versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.api");
+        versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.resourceresolver");
+        // adding Scripting Core to POM breaks ScriptSelection2Test
+        versionResolver.setVersion("org.apache.sling", "org.apache.sling.scripting.core", "2.2.0-SNAPSHOT");
+        return options(
+            composite(
                 vmOption(vmOpt),
-                failOnUnresolvedBundles(),
-                keepCaches(),
-                systemProperty("org.ops4j.pax.url.mvn.repositories").value(repositoriesURL),
-                when(localRepo.length() > 0).useOptions(
-                    systemProperty("org.ops4j.pax.url.mvn.localRepository").value(localRepo)
-                ),
                 baseConfiguration(),
-                slingQuickstartOakTar(workingDirectory(), httpPort),
-                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.api").versionAsInProject(),
-                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.resourceresolver").version("1.6.16"), // compatible with API 2.22.0
-                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.scripting.core").version("2.1.1-SNAPSHOT"), // compatible with API 2.22.0 - TODO replace with release when available
+                slingQuickstart(),
                 mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.converter").version("1.0.12"), // new Sling API dependency
                 testBundle("bundle.filename"),
                 wrappedBundle(mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.servlet-helpers").versionAsInProject()),
@@ -114,15 +91,21 @@ public class ServletResolverTestSupport extends TestSupport {
                 newConfiguration("org.apache.sling.jcr.base.internal.LoginAdminWhitelist")
                     .put("whitelist.bundles.regexp", "^PAXEXAM.*$")
                     .asOption()
-            ),
-            mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.api").version(versionResolver),
-            mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.resourceresolver").version(versionResolver),
-            mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.scripting.core").version(versionResolver),
-            mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.servlets.resolver").version(versionResolver) // remove bundle from slingQuickstartOakTar, added via testBundle in current version
+            ).remove(
+                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.servlets.resolver").version(versionResolver) // remove bundle from slingQuickstartOakTar, added via testBundle in current version
+            )
         );
     }
 
-    /** Injecting the appropriate services to wait for would be more elegant but this is very reliable.. */
+    protected Option slingQuickstart() {
+        final int httpPort = findFreePort();
+        final String workingDirectory = workingDirectory();
+        return slingQuickstartOakTar(workingDirectory, httpPort);
+    }
+
+    /**
+     * Injecting the appropriate services to wait for would be more elegant but this is very reliable..
+     */
     @Before
     public void waitForSling() throws Exception {
         final int expectedStatus = 200;
@@ -130,10 +113,10 @@ public class ServletResolverTestSupport extends TestSupport {
         final String path = "/.json";
         final long endTime = System.currentTimeMillis() + STARTUP_WAIT_SECONDS * 1000;
 
-        while(System.currentTimeMillis() < endTime) {
+        while (System.currentTimeMillis() < endTime) {
             final int status = executeRequest(path, -1).getStatus();
             statuses.add(status);
-            if(status == expectedStatus) {
+            if (status == expectedStatus) {
                 return;
             }
             Thread.sleep(250);
@@ -170,7 +153,7 @@ public class ServletResolverTestSupport extends TestSupport {
         try {
             // void processRequest(javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse resource, ResourceResolver resourceResolver)
             final Method processMethod = processor.getClass().getMethod(
-                "processRequest", 
+                "processRequest",
                 HttpServletRequest.class, HttpServletResponse.class, ResourceResolver.class);
             assertNotNull("Expecting processRequest method", processMethod);
             processMethod.invoke(processor, request, response, resourceResolver);
@@ -178,7 +161,7 @@ public class ServletResolverTestSupport extends TestSupport {
             bundleContext.ungetService(ref);
         }
 
-        if(expectedStatus > 0) {
+        if (expectedStatus > 0) {
             assertEquals("Expected status " + expectedStatus + " for " + method
                 + " at " + path, expectedStatus, response.getStatus());
         }
@@ -202,36 +185,6 @@ public class ServletResolverTestSupport extends TestSupport {
         final String output = executeRequest(method, path, TestServlet.IM_A_TEAPOT).getOutputAsString();
         final String expected = TestServlet.SERVED_BY_PREFIX + servletName;
         assertTrue("Expecting output to contain " + expected + ", got " + output, output.contains(expected));
-    }
-
-    // move below helpers for deep removal to Pax Exam
-
-    private static List<Option> expand(final Option[] options) {
-        final List<Option> expanded = new ArrayList<>();
-        if (options != null) {
-            for (final Option option : options) {
-                if (option != null) {
-                    if (option instanceof CompositeOption) {
-                        expanded.addAll(Arrays.asList(((CompositeOption) option).getOptions()));
-                    } else {
-                        expanded.add(option);
-                    }
-                }
-            }
-        }
-        return expanded;
-    }
-
-    private static Option[] remove(final Option[] options, final Option... removables) {
-        final List<Option> expanded = expand(options);
-        for (final Option removable : removables) {
-            if (removable instanceof CompositeOption) {
-                expanded.removeAll(Arrays.asList(((CompositeOption) removable).getOptions()));
-            } else {
-                expanded.removeAll(Collections.singleton(removable));
-            }
-        }
-        return expanded.toArray(new Option[0]);
     }
 
 }
