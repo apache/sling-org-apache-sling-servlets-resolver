@@ -58,6 +58,7 @@
                     <excludePackageNames>
                         org.apache.sling.servlets.resolver.internal
                     </excludePackageNames>
+                    <doclint>none</doclint>
                 </configuration>
             </plugin>
            <plugin>
