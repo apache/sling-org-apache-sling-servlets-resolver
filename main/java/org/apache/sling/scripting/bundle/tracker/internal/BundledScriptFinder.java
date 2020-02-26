@@ -32,6 +32,7 @@ import javax.script.ScriptEngineManager;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.commons.compiler.source.JavaEscapeHelper;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
@@ -56,7 +57,7 @@ public class BundledScriptFinder {
                 for (String extension : getScriptEngineExtensions()) {
                     URL bundledScriptURL;
                     if (precompiledScripts) {
-                        String className = fromScriptPathToClassName(match);
+                        String className = JavaEscapeHelper.makeJavaPackage(match);
                         try {
                             Class clazz = provider.getBundle().loadClass(className);
                             return new PrecompiledScript(provider.getBundle(), scriptEngineManager.getEngineByExtension(extension),
@@ -133,17 +134,4 @@ public class BundledScriptFinder {
         Collections.reverse(_scriptEngineExtensions);
         return Collections.unmodifiableList(_scriptEngineExtensions);
     }
-
-    private String fromScriptPathToClassName(String scriptPath) {
-        String[] parts = scriptPath.split("/");
-        StringBuilder stringBuilder = new StringBuilder();
-        for (String part : parts) {
-            if (stringBuilder.length() > 0) {
-                stringBuilder.append(".");
-            }
-            stringBuilder.append(JavaEscapeUtils.makeJavaIdentifier(part));
-        }
-        return stringBuilder.toString();
-    }
-
 }
