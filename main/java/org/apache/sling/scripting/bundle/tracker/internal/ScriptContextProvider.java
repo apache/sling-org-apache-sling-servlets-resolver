@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -34,13 +33,14 @@ import javax.script.SimpleBindings;
 
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
+import org.apache.sling.api.scripting.LazyBindings;
 import org.apache.sling.api.scripting.SlingBindings;
 import org.apache.sling.api.scripting.SlingScriptConstants;
 import org.apache.sling.scripting.api.BindingsValuesProvider;
 import org.apache.sling.scripting.api.BindingsValuesProvidersByContext;
 import org.apache.sling.scripting.api.resource.ScriptingResourceResolverProvider;
-import org.apache.sling.scripting.core.ScriptHelper;
 import org.apache.sling.scripting.bundle.tracker.BundledRenderUnit;
+import org.apache.sling.scripting.core.ScriptHelper;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
@@ -94,7 +94,7 @@ public class ScriptContextProvider {
             bindingsValuesProvider.addBindings(protectedBindings);
         }
         ScriptContext scriptContext = new BundledScriptContext();
-        Map<String, Supplier<Object>> slingBindingsSuppliers = new HashMap<>();
+        Map<String, LazyBindings.Supplier> slingBindingsSuppliers = new HashMap<>();
         slingBindingsSuppliers.put(SlingScriptConstants.ATTR_SCRIPT_RESOURCE_RESOLVER,
                 () -> scriptingResourceResolverProvider.getRequestScopedResourceResolver());
         LazyBindings slingScopeBindings = new LazyBindings(Collections.unmodifiableMap(slingBindingsSuppliers));
