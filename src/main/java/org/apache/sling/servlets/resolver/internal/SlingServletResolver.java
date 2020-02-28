@@ -446,10 +446,10 @@ public class SlingServletResolver
         // path of a servlet (or script)
         if (scriptNameOrResourceType.charAt(0) == '/') {
             final String scriptPath = ResourceUtil.normalize(scriptNameOrResourceType);
-            if ( isPathAllowed(scriptPath, this.executionPaths) ) {
+            if (scriptPath != null &&  isPathAllowed(scriptPath, this.executionPaths) ) {
                 final Resource res = resolver.getResource(scriptPath);
                 servlet = this.getServlet(res);
-                if(!pathBasedServletAcceptor.accept(request, servlet)) {
+                if (servlet != null && !pathBasedServletAcceptor.accept(request, servlet)) {
                     if(LOGGER.isDebugEnabled()) {
                         LOGGER.debug("Servlet {} rejected by {} returning FORBIDDEN status", RequestUtil.getServletName(servlet),
                         pathBasedServletAcceptor.getClass().getSimpleName());
