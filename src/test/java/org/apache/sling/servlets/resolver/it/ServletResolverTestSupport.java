@@ -76,8 +76,7 @@ public class ServletResolverTestSupport extends TestSupport {
         final String vmOpt = System.getProperty("pax.vm.options");
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.api");
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.resourceresolver");
-        // adding Scripting Core to POM breaks ScriptSelection2Test
-        versionResolver.setVersion("org.apache.sling", "org.apache.sling.scripting.core", "2.2.0");
+        versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.scripting.core");
         return options(
             composite(
                 when(vmOpt != null).useOptions(
