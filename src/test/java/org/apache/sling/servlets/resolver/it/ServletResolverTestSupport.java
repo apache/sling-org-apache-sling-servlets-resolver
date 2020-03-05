@@ -49,7 +49,6 @@ import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.CoreOptions.options;
 import static org.ops4j.pax.exam.CoreOptions.vmOption;
 import static org.ops4j.pax.exam.CoreOptions.when;
-import static org.ops4j.pax.exam.CoreOptions.wrappedBundle;
 import static org.ops4j.pax.exam.cm.ConfigurationAdminOptions.newConfiguration;
 
 public class ServletResolverTestSupport extends TestSupport {
@@ -88,7 +87,7 @@ public class ServletResolverTestSupport extends TestSupport {
                 slingQuickstart(),
                 mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.converter").version("1.0.12"), // new Sling API dependency
                 testBundle("bundle.filename"),
-                wrappedBundle(mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.servlet-helpers").versionAsInProject()),
+                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.servlet-helpers").versionAsInProject(),
                 junitBundles(),
                 newConfiguration("org.apache.sling.jcr.base.internal.LoginAdminWhitelist")
                     .put("whitelist.bundles.regexp", "^PAXEXAM.*$")
