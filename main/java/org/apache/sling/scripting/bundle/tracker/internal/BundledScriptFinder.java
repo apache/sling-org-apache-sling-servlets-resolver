@@ -81,22 +81,20 @@ public class BundledScriptFinder {
 
     private List<String> buildScriptMatches(SlingHttpServletRequest request, String providerType) {
         List<String> matches = new ArrayList<>();
-        String resourceType = providerType;
-        String version = null;
         String method = request.getMethod();
         boolean defaultMethod = DEFAULT_METHODS.contains(method);
-        if (resourceType.contains(SLASH) && StringUtils.countMatches(resourceType, SLASH) == 1) {
-            version = resourceType.substring(resourceType.indexOf(SLASH) + 1);
-            resourceType = resourceType.substring(0, resourceType.length() - version.length() - 1);
-        }
+        ResourceTypeParser.ResourceType resourceType = ResourceTypeParser.parseResourceType(providerType);
         String extension = request.getRequestPathInfo().getExtension();
         String[] selectors = request.getRequestPathInfo().getSelectors();
         if (selectors.length > 0) {
             for (int i = selectors.length - 1; i >= 0; i--) {
-                String scriptForMethod = resourceType + (StringUtils.isNotEmpty(version) ? SLASH + version + SLASH : SLASH) +
+                String scriptForMethod = resourceType.getType() +
+                        (StringUtils.isNotEmpty(resourceType.getVersion()) ? SLASH + resourceType.getVersion() + SLASH : SLASH) +
                         method + DOT + String.join(SLASH, Arrays.copyOf(selectors, i + 1));
-                String scriptNoMethod = resourceType + (StringUtils.isNotEmpty(version) ? SLASH + version + SLASH : SLASH) + String.join
-                        (SLASH, Arrays.copyOf(selectors, i + 1));
+                String scriptNoMethod = resourceType.getType() +
+                        (StringUtils.isNotEmpty(resourceType.getVersion()) ? SLASH + resourceType.getVersion() + SLASH : SLASH) +
+                        String.join
+                                (SLASH, Arrays.copyOf(selectors, i + 1));
                 if (StringUtils.isNotEmpty(extension)) {
                     if (defaultMethod) {
                         matches.add(scriptNoMethod + DOT + extension);
@@ -109,15 +107,16 @@ public class BundledScriptFinder {
                 matches.add(scriptForMethod);
             }
         }
-        String scriptForMethod = resourceType + (StringUtils.isNotEmpty(version) ? SLASH + version + SLASH : SLASH) + method;
-        String scriptNoMethod = resourceType + (StringUtils.isNotEmpty(version) ? SLASH + version + SLASH : SLASH) + resourceType
-                .substring(resourceType.lastIndexOf(DOT) + 1);
+        String scriptForMethod = resourceType.getType() +
+                (StringUtils.isNotEmpty(resourceType.getVersion()) ? SLASH + resourceType.getVersion() + SLASH : SLASH) + method;
+        String scriptNoMethod = resourceType.getType() +
+                (StringUtils.isNotEmpty(resourceType.getVersion()) ? SLASH + resourceType.getVersion() + SLASH : SLASH) +
+                resourceType.getResourceLabel();
         if (StringUtils.isNotEmpty(extension)) {
             if (defaultMethod) {
                 matches.add(scriptNoMethod + DOT + extension);
             }
             matches.add(scriptForMethod + DOT + extension);
-
         }
         if (defaultMethod) {
             matches.add(scriptNoMethod);

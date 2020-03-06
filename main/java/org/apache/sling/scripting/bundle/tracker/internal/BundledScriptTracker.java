@@ -288,22 +288,16 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
 
     private String getResourceType(Hashtable<String, Object> props) {
         String[] values = PropertiesUtil.toStringArray(props.get(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES));
-        int idx = values[0].indexOf("/");
-        if (idx != -1) {
-            return values[0].substring(0, idx);
-        } else {
-            return values[0];
-        }
+        String resourceTypeValue = values[0];
+        ResourceTypeParser.ResourceType resourceType = ResourceTypeParser.parseResourceType(resourceTypeValue);
+        return resourceType.getType();
     }
 
     private String getResourceTypeVersion(ServiceReference<?> ref) {
         String[] values = PropertiesUtil.toStringArray(ref.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES));
-        int idx = values[0].indexOf("/");
-        if (idx != -1) {
-            return values[0].substring(idx + 1);
-        } else {
-            return null;
-        }
+        String resourceTypeValue = values[0];
+        ResourceTypeParser.ResourceType resourceType = ResourceTypeParser.parseResourceType(resourceTypeValue);
+        return resourceType.getVersion();
     }
 
     private void set(String key, ServiceReference<?> ref, Hashtable<String, Object> props) {
