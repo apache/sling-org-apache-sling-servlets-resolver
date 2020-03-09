@@ -92,6 +92,11 @@ final class ResourceTypeParser {
         String getVersion() {
             return version;
         }
+
+        @Override
+        public String toString() {
+            return type + (version == null ? "" : "/" + version);
+        }
     }
 
     /**

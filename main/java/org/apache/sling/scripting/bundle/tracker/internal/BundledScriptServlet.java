@@ -97,8 +97,8 @@ class BundledScriptServlet extends GenericServlet {
                                 scriptsMap.put(scriptsMapKey, executable);
                             }
                         }
-                        lock.readLock().lock();
                     } finally {
+                        lock.readLock().lock();
                         lock.writeLock().unlock();
                     }
                 }
@@ -108,7 +108,7 @@ class BundledScriptServlet extends GenericServlet {
             if (executable != null) {
                 Set<String> wiredResourceTypes = new HashSet<>();
                 for (TypeProvider typeProvider : m_wiredTypeProviders) {
-                    wiredResourceTypes.add(typeProvider.getType());
+                    wiredResourceTypes.add(typeProvider.getResourceType().toString());
                 }
                 RequestWrapper requestWrapper = new RequestWrapper(request, wiredResourceTypes);
                 ScriptContext scriptContext = m_scriptContextProvider.prepareScriptContext(requestWrapper, response, executable);

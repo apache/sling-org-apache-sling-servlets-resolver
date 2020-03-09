@@ -25,17 +25,17 @@ import org.osgi.framework.Bundle;
  */
 public class TypeProvider {
 
-    private String type;
-    private Bundle bundle;
+    private final ResourceTypeParser.ResourceType resourceType;
+    private final Bundle bundle;
 
     /**
      * Builds a {@code TypeProvider}.
      *
-     * @param type   the resource type
+     * @param resourceType   the resource type
      * @param bundle the bundle that provides the resource type
      */
-    TypeProvider(String type, Bundle bundle) {
-        this.type = type;
+    TypeProvider(ResourceTypeParser.ResourceType resourceType, Bundle bundle) {
+        this.resourceType = resourceType;
         this.bundle = bundle;
     }
 
@@ -44,8 +44,8 @@ public class TypeProvider {
      *
      * @return the resource type
      */
-    String getType() {
-        return type;
+    ResourceTypeParser.ResourceType getResourceType() {
+        return resourceType;
     }
 
     /**
@@ -59,7 +59,7 @@ public class TypeProvider {
 
     @Override
     public int hashCode() {
-        return type.hashCode() ^ bundle.hashCode();
+        return resourceType.hashCode() ^ bundle.hashCode();
     }
 
     @Override
@@ -68,6 +68,6 @@ public class TypeProvider {
             return false;
         }
         TypeProvider other = (TypeProvider) obj;
-        return other.bundle.equals(bundle) && other.type.equals(type);
+        return other.bundle.equals(bundle) && other.resourceType.equals(resourceType);
     }
 }

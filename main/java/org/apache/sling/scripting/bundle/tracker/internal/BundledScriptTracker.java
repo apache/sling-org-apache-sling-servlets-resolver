@@ -82,10 +82,11 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
 
     static final String NS_SLING_RESOURCE_TYPE = "sling.resourceType";
     private static final Logger LOGGER = LoggerFactory.getLogger(BundledScriptTracker.class);
-    private static final String AT_SLING_SELECTORS = "sling.resourceType.selectors";
-    private static final String AT_SLING_EXTENSIONS = "sling.resourceType.extensions";
+    static final String AT_SLING_SELECTORS = "sling.resourceType.selectors";
+    static final String AT_SLING_EXTENSIONS = "sling.resourceType.extensions";
     private static final String REGISTERING_BUNDLE = "org.apache.sling.scripting.bundle.tracker.internal.BundledScriptTracker.registering_bundle";
     static final String AT_VERSION = "version";
+    static final String AT_SCRIPT_ENGINE = "scriptEngine";
     private static final String AT_EXTENDS = "extends";
 
     @Reference
@@ -170,8 +171,8 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
 
                     List<ServiceRegistration<Servlet>> regs = new ArrayList<>();
                     LinkedHashSet<TypeProvider> wiredProviders = new LinkedHashSet<>();
-                    wiredProviders.add(new TypeProvider(resourceType, bundle));
-                    wiredProviders.add(new TypeProvider(resourceTypeString, bundle));
+                    wiredProviders.add(new TypeProvider(ResourceTypeParser.parseResourceType(resourceType), bundle));
+                    wiredProviders.add(new TypeProvider(ResourceTypeParser.parseResourceType(resourceTypeString), bundle));
                     if (optionalWire.isPresent()) {
                         BundleWire extendsWire = optionalWire.get();
                         Bundle providerBundle = extendsWire.getProvider().getBundle();
@@ -180,8 +181,8 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         Version wireResourceTypeVersion = (Version) wireCapabilityAttributes.get(AT_VERSION);
                         String wireResourceTypeString = wireResourceType + (wireResourceTypeVersion != null ? "/" +
                                 wireResourceTypeVersion.toString() : "");
-                        wiredProviders.add(new TypeProvider(wireResourceType, providerBundle));
-                        wiredProviders.add(new TypeProvider(wireResourceTypeString, providerBundle));
+                        wiredProviders.add(new TypeProvider(ResourceTypeParser.parseResourceType(wireResourceType), providerBundle));
+                        wiredProviders.add(new TypeProvider(ResourceTypeParser.parseResourceType(wireResourceTypeString), providerBundle));
                         properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_SUPER_TYPE, wireResourceTypeString);
                     }
                     populateWiredProviders(wiredProviders);
@@ -209,7 +210,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         Set<String> initialResourceTypes = new HashSet<>(initialProviders.size());
         Set<Bundle> bundles = new HashSet<>(initialProviders.size());
         for (TypeProvider provider : initialProviders) {
-            initialResourceTypes.add(provider.getType());
+            initialResourceTypes.add(provider.getResourceType().toString());
             bundles.add(provider.getBundle());
         }
         for (Bundle bundle : bundles) {
@@ -222,7 +223,8 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         Version version = (Version) bundleWire.getCapability().getAttributes().get(BundledScriptTracker
                                 .AT_VERSION);
                         if (!initialResourceTypes.contains(resourceType)) {
-                            initialProviders.add(new TypeProvider(resourceType + (version == null ? "" : "/" + version.toString()),
+                            initialProviders.add(new TypeProvider(
+                                    ResourceTypeParser.parseResourceType(resourceType + (version == null ? "" : "/" + version.toString())),
                                     bundleWire.getProvider().getBundle()));
                         }
                     }
