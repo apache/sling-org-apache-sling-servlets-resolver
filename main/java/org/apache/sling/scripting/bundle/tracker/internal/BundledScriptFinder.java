@@ -25,14 +25,22 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.commons.compiler.source.JavaEscapeHelper;
+import org.apache.sling.commons.osgi.PropertiesUtil;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.Version;
+import org.osgi.framework.wiring.BundleCapability;
+import org.osgi.framework.wiring.BundleWiring;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
@@ -52,15 +60,16 @@ public class BundledScriptFinder {
     Executable getScript(SlingHttpServletRequest request, LinkedHashSet<TypeProvider> typeProviders, boolean precompiledScripts) {
         List<String> scriptMatches;
         for (TypeProvider provider : typeProviders) {
-            scriptMatches = buildScriptMatches(request, provider.getType());
-            for (String match : scriptMatches) {
-                for (String extension : getScriptEngineExtensions()) {
+            scriptMatches = buildScriptMatches(request, provider.getResourceType());
+            String scriptEngineName = getScriptEngineName(request, provider);
+            if (StringUtils.isNotEmpty(scriptEngineName)) {
+                for (String match : scriptMatches) {
                     URL bundledScriptURL;
                     if (precompiledScripts) {
                         String className = JavaEscapeHelper.makeJavaPackage(match);
                         try {
                             Class clazz = provider.getBundle().loadClass(className);
-                            return new PrecompiledScript(provider.getBundle(), scriptEngineManager.getEngineByExtension(extension),
+                            return new PrecompiledScript(provider.getBundle(), scriptEngineManager.getEngineByName(scriptEngineName),
                                     clazz.getDeclaredConstructor().newInstance());
                         } catch (ClassNotFoundException e) {
                             // do nothing here
@@ -68,9 +77,26 @@ public class BundledScriptFinder {
                             throw new RuntimeException("Cannot correctly instantiate class " + className + ".");
                         }
                     } else {
-                        bundledScriptURL = provider.getBundle().getEntry(NS_JAVAX_SCRIPT_CAPABILITY + SLASH + match + DOT + extension);
-                        if (bundledScriptURL != null) {
-                            return new Script(provider.getBundle(), bundledScriptURL, scriptEngineManager.getEngineByExtension(extension));
+                        ScriptEngine scriptEngine = null;
+                        List<String> scriptEngineExtensions = Collections.emptyList();
+                        for (ScriptEngineFactory factory : scriptEngineManager.getEngineFactories()) {
+                            for (String shortName : factory.getNames()) {
+                                if (shortName.equals(scriptEngineName)) {
+                                    scriptEngine = factory.getScriptEngine();
+                                    scriptEngineExtensions = factory.getExtensions();
+                                    break;
+                                }
+                            }
+                        }
+                        if (scriptEngine != null) {
+                            for (String scriptEngineExtension : scriptEngineExtensions) {
+                                bundledScriptURL =
+                                        provider.getBundle()
+                                                .getEntry(NS_JAVAX_SCRIPT_CAPABILITY + SLASH + match + DOT + scriptEngineExtension);
+                                if (bundledScriptURL != null) {
+                                    return new Script(provider.getBundle(), bundledScriptURL, scriptEngine);
+                                }
+                            }
                         }
                     }
                 }
@@ -79,11 +105,10 @@ public class BundledScriptFinder {
         return null;
     }
 
-    private List<String> buildScriptMatches(SlingHttpServletRequest request, String providerType) {
+    private List<String> buildScriptMatches(SlingHttpServletRequest request, ResourceTypeParser.ResourceType resourceType) {
         List<String> matches = new ArrayList<>();
         String method = request.getMethod();
         boolean defaultMethod = DEFAULT_METHODS.contains(method);
-        ResourceTypeParser.ResourceType resourceType = ResourceTypeParser.parseResourceType(providerType);
         String extension = request.getRequestPathInfo().getExtension();
         String[] selectors = request.getRequestPathInfo().getSelectors();
         if (selectors.length > 0) {
@@ -125,12 +150,39 @@ public class BundledScriptFinder {
         return Collections.unmodifiableList(matches);
     }
 
-    private List<String> getScriptEngineExtensions() {
-        List<String> _scriptEngineExtensions = new ArrayList<>();
-        for (ScriptEngineFactory factory : scriptEngineManager.getEngineFactories()) {
-            _scriptEngineExtensions.addAll(factory.getExtensions());
+    private String getScriptEngineName(SlingHttpServletRequest request, TypeProvider typeProvider) {
+        String scriptEngineName = null;
+        Bundle bundle = typeProvider.getBundle();
+        BundleWiring bundleWiring = bundle.adapt(BundleWiring.class);
+        List<BundleCapability> capabilities = bundleWiring.getCapabilities(BundledScriptTracker.NS_SLING_RESOURCE_TYPE);
+        String[] selectors = request.getRequestPathInfo().getSelectors();
+        String requestExtension = request.getRequestPathInfo().getExtension();
+        String requestMethod = request.getMethod();
+        for (BundleCapability capability : capabilities) {
+            Map<String, Object> attributes = capability.getAttributes();
+            if (typeProvider.getResourceType().getType().equals(attributes.get(BundledScriptTracker.NS_SLING_RESOURCE_TYPE)) && Arrays.equals(selectors,
+                    PropertiesUtil.toStringArray(attributes.get(BundledScriptTracker.AT_SLING_SELECTORS), new String[]{}))) {
+                String version = typeProvider.getResourceType().getVersion();
+                Version capabilityVersion = (Version) attributes.get(BundledScriptTracker.AT_VERSION);
+                if (version != null && capabilityVersion!= null && !version.equals(capabilityVersion.toString())) {
+                    continue;
+                }
+                Set<String> capabilityRequestExtensions = new HashSet<>(
+                        Arrays.asList(PropertiesUtil.toStringArray(attributes.get(BundledScriptTracker.AT_SLING_EXTENSIONS), new String[0]))
+                );
+                Set<String> capabilityRequestMethods = new HashSet<>(
+                        Arrays.asList(
+                                PropertiesUtil.toStringArray(attributes.get(ServletResolverConstants.SLING_SERVLET_METHODS), new String[0]))
+                );
+                if (
+                    ((capabilityRequestExtensions.isEmpty() && "html".equals(requestExtension)) || capabilityRequestExtensions.contains(requestExtension)) &&
+                    ((capabilityRequestMethods.isEmpty() && ("GET".equals(requestMethod) || "HEAD".equals(requestMethod))) || capabilityRequestMethods.contains(requestMethod)) &&
+                    StringUtils.isEmpty(scriptEngineName)
+                ) {
+                    scriptEngineName = (String) attributes.get(BundledScriptTracker.AT_SCRIPT_ENGINE);
+                }
+            }
         }
-        Collections.reverse(_scriptEngineExtensions);
-        return Collections.unmodifiableList(_scriptEngineExtensions);
+        return scriptEngineName;
     }
 }
