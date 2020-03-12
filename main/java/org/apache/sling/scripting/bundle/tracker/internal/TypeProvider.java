@@ -18,6 +18,8 @@
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 package org.apache.sling.scripting.bundle.tracker.internal;
 
+import java.util.Objects;
+
 import org.osgi.framework.Bundle;
 
 /**
@@ -25,7 +27,7 @@ import org.osgi.framework.Bundle;
  */
 public class TypeProvider {
 
-    private final ResourceTypeParser.ResourceType resourceType;
+    private final ResourceType resourceType;
     private final Bundle bundle;
 
     /**
@@ -34,7 +36,7 @@ public class TypeProvider {
      * @param resourceType   the resource type
      * @param bundle the bundle that provides the resource type
      */
-    TypeProvider(ResourceTypeParser.ResourceType resourceType, Bundle bundle) {
+    TypeProvider(ResourceType resourceType, Bundle bundle) {
         this.resourceType = resourceType;
         this.bundle = bundle;
     }
@@ -44,7 +46,7 @@ public class TypeProvider {
      *
      * @return the resource type
      */
-    ResourceTypeParser.ResourceType getResourceType() {
+    ResourceType getResourceType() {
         return resourceType;
     }
 
@@ -59,15 +61,18 @@ public class TypeProvider {
 
     @Override
     public int hashCode() {
-        return resourceType.hashCode() ^ bundle.hashCode();
+        return Objects.hash(bundle, resourceType);
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof TypeProvider)) {
-            return false;
+        if (this == obj) {
+            return true;
         }
-        TypeProvider other = (TypeProvider) obj;
-        return other.bundle.equals(bundle) && other.resourceType.equals(resourceType);
+        if (obj instanceof TypeProvider) {
+            TypeProvider other = (TypeProvider) obj;
+            return Objects.equals(bundle, other.bundle) && Objects.equals(resourceType, other.resourceType);
+        }
+        return false;
     }
 }

@@ -24,11 +24,11 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-public class ResourceTypeParserTest {
+public class ResourceTypeTest {
 
     @Test
     public void testSlashNoVersion() {
-        ResourceTypeParser.ResourceType t1 = ResourceTypeParser.parseResourceType("a/b/c");
+        ResourceType t1 = ResourceType.parseResourceType("a/b/c");
         assertEquals("a/b/c", t1.getType());
         assertEquals("c", t1.getResourceLabel());
         assertNull(t1.getVersion());
@@ -36,7 +36,7 @@ public class ResourceTypeParserTest {
 
     @Test
     public void testSlashVersion() {
-        ResourceTypeParser.ResourceType t1 = ResourceTypeParser.parseResourceType("a/b/c/1.0.0");
+        ResourceType t1 = ResourceType.parseResourceType("a/b/c/1.0.0");
         assertEquals("a/b/c", t1.getType());
         assertEquals("c", t1.getResourceLabel());
         assertEquals("1.0.0", t1.getVersion());
@@ -44,7 +44,7 @@ public class ResourceTypeParserTest {
 
     @Test
     public void testOneSegmentNoVersion() {
-        ResourceTypeParser.ResourceType t1 = ResourceTypeParser.parseResourceType("a");
+        ResourceType t1 = ResourceType.parseResourceType("a");
         assertEquals("a", t1.getType());
         assertEquals("a", t1.getResourceLabel());
         assertNull(t1.getVersion());
@@ -52,7 +52,7 @@ public class ResourceTypeParserTest {
 
     @Test
     public void testOneSegmentVersion() {
-        ResourceTypeParser.ResourceType t1 = ResourceTypeParser.parseResourceType("a/1.2.3");
+        ResourceType t1 = ResourceType.parseResourceType("a/1.2.3");
         assertEquals("a", t1.getType());
         assertEquals("a", t1.getResourceLabel());
         assertEquals("1.2.3", t1.getVersion());
@@ -60,7 +60,7 @@ public class ResourceTypeParserTest {
 
     @Test
     public void testDotNoVersion() {
-        ResourceTypeParser.ResourceType t1 = ResourceTypeParser.parseResourceType("a.b.c");
+        ResourceType t1 = ResourceType.parseResourceType("a.b.c");
         assertEquals("a.b.c", t1.getType());
         assertEquals("c", t1.getResourceLabel());
         assertNull(t1.getVersion());
@@ -68,7 +68,7 @@ public class ResourceTypeParserTest {
 
     @Test
     public void testDotVersion() {
-        ResourceTypeParser.ResourceType t1 = ResourceTypeParser.parseResourceType("a.b.c/42.0.0");
+        ResourceType t1 = ResourceType.parseResourceType("a.b.c/42.0.0");
         assertEquals("a.b.c", t1.getType());
         assertEquals("c", t1.getResourceLabel());
         assertEquals("42.0.0", t1.getVersion());
@@ -76,12 +76,12 @@ public class ResourceTypeParserTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testEmptyString() {
-        ResourceTypeParser.ResourceType t1 = ResourceTypeParser.parseResourceType(StringUtils.EMPTY);
+        ResourceType t1 = ResourceType.parseResourceType(StringUtils.EMPTY);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNull() {
-        ResourceTypeParser.ResourceType t1 = ResourceTypeParser.parseResourceType(null);
+        ResourceType t1 = ResourceType.parseResourceType(null);
     }
 
 }
