@@ -97,7 +97,7 @@ public class ScriptContextProvider {
         Map<String, LazyBindings.Supplier> slingBindingsSuppliers = new HashMap<>();
         slingBindingsSuppliers.put(SlingScriptConstants.ATTR_SCRIPT_RESOURCE_RESOLVER,
                 () -> scriptingResourceResolverProvider.getRequestScopedResourceResolver());
-        LazyBindings slingScopeBindings = new LazyBindings(Collections.unmodifiableMap(slingBindingsSuppliers));
+        LazyBindings slingScopeBindings = new LazyBindings(slingBindingsSuppliers);
         scriptContext.setBindings(slingScopeBindings, SlingScriptConstants.SLING_SCOPE);
         scriptContext.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
         scriptContext.setWriter(response.getWriter());
