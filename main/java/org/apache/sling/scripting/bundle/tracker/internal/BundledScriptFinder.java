@@ -52,7 +52,6 @@ public class BundledScriptFinder {
     private static final String NS_JAVAX_SCRIPT_CAPABILITY = "javax.script";
     private static final String SLASH = "/";
     private static final String DOT = ".";
-    private static final Set<String> DEFAULT_METHODS = new HashSet<>(Arrays.asList("GET", "HEAD"));
 
     @Reference
     private ScriptEngineManager scriptEngineManager;
@@ -96,48 +95,38 @@ public class BundledScriptFinder {
         return null;
     }
 
-    private List<String> buildScriptMatches(SlingHttpServletRequest request, ResourceTypeParser.ResourceType resourceType) {
+    private List<String> buildScriptMatches(SlingHttpServletRequest request, ResourceType resourceType) {
         List<String> matches = new ArrayList<>();
         String method = request.getMethod();
-        boolean defaultMethod = DEFAULT_METHODS.contains(method);
         String extension = request.getRequestPathInfo().getExtension();
         String[] selectors = request.getRequestPathInfo().getSelectors();
         if (selectors.length > 0) {
             for (int i = selectors.length - 1; i >= 0; i--) {
-                String scriptForMethod = resourceType.getType() +
+                String base =
+                resourceType.getType() +
                         (StringUtils.isNotEmpty(resourceType.getVersion()) ? SLASH + resourceType.getVersion() + SLASH : SLASH) +
-                        method + DOT + String.join(SLASH, Arrays.copyOf(selectors, i + 1));
-                String scriptNoMethod = resourceType.getType() +
-                        (StringUtils.isNotEmpty(resourceType.getVersion()) ? SLASH + resourceType.getVersion() + SLASH : SLASH) +
-                        String.join
-                                (SLASH, Arrays.copyOf(selectors, i + 1));
-                if (StringUtils.isNotEmpty(extension)) {
-                    if (defaultMethod) {
-                        matches.add(scriptNoMethod + DOT + extension);
-                    }
-                    matches.add(scriptForMethod + DOT + extension);
+                        String.join(SLASH, Arrays.copyOf(selectors, i + 1));
+                if (StringUtils.isNotEmpty(extension)){
+                    matches.add(base + DOT + extension + DOT + method);
+                    matches.add(base + DOT + extension);
                 }
-                if (defaultMethod) {
-                    matches.add(scriptNoMethod);
-                }
-                matches.add(scriptForMethod);
+                matches.add(base + DOT + method);
+                matches.add(base);
             }
         }
-        String scriptForMethod = resourceType.getType() +
-                (StringUtils.isNotEmpty(resourceType.getVersion()) ? SLASH + resourceType.getVersion() + SLASH : SLASH) + method;
-        String scriptNoMethod = resourceType.getType() +
-                (StringUtils.isNotEmpty(resourceType.getVersion()) ? SLASH + resourceType.getVersion() + SLASH : SLASH) +
-                resourceType.getResourceLabel();
+        String base = resourceType.getType() +
+                (StringUtils.isNotEmpty(resourceType.getVersion()) ? SLASH + resourceType.getVersion() : StringUtils.EMPTY);
+
         if (StringUtils.isNotEmpty(extension)) {
-            if (defaultMethod) {
-                matches.add(scriptNoMethod + DOT + extension);
-            }
-            matches.add(scriptForMethod + DOT + extension);
+            matches.add(base + SLASH + resourceType.getResourceLabel() + DOT + extension + DOT + method);
+            matches.add(base + SLASH + resourceType.getResourceLabel() + DOT + extension);
         }
-        if (defaultMethod) {
-            matches.add(scriptNoMethod);
+        matches.add(base + SLASH + resourceType.getResourceLabel() + DOT + method);
+        matches.add(base + SLASH + resourceType.getResourceLabel());
+        matches.add(base + SLASH + method);
+        if (StringUtils.isNotEmpty(extension)) {
+            matches.add(base + SLASH + extension);
         }
-        matches.add(scriptForMethod);
         return Collections.unmodifiableList(matches);
     }
 

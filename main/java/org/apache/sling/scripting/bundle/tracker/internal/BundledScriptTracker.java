@@ -171,8 +171,8 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
 
                     List<ServiceRegistration<Servlet>> regs = new ArrayList<>();
                     LinkedHashSet<TypeProvider> wiredProviders = new LinkedHashSet<>();
-                    wiredProviders.add(new TypeProvider(ResourceTypeParser.parseResourceType(resourceType), bundle));
-                    wiredProviders.add(new TypeProvider(ResourceTypeParser.parseResourceType(resourceTypeString), bundle));
+                    wiredProviders.add(new TypeProvider(ResourceType.parseResourceType(resourceType), bundle));
+                    wiredProviders.add(new TypeProvider(ResourceType.parseResourceType(resourceTypeString), bundle));
                     if (optionalWire.isPresent()) {
                         BundleWire extendsWire = optionalWire.get();
                         Bundle providerBundle = extendsWire.getProvider().getBundle();
@@ -181,8 +181,8 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         Version wireResourceTypeVersion = (Version) wireCapabilityAttributes.get(AT_VERSION);
                         String wireResourceTypeString = wireResourceType + (wireResourceTypeVersion != null ? "/" +
                                 wireResourceTypeVersion.toString() : "");
-                        wiredProviders.add(new TypeProvider(ResourceTypeParser.parseResourceType(wireResourceType), providerBundle));
-                        wiredProviders.add(new TypeProvider(ResourceTypeParser.parseResourceType(wireResourceTypeString), providerBundle));
+                        wiredProviders.add(new TypeProvider(ResourceType.parseResourceType(wireResourceType), providerBundle));
+                        wiredProviders.add(new TypeProvider(ResourceType.parseResourceType(wireResourceTypeString), providerBundle));
                         properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_SUPER_TYPE, wireResourceTypeString);
                     }
                     populateWiredProviders(wiredProviders);
@@ -224,7 +224,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                                 .AT_VERSION);
                         if (!initialResourceTypes.contains(resourceType)) {
                             initialProviders.add(new TypeProvider(
-                                    ResourceTypeParser.parseResourceType(resourceType + (version == null ? "" : "/" + version.toString())),
+                                    ResourceType.parseResourceType(resourceType + (version == null ? "" : "/" + version.toString())),
                                     bundleWire.getProvider().getBundle()));
                         }
                     }
@@ -291,14 +291,14 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     private String getResourceType(Hashtable<String, Object> props) {
         String[] values = PropertiesUtil.toStringArray(props.get(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES));
         String resourceTypeValue = values[0];
-        ResourceTypeParser.ResourceType resourceType = ResourceTypeParser.parseResourceType(resourceTypeValue);
+        ResourceType resourceType = ResourceType.parseResourceType(resourceTypeValue);
         return resourceType.getType();
     }
 
     private String getResourceTypeVersion(ServiceReference<?> ref) {
         String[] values = PropertiesUtil.toStringArray(ref.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES));
         String resourceTypeValue = values[0];
-        ResourceTypeParser.ResourceType resourceType = ResourceTypeParser.parseResourceType(resourceTypeValue);
+        ResourceType resourceType = ResourceType.parseResourceType(resourceTypeValue);
         return resourceType.getVersion();
     }
 

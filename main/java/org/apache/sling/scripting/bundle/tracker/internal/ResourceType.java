@@ -18,6 +18,8 @@
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 package org.apache.sling.scripting.bundle.tracker.internal;
 
+import java.util.Objects;
+
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,68 +37,60 @@ import org.osgi.framework.Version;
  * <li><tt>a</tt> - flat (sub-set of path-based)</li>
  * </ol>
  */
-final class ResourceTypeParser {
+final class ResourceType {
 
-    private ResourceTypeParser() {
+    private final String type;
+    private final String version;
+    private final String resourceLabel;
+
+    private ResourceType(@NotNull String type, @Nullable String version) {
+        this.type = type;
+        this.version = version;
+        if (type.lastIndexOf('/') != -1) {
+            resourceLabel = type.substring(type.lastIndexOf('/') + 1);
+        } else if (type.lastIndexOf('.') != -1) {
+            resourceLabel = type.substring(type.lastIndexOf('.') + 1);
+        } else {
+            resourceLabel = type;
+        }
     }
 
     /**
-     * The {@code ResourceType} class encapsulates the details about a resource type.
+     * Returns a resource type's label. The label is important for script selection, since it will provide the name of the main script
+     * for this resource type. For more details check the Apache Sling
+     * <a href="https://sling.apache.org/documentation/the-sling-engine/url-to-script-resolution.html#scripts-for-get-requests">URL to
+     * Script Resolution</a> page
+     *
+     * @return the resource type label
      */
-    static class ResourceType {
-        private final String type;
-        private final String version;
-        private final String resourceLabel;
+    @NotNull
+    public String getResourceLabel() {
+        return resourceLabel;
+    }
 
-        private ResourceType(@NotNull String type, @Nullable String version) {
-            this.type = type;
-            this.version = version;
-            if (type.lastIndexOf('/') != -1) {
-                resourceLabel = type.substring(type.lastIndexOf('/') + 1);
-            } else if (type.lastIndexOf('.') != -1) {
-                resourceLabel = type.substring(type.lastIndexOf('.') + 1);
-            } else {
-                resourceLabel = type;
-            }
-        }
+    /**
+     * Returns the resource type string, without any version information.
+     *
+     * @return the resource type string
+     */
+    @NotNull
+    String getType() {
+        return type;
+    }
 
-        /**
-         * Returns a resource type's label. The label is important for script selection, since it will provide the name of the main script
-         * for this resource type. For more details check the Apache Sling
-         * <a href="https://sling.apache.org/documentation/the-sling-engine/url-to-script-resolution.html#scripts-for-get-requests">URL to
-         * Script Resolution</a> page
-         *
-         * @return the resource type label
-         */
-        @NotNull
-        public String getResourceLabel() {
-            return resourceLabel;
-        }
+    /**
+     * Returns the version, if available.
+     *
+     * @return the version, if available; {@code null} otherwise
+     */
+    @Nullable
+    String getVersion() {
+        return version;
+    }
 
-        /**
-         * Returns the resource type string, without any version information.
-         *
-         * @return the resource type string
-         */
-        @NotNull
-        String getType() {
-            return type;
-        }
-
-        /**
-         * Returns the version, if available.
-         *
-         * @return the version, if available; {@code null} otherwise
-         */
-        @Nullable
-        String getVersion() {
-            return version;
-        }
-
-        @Override
-        public String toString() {
-            return type + (version == null ? "" : "/" + version);
-        }
+    @Override
+    public String toString() {
+        return type + (version == null ? "" : "/" + version);
     }
 
     /**
@@ -135,5 +129,23 @@ final class ResourceTypeParser {
             throw new IllegalArgumentException(String.format("Cannot extract a type for the resourceTypeString %s.", resourceTypeString));
         }
         return new ResourceType(type, version);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, version, resourceLabel);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof ResourceType) {
+            ResourceType other = (ResourceType) obj;
+            return Objects.equals(type, other.type) && Objects.equals(version, other.version) && Objects.equals(resourceLabel,
+                    other.resourceLabel);
+        }
+        return false;
     }
 }
