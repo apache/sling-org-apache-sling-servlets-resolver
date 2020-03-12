@@ -63,33 +63,24 @@ public class BundledScriptFinder {
             scriptMatches = buildScriptMatches(request, provider.getResourceType());
             String scriptEngineName = getScriptEngineName(request, provider);
             if (StringUtils.isNotEmpty(scriptEngineName)) {
-                for (String match : scriptMatches) {
-                    URL bundledScriptURL;
-                    if (precompiledScripts) {
-                        String className = JavaEscapeHelper.makeJavaPackage(match);
-                        try {
-                            Class clazz = provider.getBundle().loadClass(className);
-                            return new PrecompiledScript(provider.getBundle(), scriptEngineManager.getEngineByName(scriptEngineName),
-                                    clazz.getDeclaredConstructor().newInstance());
-                        } catch (ClassNotFoundException e) {
-                            // do nothing here
-                        } catch (Exception e) {
-                            throw new RuntimeException("Cannot correctly instantiate class " + className + ".");
-                        }
-                    } else {
-                        ScriptEngine scriptEngine = null;
-                        List<String> scriptEngineExtensions = Collections.emptyList();
-                        for (ScriptEngineFactory factory : scriptEngineManager.getEngineFactories()) {
-                            for (String shortName : factory.getNames()) {
-                                if (shortName.equals(scriptEngineName)) {
-                                    scriptEngine = factory.getScriptEngine();
-                                    scriptEngineExtensions = factory.getExtensions();
-                                    break;
+                ScriptEngine scriptEngine = scriptEngineManager.getEngineByName(scriptEngineName);
+                if (scriptEngine != null) {
+                    for (String match : scriptMatches) {
+                        URL bundledScriptURL;
+                        List<String> scriptEngineExtensions = getScriptEngineExtensions(scriptEngineName);
+                        for (String scriptEngineExtension : scriptEngineExtensions) {
+                            if (precompiledScripts) {
+                                String className = JavaEscapeHelper.makeJavaPackage(match + DOT + scriptEngineExtension);
+                                try {
+                                    Class clazz = provider.getBundle().loadClass(className);
+                                    return new PrecompiledScript(provider.getBundle(), scriptEngine,
+                                            clazz.getDeclaredConstructor().newInstance());
+                                } catch (ClassNotFoundException e) {
+                                    // do nothing here
+                                } catch (Exception e) {
+                                    throw new RuntimeException("Cannot correctly instantiate class " + className + ".");
                                 }
-                            }
-                        }
-                        if (scriptEngine != null) {
-                            for (String scriptEngineExtension : scriptEngineExtensions) {
+                            } else {
                                 bundledScriptURL =
                                         provider.getBundle()
                                                 .getEntry(NS_JAVAX_SCRIPT_CAPABILITY + SLASH + match + DOT + scriptEngineExtension);
@@ -184,5 +175,15 @@ public class BundledScriptFinder {
             }
         }
         return scriptEngineName;
+    }
+
+    private List<String> getScriptEngineExtensions(String scriptEngineName) {
+        for (ScriptEngineFactory factory : scriptEngineManager.getEngineFactories()) {
+            Set<String> factoryNames = new HashSet<>(factory.getNames());
+            if (factoryNames.contains(scriptEngineName)) {
+                return factory.getExtensions();
+            }
+        }
+        return Collections.emptyList();
     }
 }
