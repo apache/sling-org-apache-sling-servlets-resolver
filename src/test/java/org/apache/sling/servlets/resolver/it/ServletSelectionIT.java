@@ -81,6 +81,25 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
         .with(P_STRICT_PATHS, "true")
         .with(P_SELECTORS, new String[] { "one", "two" })
         .register(bundleContext);
+
+        new TestServlet("EmptySelectors")
+        .with(P_PATHS, "/emptySel")
+        .with(P_STRICT_PATHS, "true")
+        .with(P_SELECTORS, new String[] { ".EMPTY." })
+        .register(bundleContext);
+
+        new TestServlet("EmptyExtensions")
+        .with(P_PATHS, "/emptyExt")
+        .with(P_STRICT_PATHS, "true")
+        .with(P_EXTENSIONS, new String[] { ".EMPTY." })
+        .register(bundleContext);
+
+        new TestServlet("EmptyExtensionsAndSelectors")
+        .with(P_PATHS, "/emptyExtSel")
+        .with(P_STRICT_PATHS, "true")
+        .with(P_SELECTORS, new String[] { ".EMPTY." })
+        .with(P_EXTENSIONS, new String[] { ".EMPTY." })
+        .register(bundleContext);
     }
 
     @Test
@@ -169,5 +188,21 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
         assertTestServlet("/extpaths_multiple.two.three.html", "ExtPathsMultipleSelectors");
         assertTestServlet("/extpaths_multiple.two.html", "ExtPathsMultipleSelectors");
         assertTestServlet("/extpaths_multiple.three.html", HttpServletResponse.SC_FORBIDDEN);
+    }
+
+    @Test
+    public void testEmptyExtensionsAndSelectors() throws Exception {
+        assertTestServlet("/emptyExtSel", "EmptyExtensionsAndSelectors");
+        assertTestServlet("/emptyExtSel.ext", HttpServletResponse.SC_FORBIDDEN);
+        assertTestServlet("/emptyExtSel.sel.ext", HttpServletResponse.SC_FORBIDDEN);
+
+        assertTestServlet("/emptyExt", "EmptyExtensions");
+        assertTestServlet("/emptyExt.sel.", "EmptyExtensions");
+        assertTestServlet("/emptyExt.sel.ext", HttpServletResponse.SC_FORBIDDEN);
+
+        assertTestServlet("/emptySel", "EmptySelectors");
+        assertTestServlet("/emptySel.", "EmptySelectors");
+        assertTestServlet("/emptySel.ext", "EmptySelectors");
+        assertTestServlet("/emptySel.sel.ext", HttpServletResponse.SC_FORBIDDEN);
     }
 }
