@@ -45,6 +45,8 @@ public class PathBasedServletAcceptorTest {
 
     public static final String [] STRING_ARRAY = new String[0];
 
+    public static final String V_EMPTY = ".EMPTY.";
+
     private final PathBasedServletAcceptor acceptor = new PathBasedServletAcceptor();
 
     private class TestCase {
@@ -248,10 +250,66 @@ public class PathBasedServletAcceptorTest {
     }
 
     @Test
+    public void testEmptyExtensionAndSelectorWithEmpty() {
+        new TestCase()
+        .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, true)
+        .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, V_EMPTY)
+        .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, V_EMPTY)
+        .assertAccept(true);
+    }
+
+    @Test
+    public void testEmptyExtensionAndSelectorWithSelector() {
+        new TestCase()
+        .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, true)
+        .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, V_EMPTY)
+        .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, V_EMPTY)
+        .withSelector("someSel")
+        .assertAccept(false);
+    }
+
+    @Test
+    public void testEmptyExtensionAndSelectorWithExtension() {
+        new TestCase()
+        .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, true)
+        .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, V_EMPTY)
+        .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, V_EMPTY)
+        .withExtension("someExt")
+        .assertAccept(false);
+    }
+
+    @Test
+    public void testEmptyExtensionSpecificSelector() {
+        new TestCase()
+        .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, true)
+        .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, V_EMPTY)
+        .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, "someSel")
+        .withSelector("someSel")
+        .assertAccept(true);
+    }
+
+    @Test
+    public void testEmptySelectorSpecificExtension() {
+        new TestCase()
+        .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, true)
+        .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, "someExt")
+        .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, V_EMPTY)
+        .withExtension("someExt")
+        .assertAccept(true);
+    }
+
+    @Test(expected = PathBasedServletAcceptor.InvalidPropertyException.class)
+    public void testEmptyMethodException() {
+        new TestCase()
+        .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, true)
+        .withServiceProperty(ServletResolverTestSupport.P_METHODS, V_EMPTY)
+        .assertAccept(true);
+    }
+
+    @Test
     public void testNoSlingServletConfig() {
         final Servlet s = mock(Servlet.class);
         when(s.getServletConfig()).thenReturn(mock(ServletConfig.class));
         assertTrue(acceptor.accept(null, s));
     }
-
 }

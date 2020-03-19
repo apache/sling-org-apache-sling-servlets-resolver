@@ -23,6 +23,7 @@ import java.util.Arrays;
 import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.engine.RequestUtil;
@@ -41,6 +42,16 @@ class PathBasedServletAcceptor {
     // TODO should be in ServletResolverConstants
     private static final String STRICT_PATHS_SERVICE_PROPERTY = "sling.servlet.paths.strict";
 
+    // Used to indicate "accept only an empty set of selectors or extensions - should not be
+    // a valid selector or extension to avoid collisions
+    private static final String EMPTY_VALUE = ".EMPTY.";
+
+    static class InvalidPropertyException extends RuntimeException {
+        InvalidPropertyException(String reason) {
+            super(reason);
+        }
+    }
+
     boolean accept(SlingHttpServletRequest request, Servlet servlet) {
         // Get OSGi service properties from the SlingServletConfig
         final ServletConfig rawCfg = servlet.getServletConfig();
@@ -56,9 +67,9 @@ class PathBasedServletAcceptor {
         final Object strictPaths = config.getServiceProperty(STRICT_PATHS_SERVICE_PROPERTY);
         if(strictPaths != null && Boolean.valueOf(strictPaths.toString())) {
             accepted = 
-                accept(servletName, config, ServletResolverConstants.SLING_SERVLET_EXTENSIONS, request.getRequestPathInfo().getExtension())
-                && accept(servletName, config, ServletResolverConstants.SLING_SERVLET_SELECTORS, request.getRequestPathInfo().getSelectors())
-                && accept(servletName, config, ServletResolverConstants.SLING_SERVLET_METHODS, request.getMethod());
+                accept(servletName, config, ServletResolverConstants.SLING_SERVLET_EXTENSIONS, true, request.getRequestPathInfo().getExtension())
+                && accept(servletName, config, ServletResolverConstants.SLING_SERVLET_SELECTORS, true, request.getRequestPathInfo().getSelectors())
+                && accept(servletName, config, ServletResolverConstants.SLING_SERVLET_METHODS, false, request.getMethod());
         }
 
         LOGGER.debug("accepted={} for {}", accepted, servletName);
@@ -66,23 +77,34 @@ class PathBasedServletAcceptor {
         return accepted;
     }
 
-    private boolean accept(String servletName, SlingServletConfig config, String servicePropertyKey, String ... requestValues) {
+    private boolean accept(String servletName, SlingServletConfig config, String servicePropertyKey, boolean emptyValueApplies, String ... requestValues) {
         final String [] propValues = toStringArray(config.getServiceProperty(servicePropertyKey));
         if(propValues == null) {
             LOGGER.debug("Property {} is null or empty, not checking that value for {}", servicePropertyKey, servletName);
             return true;
         }
 
-        // requestValues must match at least one value in propValue
         boolean accepted = false;
-        for(String rValue : requestValues) {
-            for(String pValue : propValues) {
-                if(rValue != null && rValue.equals(pValue)) {
-                    accepted = true;
-                    break;
+        if(propValues.length == 1 && EMPTY_VALUE.equals(propValues[0])) {
+            // If supported for this service property, request value must be empty
+            if(!emptyValueApplies) {
+                throw new InvalidPropertyException("Special value " + EMPTY_VALUE
+                + "  is not valid for the " + servicePropertyKey + " service property");
+            } else {
+                accepted = requestValues.length == 0 || (requestValues.length == 1 && requestValues[0] == null);
+            }
+        } else {
+            // requestValues must match at least one value in propValue
+            for(String rValue : requestValues) {
+                for(String pValue : propValues) {
+                    if(rValue != null && rValue.equals(pValue)) {
+                        accepted = true;
+                        break;
+                    }
                 }
             }
         }
+
         LOGGER.debug("accepted={} for property {} and servlet {}", accepted, servicePropertyKey, servletName);
         return accepted;
     }
