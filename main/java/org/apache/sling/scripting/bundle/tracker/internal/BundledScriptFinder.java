@@ -25,7 +25,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.script.ScriptEngine;
@@ -34,11 +33,9 @@ import javax.script.ScriptEngineManager;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.SlingHttpServletRequest;
-import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.commons.compiler.source.JavaEscapeHelper;
-import org.apache.sling.commons.osgi.PropertiesUtil;
+import org.apache.sling.scripting.bundle.tracker.ResourceType;
 import org.osgi.framework.Bundle;
-import org.osgi.framework.Version;
 import org.osgi.framework.wiring.BundleCapability;
 import org.osgi.framework.wiring.BundleWiring;
 import org.osgi.service.component.annotations.Component;
@@ -59,7 +56,7 @@ public class BundledScriptFinder {
     Executable getScript(SlingHttpServletRequest request, LinkedHashSet<TypeProvider> typeProviders, boolean precompiledScripts) {
         List<String> scriptMatches;
         for (TypeProvider provider : typeProviders) {
-            scriptMatches = buildScriptMatches(request, provider.getResourceType());
+            scriptMatches = buildScriptMatches(request, provider.getResourceTypes());
             String scriptEngineName = getScriptEngineName(request, provider);
             if (StringUtils.isNotEmpty(scriptEngineName)) {
                 ScriptEngine scriptEngine = scriptEngineManager.getEngineByName(scriptEngineName);
@@ -77,7 +74,7 @@ public class BundledScriptFinder {
                                 } catch (ClassNotFoundException e) {
                                     // do nothing here
                                 } catch (Exception e) {
-                                    throw new RuntimeException("Cannot correctly instantiate class " + className + ".");
+                                    throw new IllegalStateException("Cannot correctly instantiate class " + className + ".");
                                 }
                             } else {
                                 bundledScriptURL =
@@ -95,37 +92,40 @@ public class BundledScriptFinder {
         return null;
     }
 
-    private List<String> buildScriptMatches(SlingHttpServletRequest request, ResourceType resourceType) {
+    private List<String> buildScriptMatches(SlingHttpServletRequest request, Set<ResourceType> resourceTypes) {
         List<String> matches = new ArrayList<>();
         String method = request.getMethod();
         String extension = request.getRequestPathInfo().getExtension();
         String[] selectors = request.getRequestPathInfo().getSelectors();
-        if (selectors.length > 0) {
-            for (int i = selectors.length - 1; i >= 0; i--) {
-                String base =
-                resourceType.getType() +
-                        (StringUtils.isNotEmpty(resourceType.getVersion()) ? SLASH + resourceType.getVersion() + SLASH : SLASH) +
-                        String.join(SLASH, Arrays.copyOf(selectors, i + 1));
-                if (StringUtils.isNotEmpty(extension)){
-                    matches.add(base + DOT + extension + DOT + method);
-                    matches.add(base + DOT + extension);
+        for (ResourceType resourceType : resourceTypes) {
+            if (selectors.length > 0) {
+                for (int i = selectors.length - 1; i >= 0; i--) {
+                    String base =
+                            resourceType.getType() +
+                                    (StringUtils.isNotEmpty(resourceType.getVersion()) ? SLASH + resourceType.getVersion() + SLASH :
+                                            SLASH) +
+                                    String.join(SLASH, Arrays.copyOf(selectors, i + 1));
+                    if (StringUtils.isNotEmpty(extension)) {
+                        matches.add(base + DOT + extension + DOT + method);
+                        matches.add(base + DOT + extension);
+                    }
+                    matches.add(base + DOT + method);
+                    matches.add(base);
                 }
-                matches.add(base + DOT + method);
-                matches.add(base);
             }
-        }
-        String base = resourceType.getType() +
-                (StringUtils.isNotEmpty(resourceType.getVersion()) ? SLASH + resourceType.getVersion() : StringUtils.EMPTY);
+            String base = resourceType.getType() +
+                    (StringUtils.isNotEmpty(resourceType.getVersion()) ? SLASH + resourceType.getVersion() : StringUtils.EMPTY);
 
-        if (StringUtils.isNotEmpty(extension)) {
-            matches.add(base + SLASH + resourceType.getResourceLabel() + DOT + extension + DOT + method);
-            matches.add(base + SLASH + resourceType.getResourceLabel() + DOT + extension);
-        }
-        matches.add(base + SLASH + resourceType.getResourceLabel() + DOT + method);
-        matches.add(base + SLASH + resourceType.getResourceLabel());
-        matches.add(base + SLASH + method);
-        if (StringUtils.isNotEmpty(extension)) {
-            matches.add(base + SLASH + extension);
+            if (StringUtils.isNotEmpty(extension)) {
+                matches.add(base + SLASH + resourceType.getResourceLabel() + DOT + extension + DOT + method);
+                matches.add(base + SLASH + resourceType.getResourceLabel() + DOT + extension);
+            }
+            matches.add(base + SLASH + resourceType.getResourceLabel() + DOT + method);
+            matches.add(base + SLASH + resourceType.getResourceLabel());
+            matches.add(base + SLASH + method);
+            if (StringUtils.isNotEmpty(extension)) {
+                matches.add(base + SLASH + extension);
+            }
         }
         return Collections.unmodifiableList(matches);
     }
@@ -139,27 +139,21 @@ public class BundledScriptFinder {
         String requestExtension = request.getRequestPathInfo().getExtension();
         String requestMethod = request.getMethod();
         for (BundleCapability capability : capabilities) {
-            Map<String, Object> attributes = capability.getAttributes();
-            if (typeProvider.getResourceType().getType().equals(attributes.get(BundledScriptTracker.NS_SLING_RESOURCE_TYPE)) && Arrays.equals(selectors,
-                    PropertiesUtil.toStringArray(attributes.get(BundledScriptTracker.AT_SLING_SELECTORS), new String[]{}))) {
-                String version = typeProvider.getResourceType().getVersion();
-                Version capabilityVersion = (Version) attributes.get(BundledScriptTracker.AT_VERSION);
-                if (version != null && capabilityVersion!= null && !version.equals(capabilityVersion.toString())) {
-                    continue;
-                }
-                Set<String> capabilityRequestExtensions = new HashSet<>(
-                        Arrays.asList(PropertiesUtil.toStringArray(attributes.get(BundledScriptTracker.AT_SLING_EXTENSIONS), new String[0]))
-                );
-                Set<String> capabilityRequestMethods = new HashSet<>(
-                        Arrays.asList(
-                                PropertiesUtil.toStringArray(attributes.get(ServletResolverConstants.SLING_SERVLET_METHODS), new String[0]))
-                );
+            ResourceTypeCapability resourceTypeCapability = ResourceTypeCapability.fromBundleCapability(capability);
+            for (ResourceType resourceType : typeProvider.getResourceTypes()) {
                 if (
-                    ((capabilityRequestExtensions.isEmpty() && "html".equals(requestExtension)) || capabilityRequestExtensions.contains(requestExtension)) &&
-                    ((capabilityRequestMethods.isEmpty() && ("GET".equals(requestMethod) || "HEAD".equals(requestMethod))) || capabilityRequestMethods.contains(requestMethod)) &&
-                    StringUtils.isEmpty(scriptEngineName)
+                        resourceTypeCapability.getResourceTypes().contains(resourceType) &&
+                        Arrays.equals(selectors, resourceTypeCapability.getSelectors().toArray()) &&
+                        ((resourceTypeCapability.getExtensions().isEmpty() && "html".equals(requestExtension)) ||
+                                resourceTypeCapability.getExtensions().contains(requestExtension)) &&
+                        ((resourceTypeCapability.getMethods().isEmpty() &&
+                                ("GET".equals(requestMethod) || "HEAD".equals(requestMethod))) ||
+                                resourceTypeCapability.getMethods().contains(requestMethod))
                 ) {
-                    scriptEngineName = (String) attributes.get(BundledScriptTracker.AT_SCRIPT_ENGINE);
+                    scriptEngineName = resourceTypeCapability.getScriptEngineName();
+                    if (scriptEngineName != null) {
+                        break;
+                    }
                 }
             }
         }

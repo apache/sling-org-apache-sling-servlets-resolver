@@ -42,6 +42,7 @@ import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.request.RequestPathInfo;
 import org.apache.sling.api.scripting.ScriptEvaluationException;
 import org.apache.sling.api.scripting.SlingBindings;
+import org.apache.sling.scripting.bundle.tracker.ResourceType;
 import org.apache.sling.scripting.core.ScriptHelper;
 
 class BundledScriptServlet extends GenericServlet {
@@ -108,7 +109,9 @@ class BundledScriptServlet extends GenericServlet {
             if (executable != null) {
                 Set<String> wiredResourceTypes = new HashSet<>();
                 for (TypeProvider typeProvider : m_wiredTypeProviders) {
-                    wiredResourceTypes.add(typeProvider.getResourceType().toString());
+                    for (ResourceType resourceType : typeProvider.getResourceTypes()) {
+                        wiredResourceTypes.add(resourceType.toString());
+                    }
                 }
                 RequestWrapper requestWrapper = new RequestWrapper(request, wiredResourceTypes);
                 ScriptContext scriptContext = m_scriptContextProvider.prepareScriptContext(requestWrapper, response, executable);
