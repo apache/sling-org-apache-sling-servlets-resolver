@@ -16,7 +16,7 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-package org.apache.sling.scripting.bundle.tracker.internal;
+package org.apache.sling.scripting.bundle.tracker;
 
 import java.util.Objects;
 
@@ -37,7 +37,7 @@ import org.osgi.framework.Version;
  * <li><tt>a</tt> - flat (sub-set of path-based)</li>
  * </ol>
  */
-final class ResourceType {
+public final class ResourceType {
 
     private final String type;
     private final String version;
@@ -74,7 +74,7 @@ final class ResourceType {
      * @return the resource type string
      */
     @NotNull
-    String getType() {
+    public String getType() {
         return type;
     }
 
@@ -84,7 +84,7 @@ final class ResourceType {
      * @return the version, if available; {@code null} otherwise
      */
     @Nullable
-    String getVersion() {
+    public String getVersion() {
         return version;
     }
 
@@ -109,7 +109,7 @@ final class ResourceType {
      * @throws IllegalArgumentException if the {@code resourceTypeString} cannot be parsed
      */
     @NotNull
-    static ResourceType parseResourceType(@NotNull String resourceTypeString) {
+    public static ResourceType parseResourceType(@NotNull String resourceTypeString) {
         String type = StringUtils.EMPTY;
         String version = null;
         if (StringUtils.isNotEmpty(resourceTypeString)) {

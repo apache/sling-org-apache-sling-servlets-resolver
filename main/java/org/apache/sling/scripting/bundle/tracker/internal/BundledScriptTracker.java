@@ -49,6 +49,7 @@ import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.request.RequestDispatcherOptions;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.commons.osgi.PropertiesUtil;
+import org.apache.sling.scripting.bundle.tracker.ResourceType;
 import org.osgi.annotation.bundle.Capability;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -87,7 +88,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     private static final String REGISTERING_BUNDLE = "org.apache.sling.scripting.bundle.tracker.internal.BundledScriptTracker.registering_bundle";
     static final String AT_VERSION = "version";
     static final String AT_SCRIPT_ENGINE = "scriptEngine";
-    private static final String AT_EXTENDS = "extends";
+    static final String AT_EXTENDS = "extends";
 
     @Reference
     private BundledScriptFinder bundledScriptFinder;
@@ -126,64 +127,49 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     Hashtable<String, Object> properties = new Hashtable<>();
                     properties.put(ServletResolverConstants.SLING_SERVLET_NAME, BundledScriptServlet.class.getName());
                     properties.put(Constants.SERVICE_DESCRIPTION, cap.toString());
-
-                    Map<String, Object> attributes = cap.getAttributes();
-                    String resourceType = (String) attributes.get(NS_SLING_RESOURCE_TYPE);
-                    String resourceTypeString = resourceType;
-
-                    Version version = (Version) attributes.get(AT_VERSION);
-
-                    if (version != null) {
-                        resourceTypeString += "/" + version;
+                    ResourceTypeCapability resourceTypeCapability = ResourceTypeCapability.fromBundleCapability(cap);
+                    String[] resourceTypesRegistrationValue = new String[resourceTypeCapability.getResourceTypes().size()];
+                    int rtIndex = 0;
+                    for (ResourceType resourceType : resourceTypeCapability.getResourceTypes()) {
+                        resourceTypesRegistrationValue[rtIndex++] = resourceType.toString();
                     }
+                    properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES, resourceTypesRegistrationValue);
 
-                    properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES, resourceTypeString);
-
-                    Object selectors = attributes.get(AT_SLING_SELECTORS);
-                    Set<String> extensions = new HashSet<>(
-                            Arrays.asList(PropertiesUtil.toStringArray(attributes.get(AT_SLING_EXTENSIONS), new String[0]))
-                    );
+                    Set<String> extensions = new HashSet<>(resourceTypeCapability.getSelectors());
                     extensions.add("html");
-                    properties.put(ServletResolverConstants.SLING_SERVLET_EXTENSIONS, extensions);
+                    properties.put(ServletResolverConstants.SLING_SERVLET_EXTENSIONS, extensions.toArray());
 
-                    if (selectors != null) {
-                        properties.put(ServletResolverConstants.SLING_SERVLET_SELECTORS, selectors);
+                    if (!resourceTypeCapability.getSelectors().isEmpty()) {
+                        properties.put(ServletResolverConstants.SLING_SERVLET_SELECTORS, resourceTypeCapability.getSelectors().toArray());
                     }
 
-                    Set<String> methods = new HashSet<>(Arrays.asList(
-                            PropertiesUtil.toStringArray(attributes.get(ServletResolverConstants.SLING_SERVLET_METHODS), new String[0])));
-                    if (!methods.isEmpty()) {
-                        properties.put(ServletResolverConstants.SLING_SERVLET_METHODS, String.join(",", methods));
-                    }
-
-                    String extendsRT = (String) attributes.get(AT_EXTENDS);
-                    Optional<BundleWire> optionalWire = Optional.empty();
-
-                    if (StringUtils.isNotEmpty(extendsRT)) {
-
-                        LOGGER.debug("Bundle {} extends resource type {} through {}.", bundle.getSymbolicName(), extendsRT,
-                                resourceTypeString);
-                        optionalWire = bundleWiring.getRequiredWires(NS_SLING_RESOURCE_TYPE).stream().filter(
-                                bundleWire -> extendsRT.equals(bundleWire.getCapability().getAttributes().get(NS_SLING_RESOURCE_TYPE)) &&
-                                        !bundleWire.getCapability().getAttributes().containsKey(AT_SLING_SELECTORS)
-                        ).findFirst();
+                    if (!resourceTypeCapability.getMethods().isEmpty()) {
+                        properties.put(ServletResolverConstants.SLING_SERVLET_METHODS, resourceTypeCapability.getMethods().toArray());
                     }
 
                     List<ServiceRegistration<Servlet>> regs = new ArrayList<>();
                     LinkedHashSet<TypeProvider> wiredProviders = new LinkedHashSet<>();
-                    wiredProviders.add(new TypeProvider(ResourceType.parseResourceType(resourceType), bundle));
-                    wiredProviders.add(new TypeProvider(ResourceType.parseResourceType(resourceTypeString), bundle));
-                    if (optionalWire.isPresent()) {
-                        BundleWire extendsWire = optionalWire.get();
-                        Bundle providerBundle = extendsWire.getProvider().getBundle();
-                        Map<String, Object> wireCapabilityAttributes = extendsWire.getCapability().getAttributes();
-                        String wireResourceType = (String) wireCapabilityAttributes.get(NS_SLING_RESOURCE_TYPE);
-                        Version wireResourceTypeVersion = (Version) wireCapabilityAttributes.get(AT_VERSION);
-                        String wireResourceTypeString = wireResourceType + (wireResourceTypeVersion != null ? "/" +
-                                wireResourceTypeVersion.toString() : "");
-                        wiredProviders.add(new TypeProvider(ResourceType.parseResourceType(wireResourceType), providerBundle));
-                        wiredProviders.add(new TypeProvider(ResourceType.parseResourceType(wireResourceTypeString), providerBundle));
-                        properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_SUPER_TYPE, wireResourceTypeString);
+                    wiredProviders.add(new TypeProvider(resourceTypeCapability.getResourceTypes(), bundle));
+                    String extendedResourceType = resourceTypeCapability.getExtendedResourceType();
+                    if (StringUtils.isNotEmpty(extendedResourceType)) {
+                        BundleWire extendedWire = null;
+                        ResourceTypeCapability extendedCapability = null;
+                        LOGGER.debug("Bundle {} extends resource type {} through {}.", bundle.getSymbolicName(), extendedResourceType,
+                                resourceTypesRegistrationValue);
+                        for (BundleWire wire : bundleWiring.getRequiredWires(NS_SLING_RESOURCE_TYPE)) {
+                            ResourceTypeCapability wiredCapability =
+                                    ResourceTypeCapability.fromBundleCapability(wire.getCapability());
+                            for (ResourceType resourceType : wiredCapability.getResourceTypes()) {
+                                if (extendedResourceType.equals(resourceType.getType()) && wiredCapability.getSelectors().isEmpty()) {
+                                    extendedWire = wire;
+                                    extendedCapability = wiredCapability;
+                                }
+                            }
+                        }
+                        if (extendedWire != null) {
+                            wiredProviders.add(new TypeProvider(extendedCapability.getResourceTypes(), extendedWire.getProvider().getBundle()));
+                            properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_SUPER_TYPE, extendedResourceType);
+                        }
                     }
                     populateWiredProviders(wiredProviders);
                     regs.add(
@@ -198,34 +184,35 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                 refreshDispatcher(serviceRegistrations);
                 return serviceRegistrations;
             } else {
-                return null;
+                return Collections.emptyList();
             }
         } else {
-            return null;
+            return Collections.emptyList();
         }
     }
 
 
     private void populateWiredProviders(LinkedHashSet<TypeProvider> initialProviders) {
-        Set<String> initialResourceTypes = new HashSet<>(initialProviders.size());
+        Set<ResourceType> initialResourceTypes = new HashSet<>();
         Set<Bundle> bundles = new HashSet<>(initialProviders.size());
-        for (TypeProvider provider : initialProviders) {
-            initialResourceTypes.add(provider.getResourceType().toString());
-            bundles.add(provider.getBundle());
-        }
+        initialProviders.forEach(typeProvider -> {
+            initialResourceTypes.addAll(typeProvider.getResourceTypes());
+            bundles.add(typeProvider.getBundle());
+        });
         for (Bundle bundle : bundles) {
             BundleWiring bundleWiring = bundle.adapt(BundleWiring.class);
             bundleWiring.getRequiredWires(BundledScriptTracker.NS_SLING_RESOURCE_TYPE).forEach(
                     bundleWire ->
                     {
-                        String resourceType = (String) bundleWire.getCapability().getAttributes().get(BundledScriptTracker
-                                .NS_SLING_RESOURCE_TYPE);
-                        Version version = (Version) bundleWire.getCapability().getAttributes().get(BundledScriptTracker
-                                .AT_VERSION);
-                        if (!initialResourceTypes.contains(resourceType)) {
-                            initialProviders.add(new TypeProvider(
-                                    ResourceType.parseResourceType(resourceType + (version == null ? "" : "/" + version.toString())),
-                                    bundleWire.getProvider().getBundle()));
+                        ResourceTypeCapability wiredCapability = ResourceTypeCapability.fromBundleCapability(bundleWire.getCapability());
+                        Set<ResourceType> wiredResourceTypes = new HashSet<>();
+                        for (ResourceType capabilityRT : wiredCapability.getResourceTypes()) {
+                            if (!initialResourceTypes.contains(capabilityRT)) {
+                                wiredResourceTypes.add(capabilityRT);
+                            }
+                        }
+                        if (!wiredResourceTypes.isEmpty()) {
+                            initialProviders.add(new TypeProvider(wiredResourceTypes, bundleWire.getProvider().getBundle()));
                         }
                     }
             );
@@ -295,13 +282,6 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         return resourceType.getType();
     }
 
-    private String getResourceTypeVersion(ServiceReference<?> ref) {
-        String[] values = PropertiesUtil.toStringArray(ref.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES));
-        String resourceTypeValue = values[0];
-        ResourceType resourceType = ResourceType.parseResourceType(resourceTypeValue);
-        return resourceType.getVersion();
-    }
-
     private void set(String key, ServiceReference<?> ref, Hashtable<String, Object> props) {
         Object value = ref.getProperty(key);
         if (value != null) {
@@ -311,14 +291,14 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
 
     @Override
     public void modifiedBundle(Bundle bundle, BundleEvent event, List<ServiceRegistration<Servlet>> regs) {
-        LOGGER.warn(String.format("Unexpected modified event: %s for bundle %s", event.toString(), bundle.toString()));
+        LOGGER.warn("Unexpected modified event {} for bundle {}.", event.toString(), bundle.toString());
     }
 
     @Override
     public void removedBundle(Bundle bundle, BundleEvent event, List<ServiceRegistration<Servlet>> regs) {
         LOGGER.debug("Bundle {} removed", bundle.getSymbolicName());
         regs.forEach(ServiceRegistration::unregister);
-        refreshDispatcher(Collections.EMPTY_LIST);
+        refreshDispatcher(Collections.emptyList());
     }
 
     private class DispatcherServlet extends GenericServlet {
@@ -373,28 +353,41 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     .findFirst();
 
             if (target.isPresent()) {
-                String rt = (String) target.get().getReference().getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES);
-                RequestDispatcherOptions options = new RequestDispatcherOptions();
-                options.setForceResourceType(rt);
+                String[] targetRT =
+                        PropertiesUtil.toStringArray(target.get().getReference().getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES));
+                if (targetRT == null || targetRT.length == 0) {
+                    ((SlingHttpServletResponse) res).sendError(HttpServletResponse.SC_NOT_FOUND);
+                } else {
+                    String rt = targetRT[0];
+                    RequestDispatcherOptions options = new RequestDispatcherOptions();
+                    options.setForceResourceType(rt);
 
-                RequestDispatcher dispatcher = slingRequest.getRequestDispatcher(slingRequest.getResource(), options);
-                if (dispatcher != null) {
-                    if (slingRequest.getAttribute(SlingConstants.ATTR_INCLUDE_SERVLET_PATH) == null) {
-                        final String contentType = slingRequest.getResponseContentType();
-                        if (contentType != null) {
-                            res.setContentType(contentType);
-                            if (contentType.startsWith("text/")) {
-                                res.setCharacterEncoding("UTF-8");
+                    RequestDispatcher dispatcher = slingRequest.getRequestDispatcher(slingRequest.getResource(), options);
+                    if (dispatcher != null) {
+                        if (slingRequest.getAttribute(SlingConstants.ATTR_INCLUDE_SERVLET_PATH) == null) {
+                            final String contentType = slingRequest.getResponseContentType();
+                            if (contentType != null) {
+                                res.setContentType(contentType);
+                                if (contentType.startsWith("text/")) {
+                                    res.setCharacterEncoding("UTF-8");
+                                }
                             }
                         }
+                        dispatcher.include(req, res);
+                    } else {
+                        ((SlingHttpServletResponse) res).sendError(HttpServletResponse.SC_NOT_FOUND);
                     }
-                    dispatcher.include(req, res);
-                } else {
-                    ((SlingHttpServletResponse) res).sendError(HttpServletResponse.SC_NOT_FOUND);
                 }
             } else {
                 ((SlingHttpServletResponse) res).sendError(HttpServletResponse.SC_NOT_FOUND);
             }
+        }
+
+        private String getResourceTypeVersion(ServiceReference<?> ref) {
+            String[] values = PropertiesUtil.toStringArray(ref.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES));
+            String resourceTypeValue = values[0];
+            ResourceType resourceType = ResourceType.parseResourceType(resourceTypeValue);
+            return resourceType.getVersion();
         }
     }
 }
