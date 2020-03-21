@@ -78,6 +78,34 @@ public class ServletResourceProviderCreateTest {
             + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
     }
 
+    @Test public void testCreateFailsForInvalidResourceType() {
+        @SuppressWarnings("unchecked")
+        final ServiceReference<Servlet> msr = Mockito.mock(ServiceReference.class);
+        Mockito.when(msr.getProperty(Constants.SERVICE_ID))
+                .thenReturn(1L);
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES))
+                .thenReturn("[/mock,/path]");
+        final ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
+        assertNull(srp);
+    }
+
+    @Test public void testCreateValidResourceType() {
+        @SuppressWarnings("unchecked")
+        final ServiceReference<Servlet> msr = Mockito.mock(ServiceReference.class);
+        Mockito.when(msr.getProperty(Constants.SERVICE_ID))
+                .thenReturn(1L);
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES))
+                .thenReturn("[/path/");
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_METHODS))
+                .thenReturn("GET");
+
+        final ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
+        final Set<String> paths = srp.getServletPaths();
+        assertEquals(1, paths.size());
+        assertTrue(paths.contains(ROOT + "[/path/" + HttpConstants.METHOD_GET
+                + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+    }
+
     @Test public void testCreateMethodsSingle() {
         @SuppressWarnings("unchecked")
         final ServiceReference<Servlet> msr = Mockito.mock(ServiceReference.class);

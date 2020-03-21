@@ -274,6 +274,15 @@ public class ServletResourceProviderFactory {
 
         for (String type : types) {
 
+            //avoid invalid paths
+            if (type.startsWith("[") && type.endsWith("]")) {
+                if (log.isDebugEnabled()){
+                    log.debug("addByType({}): found an invalid path : {} , skipping it!",
+                            getServiceReferenceInfo(ref),type);
+                }
+                continue;
+            }
+
             // ensure namespace prefixes are converted to slashes
             type = ResourceUtil.resourceTypeToPath(type);
 
