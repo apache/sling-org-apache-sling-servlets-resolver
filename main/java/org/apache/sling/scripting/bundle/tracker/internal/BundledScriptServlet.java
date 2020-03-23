@@ -19,13 +19,12 @@
 package org.apache.sling.scripting.bundle.tracker.internal;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Collection;
 import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -42,7 +41,6 @@ import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.request.RequestPathInfo;
 import org.apache.sling.api.scripting.ScriptEvaluationException;
 import org.apache.sling.api.scripting.SlingBindings;
-import org.apache.sling.scripting.bundle.tracker.ResourceType;
 import org.apache.sling.scripting.core.ScriptHelper;
 
 class BundledScriptServlet extends GenericServlet {
@@ -53,8 +51,7 @@ class BundledScriptServlet extends GenericServlet {
     private final LinkedHashSet<TypeProvider> m_wiredTypeProviders;
     private final boolean m_precompiledScripts;
 
-    private Map<String, Executable> scriptsMap = new HashMap<>();
-    private ReadWriteLock lock = new ReentrantReadWriteLock();
+    private ConcurrentMap<String, Optional<Executable>> scriptsMap = new ConcurrentHashMap<>();
 
 
 
@@ -83,55 +80,27 @@ class BundledScriptServlet extends GenericServlet {
             }
 
             String scriptsMapKey = getScriptsMapKey(request);
-            Executable executable;
-            lock.readLock().lock();
+            Executable executable = scriptsMap.computeIfAbsent(scriptsMapKey,
+                key -> Optional.ofNullable(m_bundledScriptFinder.getScript(request, m_wiredTypeProviders, m_precompiledScripts))
+            ).orElseThrow(() -> new ServletException("Unable to locate a " + (m_precompiledScripts ? "class" : "script") + " for rendering."));
+
+            RequestWrapper requestWrapper = new RequestWrapper(request,
+                    m_wiredTypeProviders.stream().map(TypeProvider::getResourceTypes).flatMap(Collection::stream).collect(Collectors.toSet()));
+            ScriptContext scriptContext = m_scriptContextProvider.prepareScriptContext(requestWrapper, response, executable);
             try {
-                executable = scriptsMap.get(scriptsMapKey);
-                if (executable == null) {
-                    lock.readLock().unlock();
-                    lock.writeLock().lock();
-                    try {
-                        executable = scriptsMap.get(scriptsMapKey);
-                        if (executable == null) {
-                            executable = m_bundledScriptFinder.getScript(request, m_wiredTypeProviders, m_precompiledScripts);
-                            if (executable != null) {
-                                scriptsMap.put(scriptsMapKey, executable);
-                            }
-                        }
-                    } finally {
-                        lock.readLock().lock();
-                        lock.writeLock().unlock();
-                    }
-                }
+                executable.eval(scriptContext);
+            } catch (ScriptException se) {
+                Throwable cause = (se.getCause() == null) ? se : se.getCause();
+                throw new ScriptEvaluationException(executable.getName(), se.getMessage(), cause);
             } finally {
-                lock.readLock().unlock();
-            }
-            if (executable != null) {
-                Set<String> wiredResourceTypes = new HashSet<>();
-                for (TypeProvider typeProvider : m_wiredTypeProviders) {
-                    for (ResourceType resourceType : typeProvider.getResourceTypes()) {
-                        wiredResourceTypes.add(resourceType.toString());
+                Bindings engineBindings = scriptContext.getBindings(ScriptContext.ENGINE_SCOPE);
+                if (engineBindings != null && engineBindings.containsKey(SlingBindings.SLING)) {
+                    Object scriptHelper = engineBindings.get(SlingBindings.SLING);
+                    if (scriptHelper instanceof ScriptHelper) {
+                        ((ScriptHelper) scriptHelper).cleanup();
                     }
                 }
-                RequestWrapper requestWrapper = new RequestWrapper(request, wiredResourceTypes);
-                ScriptContext scriptContext = m_scriptContextProvider.prepareScriptContext(requestWrapper, response, executable);
-                try {
-                    executable.eval(scriptContext);
-                } catch (ScriptException se) {
-                    Throwable cause = (se.getCause() == null) ? se : se.getCause();
-                    throw new ScriptEvaluationException(executable.getName(), se.getMessage(), cause);
-                } finally {
-                    Bindings engineBindings = scriptContext.getBindings(ScriptContext.ENGINE_SCOPE);
-                    if (engineBindings != null && engineBindings.containsKey(SlingBindings.SLING)) {
-                        Object scriptHelper = engineBindings.get(SlingBindings.SLING);
-                        if (scriptHelper instanceof ScriptHelper) {
-                            ((ScriptHelper) scriptHelper).cleanup();
-                        }
-                    }
-                    executable.releaseDependencies();
-                }
-            } else {
-                throw new ServletException("Unable to locate a " + (m_precompiledScripts ? "class" : "script") + " for rendering.");
+                executable.releaseDependencies();
             }
         } else {
             throw new ServletException("Not a Sling HTTP request/response");

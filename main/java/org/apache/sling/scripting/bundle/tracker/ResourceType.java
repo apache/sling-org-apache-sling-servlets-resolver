@@ -19,6 +19,7 @@
 package org.apache.sling.scripting.bundle.tracker;
 
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -39,9 +40,12 @@ import org.osgi.framework.Version;
  */
 public final class ResourceType {
 
+    private static final Pattern versionPattern = Pattern.compile("[\\d\\.]+(-.*)*$");
+
     private final String type;
     private final String version;
     private final String resourceLabel;
+    private final String toString;
 
     private ResourceType(@NotNull String type, @Nullable String version) {
         this.type = type;
@@ -53,6 +57,7 @@ public final class ResourceType {
         } else {
             resourceLabel = type;
         }
+        toString = type + (version == null ? "" : "/" + version);
     }
 
     /**
@@ -90,7 +95,7 @@ public final class ResourceType {
 
     @Override
     public String toString() {
-        return type + (version == null ? "" : "/" + version);
+        return toString;
     }
 
     /**
@@ -115,10 +120,15 @@ public final class ResourceType {
         if (StringUtils.isNotEmpty(resourceTypeString)) {
             int lastSlash = resourceTypeString.lastIndexOf('/');
             if (lastSlash != -1 && !resourceTypeString.endsWith("/")) {
-                try {
-                    version = Version.parseVersion(resourceTypeString.substring(lastSlash + 1)).toString();
-                    type = resourceTypeString.substring(0, lastSlash);
-                } catch (IllegalArgumentException e) {
+                String versionString = resourceTypeString.substring(lastSlash + 1);
+                if (versionPattern.matcher(versionString).matches()) {
+                    try {
+                        version = Version.parseVersion(versionString).toString();
+                        type = resourceTypeString.substring(0, lastSlash);
+                    } catch (IllegalArgumentException e) {
+                        type = resourceTypeString;
+                    }
+                } else {
                     type = resourceTypeString;
                 }
             } else {
