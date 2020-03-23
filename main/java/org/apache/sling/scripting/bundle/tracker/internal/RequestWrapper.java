@@ -27,12 +27,13 @@ import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.request.RequestDispatcherOptions;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.wrappers.SlingHttpServletRequestWrapper;
+import org.apache.sling.scripting.bundle.tracker.ResourceType;
 
 class RequestWrapper extends SlingHttpServletRequestWrapper {
 
-    private final Set<String> wiredResourceTypes;
+    private final Set<ResourceType> wiredResourceTypes;
 
-    RequestWrapper(SlingHttpServletRequest wrappedRequest, Set<String> wiredResourceTypes) {
+    RequestWrapper(SlingHttpServletRequest wrappedRequest, Set<ResourceType> wiredResourceTypes) {
         super(wrappedRequest);
         this.wiredResourceTypes = wiredResourceTypes;
     }
@@ -67,9 +68,10 @@ class RequestWrapper extends SlingHttpServletRequestWrapper {
             requestDispatcherOptions.setReplaceSuffix(options.getReplaceSuffix());
             String forcedResourceType = options.getForceResourceType();
             if (StringUtils.isNotEmpty(forcedResourceType)) {
-                for (String wiredResourceType : wiredResourceTypes) {
-                    if (wiredResourceType.startsWith(forcedResourceType + "/")) {
-                        requestDispatcherOptions.setForceResourceType(wiredResourceType);
+                for (ResourceType wiredResourceType : wiredResourceTypes) {
+                    String type = wiredResourceType.getType();
+                    if (type.startsWith(forcedResourceType + "/")) {
+                        requestDispatcherOptions.setForceResourceType(type);
                         break;
                     }
                 }

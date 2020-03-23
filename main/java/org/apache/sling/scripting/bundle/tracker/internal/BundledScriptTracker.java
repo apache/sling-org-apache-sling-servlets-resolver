@@ -99,7 +99,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
 
     private volatile BundleContext m_context;
     private volatile BundleTracker<List<ServiceRegistration<Servlet>>> m_tracker;
-    private volatile Map<String, ServiceRegistration<Servlet>> m_dispatchers = new HashMap<>();
+    private volatile Map<Set<String>, ServiceRegistration<Servlet>> m_dispatchers = new HashMap<>();
 
     @Activate
     protected void activate(BundleContext context) {
@@ -126,7 +126,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                 {
                     Hashtable<String, Object> properties = new Hashtable<>();
                     properties.put(ServletResolverConstants.SLING_SERVLET_NAME, BundledScriptServlet.class.getName());
-                    properties.put(Constants.SERVICE_DESCRIPTION, cap.toString());
+                    properties.put(Constants.SERVICE_DESCRIPTION, BundledScriptServlet.class.getName() + cap.getAttributes());
                     ResourceTypeCapability resourceTypeCapability = ResourceTypeCapability.fromBundleCapability(cap);
                     String[] resourceTypesRegistrationValue = new String[resourceTypeCapability.getResourceTypes().size()];
                     int rtIndex = 0;
@@ -220,12 +220,14 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     }
 
     private void refreshDispatcher(List<ServiceRegistration<Servlet>> regs) {
-        Map<String, ServiceRegistration<Servlet>> dispatchers = new HashMap<>();
-        Stream.concat(m_tracker.getTracked().values().stream(), Stream.of(regs)).flatMap(List::stream).map(this::toProperties).collect(
-                Collectors.groupingBy(this::getResourceType)).forEach((rt, propList) -> {
+        Map<Set<String>, ServiceRegistration<Servlet>> dispatchers = new HashMap<>();
+        Stream.concat(m_tracker.getTracked().values().stream(), Stream.of(regs)).flatMap(List::stream)
+            .filter(ref -> getResourceTypeVersion(ref.getReference()) != null)
+            .map(this::toProperties)
+            .collect(Collectors.groupingBy(BundledScriptTracker::getResourceTypes)).forEach((rt, propList) -> {
             Hashtable<String, Object> properties = new Hashtable<>();
             properties.put(ServletResolverConstants.SLING_SERVLET_NAME, DispatcherServlet.class.getName());
-            properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES, rt);
+            properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES, rt.toArray());
             Set<String> methods = propList.stream()
                     .map(props -> props.getOrDefault(ServletResolverConstants.SLING_SERVLET_METHODS, new String[]{"GET", "HEAD"}))
                     .map(PropertiesUtil::toStringArray).map(Arrays::asList).flatMap(List::stream).collect(Collectors.toSet());
@@ -245,9 +247,11 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     }
                     return null;
                 }).findFirst();
-                properties.put(Constants.SERVICE_DESCRIPTION, ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES + "=" + rt + "; " +
+                properties.put(Constants.SERVICE_DESCRIPTION,
+                        DispatcherServlet.class.getName() + "{" + ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES +
+                        "=" + rt + "; " +
                         ServletResolverConstants.SLING_SERVLET_EXTENSIONS + "=" + extensions + "; " +
-                        ServletResolverConstants.SLING_SERVLET_METHODS + "=" + methods);
+                        ServletResolverConstants.SLING_SERVLET_METHODS + "=" + methods  + "}");
                 reg = registeringBundle.orElse(m_context).registerService(Servlet.class, new DispatcherServlet(rt), properties);
             } else {
                 if (!new HashSet<>(Arrays.asList(PropertiesUtil
@@ -275,13 +279,6 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         return result;
     }
 
-    private String getResourceType(Hashtable<String, Object> props) {
-        String[] values = PropertiesUtil.toStringArray(props.get(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES));
-        String resourceTypeValue = values[0];
-        ResourceType resourceType = ResourceType.parseResourceType(resourceTypeValue);
-        return resourceType.getType();
-    }
-
     private void set(String key, ServiceReference<?> ref, Hashtable<String, Object> props) {
         Object value = ref.getProperty(key);
         if (value != null) {
@@ -302,9 +299,9 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     }
 
     private class DispatcherServlet extends GenericServlet {
-        private final String m_rt;
+        private final Set<String> m_rt;
 
-        DispatcherServlet(String rt) {
+        DispatcherServlet(Set<String> rt) {
             m_rt = rt;
         }
 
@@ -322,7 +319,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     .filter(reg ->
                     {
                         Hashtable<String, Object> props = toProperties(reg);
-                        return getResourceType(props).equals(m_rt) &&
+                        return getResourceTypes(props).equals(m_rt) &&
                                 Arrays.asList(PropertiesUtil
                                         .toStringArray(props.get(ServletResolverConstants.SLING_SERVLET_METHODS),
                                                 new String[]{"GET", "HEAD"}))
@@ -331,8 +328,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                                         .toStringArray(props.get(ServletResolverConstants.SLING_SERVLET_EXTENSIONS), new String[]{"html"}))
                                         .contains(slingRequest.getRequestPathInfo().getExtension() == null ? "html" :
                                                 slingRequest.getRequestPathInfo().getExtension());
-                    })
-                    .sorted((left, right) ->
+                    }).min((left, right) ->
                     {
                         boolean la = Arrays.asList(PropertiesUtil
                                 .toStringArray(toProperties(left).get(ServletResolverConstants.SLING_SERVLET_SELECTORS), new String[0]))
@@ -349,8 +345,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                             return 1;
                         }
 
-                    })
-                    .findFirst();
+                    });
 
             if (target.isPresent()) {
                 String[] targetRT =
@@ -382,12 +377,21 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                 ((SlingHttpServletResponse) res).sendError(HttpServletResponse.SC_NOT_FOUND);
             }
         }
+    }
 
-        private String getResourceTypeVersion(ServiceReference<?> ref) {
-            String[] values = PropertiesUtil.toStringArray(ref.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES));
-            String resourceTypeValue = values[0];
-            ResourceType resourceType = ResourceType.parseResourceType(resourceTypeValue);
-            return resourceType.getVersion();
+    private static String getResourceTypeVersion(ServiceReference<?> ref) {
+        String[] values = PropertiesUtil.toStringArray(ref.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES));
+        String resourceTypeValue = values[0];
+        ResourceType resourceType = ResourceType.parseResourceType(resourceTypeValue);
+        return resourceType.getVersion();
+    }
+
+    private static Set<String> getResourceTypes(Hashtable<String, Object> props) {
+        Set<String> resourceTypes = new HashSet<>();
+        String[] values = PropertiesUtil.toStringArray(props.get(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES));
+        for (String resourceTypeValue : values) {
+            resourceTypes.add(ResourceType.parseResourceType(resourceTypeValue).getType());
         }
+        return resourceTypes;
     }
 }
