@@ -40,12 +40,15 @@ import org.osgi.framework.wiring.BundleCapability;
 import org.osgi.framework.wiring.BundleWiring;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component(
         service = BundledScriptFinder.class
 )
 public class BundledScriptFinder {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(BundledScriptFinder.class);
     private static final String NS_JAVAX_SCRIPT_CAPABILITY = "javax.script";
     private static final String SLASH = "/";
     private static final String DOT = ".";
@@ -79,14 +82,18 @@ public class BundledScriptFinder {
                             } else {
                                 bundledScriptURL =
                                         provider.getBundle()
-                                                .getEntry(NS_JAVAX_SCRIPT_CAPABILITY + SLASH + match + DOT + scriptEngineExtension);
+                                                .getEntry(NS_JAVAX_SCRIPT_CAPABILITY + (match.startsWith("/") ? "" : SLASH) + match + DOT + scriptEngineExtension);
                                 if (bundledScriptURL != null) {
                                     return new Script(provider.getBundle(), bundledScriptURL, scriptEngine);
                                 }
                             }
                         }
                     }
+                } else {
+                    LOGGER.error("Cannot find a script engine for short name {}.", scriptEngineName);
                 }
+            } else {
+                LOGGER.error("Cannot find a script engine name for {}.", provider);
             }
         }
         return null;
