@@ -77,4 +77,9 @@ public class TypeProvider {
         }
         return false;
     }
+
+    @Override
+    public String toString() {
+        return String.format("TypeProvider{ resourceTypes=%s; bundle=%s }", resourceTypes, bundle.getSymbolicName());
+    }
 }
