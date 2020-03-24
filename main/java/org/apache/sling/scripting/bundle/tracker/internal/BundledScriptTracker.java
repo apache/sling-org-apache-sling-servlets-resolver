@@ -152,25 +152,28 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     List<ServiceRegistration<Servlet>> regs = new ArrayList<>();
                     LinkedHashSet<TypeProvider> wiredProviders = new LinkedHashSet<>();
                     wiredProviders.add(new TypeProvider(resourceTypeCapability.getResourceTypes(), bundle));
-                    String extendedResourceType = resourceTypeCapability.getExtendedResourceType();
-                    if (StringUtils.isNotEmpty(extendedResourceType)) {
-                        BundleWire extendedWire = null;
+                    String extendedResourceTypeString = resourceTypeCapability.getExtendedResourceType();
+                    if (StringUtils.isNotEmpty(extendedResourceTypeString)) {
+                        Bundle providingBundle = null;
+                        ResourceType extendedResourceType = null;
                         ResourceTypeCapability extendedCapability = null;
-                        LOGGER.debug("Bundle {} extends resource type {} through {}.", bundle.getSymbolicName(), extendedResourceType,
-                                resourceTypesRegistrationValue);
                         for (BundleWire wire : bundleWiring.getRequiredWires(NS_SLING_RESOURCE_TYPE)) {
                             ResourceTypeCapability wiredCapability =
                                     ResourceTypeCapability.fromBundleCapability(wire.getCapability());
                             for (ResourceType resourceType : wiredCapability.getResourceTypes()) {
-                                if (extendedResourceType.equals(resourceType.getType()) && wiredCapability.getSelectors().isEmpty()) {
-                                    extendedWire = wire;
+                                if (extendedResourceTypeString.equals(resourceType.getType()) && wiredCapability.getSelectors().isEmpty()) {
+                                    providingBundle = wire.getProvider().getBundle();
                                     extendedCapability = wiredCapability;
+                                    extendedResourceType = resourceType;
+                                    LOGGER.debug("Bundle {} extends resource type {} through {}.", bundle.getSymbolicName(),
+                                            extendedResourceType.toString(), resourceTypesRegistrationValue);
+                                    break;
                                 }
                             }
                         }
-                        if (extendedWire != null) {
-                            wiredProviders.add(new TypeProvider(extendedCapability.getResourceTypes(), extendedWire.getProvider().getBundle()));
-                            properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_SUPER_TYPE, extendedResourceType);
+                        if (providingBundle != null) {
+                            wiredProviders.add(new TypeProvider(extendedCapability.getResourceTypes(), providingBundle));
+                            properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_SUPER_TYPE, extendedResourceType.toString());
                         }
                     }
                     populateWiredProviders(wiredProviders);
