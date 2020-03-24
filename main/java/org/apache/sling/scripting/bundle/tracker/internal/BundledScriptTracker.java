@@ -135,8 +135,10 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     }
                     properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES, resourceTypesRegistrationValue);
 
-                    Set<String> extensions = new HashSet<>(resourceTypeCapability.getSelectors());
-                    extensions.add("html");
+                    Set<String> extensions = new HashSet<>(resourceTypeCapability.getExtensions());
+                    if (extensions.isEmpty()) {
+                        extensions.add("html");
+                    }
                     properties.put(ServletResolverConstants.SLING_SERVLET_EXTENSIONS, extensions.toArray());
 
                     if (!resourceTypeCapability.getSelectors().isEmpty()) {
