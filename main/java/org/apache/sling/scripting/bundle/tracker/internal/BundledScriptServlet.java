@@ -21,46 +21,33 @@ package org.apache.sling.scripting.bundle.tracker.internal;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedHashSet;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
-import javax.script.Bindings;
-import javax.script.ScriptContext;
 import javax.script.ScriptException;
 import javax.servlet.GenericServlet;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
-import org.apache.sling.api.request.RequestPathInfo;
-import org.apache.sling.api.scripting.ScriptEvaluationException;
-import org.apache.sling.api.scripting.SlingBindings;
-import org.apache.sling.scripting.core.ScriptHelper;
+import org.jetbrains.annotations.NotNull;
 
 class BundledScriptServlet extends GenericServlet {
 
 
-    private final BundledScriptFinder m_bundledScriptFinder;
-    private final ScriptContextProvider m_scriptContextProvider;
-    private final LinkedHashSet<TypeProvider> m_wiredTypeProviders;
-    private final boolean m_precompiledScripts;
-
-    private ConcurrentMap<String, Optional<Executable>> scriptsMap = new ConcurrentHashMap<>();
+    private final ScriptContextProvider scriptContextProvider;
+    private final LinkedHashSet<TypeProvider> wiredTypeProviders;
+    private final Executable executable;
 
 
-
-    BundledScriptServlet(BundledScriptFinder bundledScriptFinder, ScriptContextProvider scriptContextProvider,
-                         LinkedHashSet<TypeProvider> wiredTypeProviders, boolean precompiledScripts) {
-        m_bundledScriptFinder = bundledScriptFinder;
-        m_scriptContextProvider = scriptContextProvider;
-        m_wiredTypeProviders = wiredTypeProviders;
-        m_precompiledScripts = precompiledScripts;
+    BundledScriptServlet(@NotNull ScriptContextProvider scriptContextProvider,
+                         @NotNull LinkedHashSet<TypeProvider> wiredTypeProviders,
+                         @NotNull Executable executable) {
+        this.scriptContextProvider = scriptContextProvider;
+        this.wiredTypeProviders = wiredTypeProviders;
+        this.executable = executable;
     }
 
     @Override
@@ -79,40 +66,21 @@ class BundledScriptServlet extends GenericServlet {
                 }
             }
 
-            String scriptsMapKey = getScriptsMapKey(request);
-            Executable executable = scriptsMap.computeIfAbsent(scriptsMapKey,
-                key -> Optional.ofNullable(m_bundledScriptFinder.getScript(request, m_wiredTypeProviders, m_precompiledScripts))
-            ).orElseThrow(() -> new ServletException("Unable to locate a " + (m_precompiledScripts ? "class" : "script") + " for rendering."));
-
             RequestWrapper requestWrapper = new RequestWrapper(request,
-                    m_wiredTypeProviders.stream().map(TypeProvider::getResourceTypes).flatMap(Collection::stream).collect(Collectors.toSet()));
-            ScriptContext scriptContext = m_scriptContextProvider.prepareScriptContext(requestWrapper, response, executable);
+                    wiredTypeProviders.stream().map(typeProvider -> typeProvider.getResourceTypeCapability().getResourceTypes()
+            ).flatMap(Collection::stream).collect(Collectors.toSet()));
+            ScriptContextProvider.ExecutableContext executableContext = scriptContextProvider
+                    .prepareScriptContext(requestWrapper, response, executable);
             try {
-                executable.eval(scriptContext);
+                executableContext.eval();
             } catch (ScriptException se) {
                 Throwable cause = (se.getCause() == null) ? se : se.getCause();
-                throw new ScriptEvaluationException(executable.getName(), se.getMessage(), cause);
+                throw new ServletException(String.format("Failed executing script %s: %s", executable.getName(), se.getMessage()), cause);
             } finally {
-                Bindings engineBindings = scriptContext.getBindings(ScriptContext.ENGINE_SCOPE);
-                if (engineBindings != null && engineBindings.containsKey(SlingBindings.SLING)) {
-                    Object scriptHelper = engineBindings.get(SlingBindings.SLING);
-                    if (scriptHelper instanceof ScriptHelper) {
-                        ((ScriptHelper) scriptHelper).cleanup();
-                    }
-                }
-                executable.releaseDependencies();
+                executableContext.clean();
             }
         } else {
             throw new ServletException("Not a Sling HTTP request/response");
         }
-    }
-
-    private String getScriptsMapKey(SlingHttpServletRequest request) {
-        RequestPathInfo requestPathInfo = request.getRequestPathInfo();
-        String selectorString = requestPathInfo.getSelectorString();
-        String requestExtension = requestPathInfo.getExtension();
-        return request.getMethod() + ":" + request.getResource().getResourceType() +
-                (StringUtils.isNotEmpty(selectorString) ? ":" + selectorString : "") +
-                (StringUtils.isNotEmpty(requestExtension) ? ":" + requestExtension : "");
     }
 }

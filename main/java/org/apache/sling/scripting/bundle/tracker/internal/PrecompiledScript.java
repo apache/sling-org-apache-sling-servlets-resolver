@@ -25,43 +25,48 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.sling.api.scripting.SlingScriptConstants;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Bundle;
 
 public class PrecompiledScript extends AbstractBundledRenderUnit {
 
     private static final StringReader EMPTY_READER = new StringReader(StringUtils.EMPTY);
+    private final Class<?> clazz;
+    private volatile Object instance;
 
-    private final ScriptEngine scriptEngine;
-    private final Object precompiledScript;
-
-    PrecompiledScript(@NotNull Bundle bundle, @NotNull ScriptEngine scriptEngine, @NotNull Object precompiledScript) {
-        super(bundle);
-        this.scriptEngine = scriptEngine;
-        this.precompiledScript = precompiledScript;
+    PrecompiledScript(@NotNull Bundle bundle, @NotNull String path, @NotNull Class<?> clazz, @NotNull String scriptEngineName) {
+        super(bundle, path, scriptEngineName);
+        this.clazz = clazz;
     }
 
     @Override
     @NotNull
     public String getName() {
-        return precompiledScript.getClass().getName();
+        return clazz.getName();
     }
 
     @Override
-    @NotNull
-    public ScriptEngine getScriptEngine() {
-        return scriptEngine;
-    }
-
-    @Override
-    public void eval(@NotNull ScriptContext context) throws ScriptException {
+    public void eval(@NotNull ScriptEngine scriptEngine, @NotNull ScriptContext context) throws ScriptException {
         scriptEngine.eval(EMPTY_READER, context);
     }
 
     @Override
     public @NotNull Object getUnit() {
-        return precompiledScript;
+        Object localInstance = instance;
+        if (localInstance == null) {
+            synchronized (this) {
+                localInstance = instance;
+                if (localInstance == null) {
+                    try {
+                        localInstance = clazz.getDeclaredConstructor().newInstance();
+                        instance = localInstance;
+                    } catch (Exception e) {
+                        throw new IllegalStateException("Cannot instantiate class " + clazz.getName(), e);
+                    }
+                }
+            }
+        }
+        return localInstance;
     }
+
 }

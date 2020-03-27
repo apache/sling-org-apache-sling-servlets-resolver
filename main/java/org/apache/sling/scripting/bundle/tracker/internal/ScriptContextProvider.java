@@ -29,6 +29,8 @@ import java.util.Set;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 
 import org.apache.sling.api.SlingHttpServletRequest;
@@ -68,10 +70,18 @@ public class ScriptContextProvider {
     private BindingsValuesProvidersByContext bvpTracker;
 
     @Reference
+    private ScriptEngineManager scriptEngineManager;
+
+    @Reference
     private ScriptingResourceResolverProvider scriptingResourceResolverProvider;
 
-    ScriptContext prepareScriptContext(SlingHttpServletRequest request, SlingHttpServletResponse response, Executable executable)
+    ExecutableContext prepareScriptContext(SlingHttpServletRequest request, SlingHttpServletResponse response, Executable executable)
             throws IOException {
+        ScriptEngine scriptEngine = scriptEngineManager.getEngineByName(executable.getScriptEngineName());
+        if (scriptEngine == null) {
+            throw new IllegalStateException(String.format("Cannot find a script engine with name %s for executable %s.",
+                    executable.getScriptEngineName(), executable.getPath()));
+        }
         // prepare the SlingBindings
         Bindings bindings = new SimpleBindings();
         bindings.put("properties", request.getResource().getValueMap());
@@ -89,7 +99,7 @@ public class ScriptContextProvider {
         bindings.put(ScriptEngine.FILENAME.replaceAll("\\.", "_"), executable.getName());
 
         ProtectedBindings protectedBindings = new ProtectedBindings(bindings, PROTECTED_BINDINGS);
-        for (BindingsValuesProvider bindingsValuesProvider : bvpTracker.getBindingsValuesProviders(executable.getScriptEngine().getFactory(),
+        for (BindingsValuesProvider bindingsValuesProvider : bvpTracker.getBindingsValuesProviders(scriptEngine.getFactory(),
                 BindingsValuesProvider.DEFAULT_CONTEXT)) {
             bindingsValuesProvider.addBindings(protectedBindings);
         }
@@ -103,7 +113,34 @@ public class ScriptContextProvider {
         scriptContext.setWriter(response.getWriter());
         scriptContext.setErrorWriter(new LogWriter(scriptLogger));
         scriptContext.setReader(request.getReader());
-        return scriptContext;
+        return new ExecutableContext(scriptContext, executable, scriptEngine);
+    }
+
+    static class ExecutableContext {
+        private final ScriptContext scriptContext;
+        private final Executable executable;
+        private final ScriptEngine scriptEngine;
+
+        private ExecutableContext(ScriptContext scriptContext, Executable executable, ScriptEngine scriptEngine) {
+            this.scriptContext = scriptContext;
+            this.executable = executable;
+            this.scriptEngine = scriptEngine;
+        }
+
+        void eval() throws ScriptException {
+            executable.eval(scriptEngine, scriptContext);
+        }
+
+        void clean() {
+            Bindings engineBindings = scriptContext.getBindings(ScriptContext.ENGINE_SCOPE);
+            if (engineBindings != null && engineBindings.containsKey(SlingBindings.SLING)) {
+                Object scriptHelper = engineBindings.get(SlingBindings.SLING);
+                if (scriptHelper instanceof ScriptHelper) {
+                    ((ScriptHelper) scriptHelper).cleanup();
+                }
+            }
+            executable.releaseDependencies();
+        }
     }
 
 

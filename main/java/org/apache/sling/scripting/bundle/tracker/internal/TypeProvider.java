@@ -19,9 +19,7 @@
 package org.apache.sling.scripting.bundle.tracker.internal;
 
 import java.util.Objects;
-import java.util.Set;
 
-import org.apache.sling.scripting.bundle.tracker.ResourceType;
 import org.osgi.framework.Bundle;
 
 /**
@@ -29,27 +27,29 @@ import org.osgi.framework.Bundle;
  */
 public class TypeProvider {
 
-    private final Set<ResourceType> resourceTypes;
+    private final ResourceTypeCapability resourceTypeCapability;
     private final Bundle bundle;
+    private final boolean precompiled;
 
     /**
      * Builds a {@code TypeProvider}.
      *
-     * @param resourceTypes   the resource type
+     * @param resourceTypeCapability  the resource type capability
      * @param bundle the bundle that provides the resource type
      */
-    TypeProvider(Set<ResourceType> resourceTypes, Bundle bundle) {
-        this.resourceTypes = resourceTypes;
+    TypeProvider(ResourceTypeCapability resourceTypeCapability, Bundle bundle) {
+        this.resourceTypeCapability = resourceTypeCapability;
         this.bundle = bundle;
+        precompiled = Boolean.parseBoolean(bundle.getHeaders().get("Sling-ResourceType-Precompiled"));
     }
 
     /**
-     * Returns the resource type.
+     * Returns the resource type capabilities.
      *
-     * @return the resource type
+     * @return the resource type capabilities
      */
-    Set<ResourceType> getResourceTypes() {
-        return resourceTypes;
+    ResourceTypeCapability getResourceTypeCapability() {
+        return resourceTypeCapability;
     }
 
     /**
@@ -61,9 +61,18 @@ public class TypeProvider {
         return bundle;
     }
 
+    /**
+     * Returns {@code true} if the bundle provides precompiled scripts.
+     *
+     * @return {@code true} if the bundle provides precompiled scripts, {@code false} otherwise
+     */
+    public boolean isPrecompiled() {
+        return precompiled;
+    }
+
     @Override
     public int hashCode() {
-        return Objects.hash(bundle, resourceTypes);
+        return Objects.hash(bundle, resourceTypeCapability, precompiled);
     }
 
     @Override
@@ -73,13 +82,15 @@ public class TypeProvider {
         }
         if (obj instanceof TypeProvider) {
             TypeProvider other = (TypeProvider) obj;
-            return Objects.equals(bundle, other.bundle) && Objects.equals(resourceTypes, other.resourceTypes);
+            return Objects.equals(bundle, other.bundle) && Objects.equals(resourceTypeCapability, other.resourceTypeCapability) &&
+                    Objects.equals(precompiled, other.precompiled);
         }
         return false;
     }
 
     @Override
     public String toString() {
-        return String.format("TypeProvider{ resourceTypes=%s; bundle=%s }", resourceTypes, bundle.getSymbolicName());
+        return String.format("TypeProvider{ resourceTypeCapability=%s; bundle=%s; precompiled=%s }", resourceTypeCapability,
+                bundle.getSymbolicName(), precompiled);
     }
 }

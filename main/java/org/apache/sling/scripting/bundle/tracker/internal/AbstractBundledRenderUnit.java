@@ -40,11 +40,16 @@ abstract class AbstractBundledRenderUnit implements Executable {
 
     private final Bundle bundle;
     private final BundleContext bundleContext;
-    private List<ServiceReference> references;
+    private final String path;
+    private final String scriptEngineName;
+    private List<ServiceReference<?>> references;
     private Map<String, Object> services;
 
-    AbstractBundledRenderUnit(@NotNull Bundle bundle) {
+
+    AbstractBundledRenderUnit(@NotNull Bundle bundle, @NotNull String path, @NotNull String scriptEngineName) {
         this.bundle = bundle;
+        this.path = path;
+        this.scriptEngineName = scriptEngineName;
         bundleContext = bundle.getBundleContext();
     }
 
@@ -55,15 +60,25 @@ abstract class AbstractBundledRenderUnit implements Executable {
     }
 
     @Override
+    public @NotNull String getPath() {
+        return path;
+    }
+
+    @Override
+    public @NotNull String getScriptEngineName() {
+        return scriptEngineName;
+    }
+
+    @Override
     @Nullable
     @SuppressWarnings("unchecked")
-    public <ServiceType> ServiceType getService(@NotNull String className) {
+    public <T> T getService(@NotNull String className) {
         LOG.debug("Attempting to load class {} as an OSGi service.", className);
-        ServiceType result = (this.services == null ? null : (ServiceType) this.services.get(className));
+        T result = (this.services == null ? null : (T) this.services.get(className));
         if (result == null) {
-            final ServiceReference ref = this.bundleContext.getServiceReference(className);
+            final ServiceReference<?> ref = this.bundleContext.getServiceReference(className);
             if (ref != null) {
-                result = (ServiceType) this.bundleContext.getService(ref);
+                result = (T) this.bundleContext.getService(ref);
                 if (result != null) {
                     if (this.services == null) {
                         this.services = new HashMap<>();
@@ -83,21 +98,21 @@ abstract class AbstractBundledRenderUnit implements Executable {
     @Override
     @Nullable
     @SuppressWarnings("unchecked")
-    public <ServiceType> ServiceType[] getServices(@NotNull String className, @Nullable String filter) {
-        ServiceType[] result = null;
+    public <T> T[] getServices(@NotNull String className, @Nullable String filter) {
+        T[] result = null;
         try {
-            final ServiceReference[] refs = this.bundleContext.getServiceReferences(className, filter);
+            final ServiceReference<?>[] refs = this.bundleContext.getServiceReferences(className, filter);
 
             if (refs != null) {
                 // sort by service ranking (lowest first) (see ServiceReference#compareTo(Object))
-                List<ServiceReference> references = Arrays.asList(refs);
-                Collections.sort(references);
+                List<ServiceReference<?>> localReferences = Arrays.asList(refs);
+                Collections.sort(localReferences);
                 // get the highest ranking first
-                Collections.reverse(references);
+                Collections.reverse(localReferences);
 
-                final List<ServiceType> objects = new ArrayList<>();
-                for (ServiceReference reference : references) {
-                    final ServiceType service = (ServiceType) this.bundleContext.getService(reference);
+                final List<T> objects = new ArrayList<>();
+                for (ServiceReference<?> reference : localReferences) {
+                    final T service = (T) this.bundleContext.getService(reference);
                     if (service != null) {
                         if (this.references == null) {
                             this.references = new ArrayList<>();
@@ -106,8 +121,8 @@ abstract class AbstractBundledRenderUnit implements Executable {
                         objects.add(service);
                     }
                 }
-                if (objects.size() > 0) {
-                    ServiceType[] srv = (ServiceType[]) Array.newInstance(bundle.loadClass(className), objects.size());
+                if (!objects.isEmpty()) {
+                    T[] srv = (T[]) Array.newInstance(bundle.loadClass(className), objects.size());
                     result = objects.toArray(srv);
                 }
             }
@@ -120,7 +135,7 @@ abstract class AbstractBundledRenderUnit implements Executable {
     @Override
     public void releaseDependencies() {
         if (references != null) {
-            for (ServiceReference reference : this.references) {
+            for (ServiceReference<?> reference : this.references) {
                 bundleContext.ungetService(reference);
             }
             references.clear();

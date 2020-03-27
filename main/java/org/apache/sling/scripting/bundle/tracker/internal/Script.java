@@ -39,17 +39,15 @@ import org.osgi.framework.Bundle;
 class Script extends AbstractBundledRenderUnit {
 
     private final URL url;
-    private final ScriptEngine scriptEngine;
     private String sourceCode;
     private CompiledScript compiledScript = null;
     private Lock compilationLock = new ReentrantLock();
     private Lock readLock = new ReentrantLock();
 
 
-    Script(Bundle bundle, URL url, ScriptEngine scriptEngine) {
-        super(bundle);
+    Script(@NotNull Bundle bundle, @NotNull String path, @NotNull URL url, @NotNull String scriptEngineName) {
+        super(bundle, path, scriptEngineName);
         this.url = url;
-        this.scriptEngine = scriptEngine;
     }
 
     private String getSourceCode() throws IOException {
@@ -72,14 +70,8 @@ class Script extends AbstractBundledRenderUnit {
         return url.getPath();
     }
 
-    @NotNull
     @Override
-    public ScriptEngine getScriptEngine() {
-        return scriptEngine;
-    }
-
-    @Override
-    public void eval(@NotNull ScriptContext context) throws ScriptException {
+    public void eval(@NotNull ScriptEngine scriptEngine, @NotNull ScriptContext context) throws ScriptException {
         try {
             if (scriptEngine instanceof Compilable && compiledScript == null) {
                 compilationLock.lock();
