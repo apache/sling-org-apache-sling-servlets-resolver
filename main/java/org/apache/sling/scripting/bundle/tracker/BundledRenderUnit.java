@@ -18,10 +18,6 @@
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 package org.apache.sling.scripting.bundle.tracker;
 
-import javax.script.ScriptContext;
-import javax.script.ScriptEngine;
-import javax.script.ScriptException;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.annotation.versioning.ProviderType;
@@ -65,14 +61,6 @@ public interface BundledRenderUnit {
     @NotNull String getName();
 
     /**
-     * Returns an instance of the {@link ScriptEngine} that can execute the wrapped script or precompiled script, if the latter needs a
-     * specific runtime.
-     *
-     * @return an instance of the script's or precompiled script's associated {@link ScriptEngine}
-     */
-    @NotNull ScriptEngine getScriptEngine();
-
-    /**
      * Returns the {@link Bundle} in which the script or precompiled script is packaged. This method can be useful for getting an
      * instance of the bundle's classloader, when needed to load dependencies at run time. To do so the following code example can help:
      *
@@ -84,31 +72,23 @@ public interface BundledRenderUnit {
     @NotNull Bundle getBundle();
 
     /**
-     * Provided a {@link ScriptContext}, this method will execute / evaluate the wrapped script or precompiled script.
-     *
-     * @param context the {@link ScriptContext}
-     * @throws ScriptException if the execution leads to an error
-     */
-    void eval(@NotNull ScriptContext context) throws ScriptException;
-
-    /**
      * Retrieves an OSGi runtime dependency of the wrapped script identified by the passed {@code className} parameter.
      *
-     * @param className     the fully qualified class name
-     * @param <ServiceType> the expected service type
-     * @return an instance of the {@link ServiceType} or {@code null}
+     * @param className the fully qualified class name
+     * @param <T>       the expected service type
+     * @return an instance of the {@link T} or {@code null}
      */
-    @Nullable <ServiceType> ServiceType getService(@NotNull String className);
+    @Nullable <T> T getService(@NotNull String className);
 
     /**
      * Retrieves multiple instances of an OSGi runtime dependency of the wrapped script identified by the passed {@code className}
      * parameter, filtered according to the passed {@code filter}.
      *
-     * @param className     the fully qualified class name
-     * @param filter        a filter expression or {@code null} if all the instances should be returned; for more details about the {@code
-     *                      filter}'s syntax check {@link org.osgi.framework.BundleContext#getServiceReferences(String, String)}
-     * @param <ServiceType> the expected service type
-     * @return an instance of the {@link ServiceType} or {@code null}
+     * @param className the fully qualified class name
+     * @param filter    a filter expression or {@code null} if all the instances should be returned; for more details about the {@code
+     *                  filter}'s syntax check {@link org.osgi.framework.BundleContext#getServiceReferences(String, String)}
+     * @param <T>       the expected service type
+     * @return an instance of the {@link T} or {@code null}
      */
-    @Nullable <ServiceType> ServiceType[] getServices(@NotNull String className, @Nullable String filter);
+    @Nullable <T> T[] getServices(@NotNull String className, @Nullable String filter);
 }

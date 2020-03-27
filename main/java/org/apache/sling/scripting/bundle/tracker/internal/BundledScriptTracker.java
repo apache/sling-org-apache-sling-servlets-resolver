@@ -50,6 +50,7 @@ import org.apache.sling.api.request.RequestDispatcherOptions;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.commons.osgi.PropertiesUtil;
 import org.apache.sling.scripting.bundle.tracker.ResourceType;
+import org.jetbrains.annotations.NotNull;
 import org.osgi.annotation.bundle.Capability;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -88,6 +89,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     private static final String REGISTERING_BUNDLE = "org.apache.sling.scripting.bundle.tracker.internal.BundledScriptTracker.registering_bundle";
     static final String AT_VERSION = "version";
     static final String AT_SCRIPT_ENGINE = "scriptEngine";
+    static final String AT_SCRIPT_EXTENSION = "scriptExtension";
     static final String AT_EXTENDS = "extends";
 
     @Reference
@@ -121,7 +123,6 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
             LOGGER.debug("Inspecting bundle {} for {} capability.", bundle.getSymbolicName(), NS_SLING_RESOURCE_TYPE);
             List<BundleCapability> capabilities = bundleWiring.getCapabilities(NS_SLING_RESOURCE_TYPE);
             if (!capabilities.isEmpty()) {
-                boolean precompiled = Boolean.parseBoolean(bundle.getHeaders().get("Sling-ResourceType-Precompiled"));
                 List<ServiceRegistration<Servlet>> serviceRegistrations = capabilities.stream().flatMap(cap ->
                 {
                     Hashtable<String, Object> properties = new Hashtable<>();
@@ -135,55 +136,48 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     }
                     properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES, resourceTypesRegistrationValue);
 
-                    Set<String> extensions = new HashSet<>(resourceTypeCapability.getExtensions());
-                    if (extensions.isEmpty()) {
-                        extensions.add("html");
+                    String extension = resourceTypeCapability.getExtension();
+                    if (StringUtils.isEmpty(extension)) {
+                        extension = "html";
                     }
-                    properties.put(ServletResolverConstants.SLING_SERVLET_EXTENSIONS, extensions.toArray());
+                    properties.put(ServletResolverConstants.SLING_SERVLET_EXTENSIONS, extension);
 
                     if (!resourceTypeCapability.getSelectors().isEmpty()) {
                         properties.put(ServletResolverConstants.SLING_SERVLET_SELECTORS, resourceTypeCapability.getSelectors().toArray());
                     }
 
-                    if (!resourceTypeCapability.getMethods().isEmpty()) {
-                        properties.put(ServletResolverConstants.SLING_SERVLET_METHODS, resourceTypeCapability.getMethods().toArray());
+                    if (StringUtils.isNotEmpty(resourceTypeCapability.getMethod())) {
+                        properties.put(ServletResolverConstants.SLING_SERVLET_METHODS, resourceTypeCapability.getMethod());
                     }
 
                     List<ServiceRegistration<Servlet>> regs = new ArrayList<>();
                     LinkedHashSet<TypeProvider> wiredProviders = new LinkedHashSet<>();
-                    wiredProviders.add(new TypeProvider(resourceTypeCapability.getResourceTypes(), bundle));
+                    wiredProviders.add(new TypeProvider(resourceTypeCapability, bundle));
                     String extendedResourceTypeString = resourceTypeCapability.getExtendedResourceType();
                     if (StringUtils.isNotEmpty(extendedResourceTypeString)) {
-                        Bundle providingBundle = null;
-                        ResourceType extendedResourceType = null;
-                        ResourceTypeCapability extendedCapability = null;
-                        for (BundleWire wire : bundleWiring.getRequiredWires(NS_SLING_RESOURCE_TYPE)) {
-                            ResourceTypeCapability wiredCapability =
-                                    ResourceTypeCapability.fromBundleCapability(wire.getCapability());
-                            for (ResourceType resourceType : wiredCapability.getResourceTypes()) {
-                                if (extendedResourceTypeString.equals(resourceType.getType()) && wiredCapability.getSelectors().isEmpty()) {
-                                    providingBundle = wire.getProvider().getBundle();
-                                    extendedCapability = wiredCapability;
-                                    extendedResourceType = resourceType;
-                                    LOGGER.debug("Bundle {} extends resource type {} through {}.", bundle.getSymbolicName(),
-                                            extendedResourceType.toString(), resourceTypesRegistrationValue);
-                                    break;
+                        collectProvidersChain(wiredProviders, bundleWiring, extendedResourceTypeString);
+                        wiredProviders.stream().filter(typeProvider -> typeProvider.getResourceTypeCapability().getResourceTypes().stream().anyMatch(resourceType -> resourceType.getType().equals(extendedResourceTypeString))).findFirst().ifPresent(typeProvider -> {
+                            for (ResourceType type : typeProvider.getResourceTypeCapability().getResourceTypes()) {
+                                if (type.getType().equals(extendedResourceTypeString)) {
+                                    properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_SUPER_TYPE, type.toString());
                                 }
                             }
-                        }
-                        if (providingBundle != null) {
-                            wiredProviders.add(new TypeProvider(extendedCapability.getResourceTypes(), providingBundle));
-                            properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_SUPER_TYPE, extendedResourceType.toString());
-                        }
+                        });
                     }
-                    populateWiredProviders(wiredProviders);
-                    regs.add(
-                        bundle.getBundleContext().registerService(
-                                Servlet.class,
-                                new BundledScriptServlet(bundledScriptFinder, scriptContextProvider, wiredProviders, precompiled),
-                                properties
-                        )
-                    );
+                    Executable executable = bundledScriptFinder.getScript(wiredProviders);
+                    if (executable != null) {
+                        properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, executable.getPath());
+                        regs.add(
+                                bundle.getBundleContext().registerService(
+                                        Servlet.class,
+                                        new BundledScriptServlet(scriptContextProvider, wiredProviders, executable),
+                                        properties
+                                )
+                        );
+                    } else {
+                        LOGGER.error(String.format("Unable to locate an executable for capability %s.", cap));
+                    }
+
                     return regs.stream();
                 }).collect(Collectors.toList());
                 refreshDispatcher(serviceRegistrations);
@@ -193,34 +187,6 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
             }
         } else {
             return Collections.emptyList();
-        }
-    }
-
-
-    private void populateWiredProviders(LinkedHashSet<TypeProvider> initialProviders) {
-        Set<ResourceType> initialResourceTypes = new HashSet<>();
-        Set<Bundle> bundles = new HashSet<>(initialProviders.size());
-        initialProviders.forEach(typeProvider -> {
-            initialResourceTypes.addAll(typeProvider.getResourceTypes());
-            bundles.add(typeProvider.getBundle());
-        });
-        for (Bundle bundle : bundles) {
-            BundleWiring bundleWiring = bundle.adapt(BundleWiring.class);
-            bundleWiring.getRequiredWires(BundledScriptTracker.NS_SLING_RESOURCE_TYPE).forEach(
-                    bundleWire ->
-                    {
-                        ResourceTypeCapability wiredCapability = ResourceTypeCapability.fromBundleCapability(bundleWire.getCapability());
-                        Set<ResourceType> wiredResourceTypes = new HashSet<>();
-                        for (ResourceType capabilityRT : wiredCapability.getResourceTypes()) {
-                            if (!initialResourceTypes.contains(capabilityRT)) {
-                                wiredResourceTypes.add(capabilityRT);
-                            }
-                        }
-                        if (!wiredResourceTypes.isEmpty()) {
-                            initialProviders.add(new TypeProvider(wiredResourceTypes, bundleWire.getProvider().getBundle()));
-                        }
-                    }
-            );
         }
     }
 
@@ -317,8 +283,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
 
             Optional<ServiceRegistration<Servlet>> target = m_tracker.getTracked().values().stream().flatMap(List::stream)
                     .filter(
-                            ((Predicate<ServiceRegistration<Servlet>>) reg -> reg.getReference().getBundle().equals(m_context.getBundle()))
-                                    .negate()
+                            reg -> !reg.getReference().getBundle().equals(m_context.getBundle())
                     )
                     .filter(reg -> getResourceTypeVersion(reg.getReference()) != null)
                     .filter(reg ->
@@ -398,5 +363,35 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
             resourceTypes.add(ResourceType.parseResourceType(resourceTypeValue).getType());
         }
         return resourceTypes;
+    }
+
+    private void collectProvidersChain(@NotNull Set<TypeProvider> providers, @NotNull BundleWiring wiring,
+                                       @NotNull String extendedResourceType) {
+        for (BundleWire wire : wiring.getRequiredWires(NS_SLING_RESOURCE_TYPE)) {
+            ResourceTypeCapability wiredCapability = ResourceTypeCapability.fromBundleCapability(wire.getCapability());
+            if (wiredCapability.getSelectors().isEmpty()) {
+                for (ResourceType resourceType : wiredCapability.getResourceTypes()) {
+                    if (extendedResourceType.equals(resourceType.getType())) {
+                        Bundle providingBundle = wire.getProvider().getBundle();
+                        providers.add(new TypeProvider(wiredCapability, providingBundle));
+                        for (BundleWire providedWire : wire.getProvider().getWiring().getRequiredWires(NS_SLING_RESOURCE_TYPE)) {
+                            ResourceTypeCapability resourceTypeCapability =
+                                    ResourceTypeCapability.fromBundleCapability(providedWire.getCapability());
+                            String capabilityExtends = resourceTypeCapability.getExtendedResourceType();
+                            if (resourceTypeCapability.getSelectors().isEmpty() && StringUtils.isNotEmpty(capabilityExtends)) {
+                                for (ResourceType providedResourceType : resourceTypeCapability.getResourceTypes()) {
+                                    if (providedResourceType.getType().equals(extendedResourceType)) {
+                                        collectProvidersChain(providers, providedWire.getProvider()
+                                                .getBundle().adapt(BundleWiring.class), capabilityExtends);
+                                    }
+                                }
+                            } else {
+                                providers.add(new TypeProvider(resourceTypeCapability, providedWire.getProvider().getBundle()));
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
