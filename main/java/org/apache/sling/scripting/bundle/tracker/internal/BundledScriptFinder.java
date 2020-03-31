@@ -44,7 +44,7 @@ public class BundledScriptFinder {
 
     Executable getScript(Set<TypeProvider> providers) {
         for (TypeProvider provider : providers) {
-            ResourceTypeCapability capability = provider.getResourceTypeCapability();
+            ServletCapability capability = provider.getServletCapability();
             for (String match : buildScriptMatches(capability.getResourceTypes(),
                     capability.getSelectors().toArray(new String[0]), capability.getMethod(), capability.getExtension())) {
                 String scriptExtension = capability.getScriptExtension();
@@ -61,10 +61,7 @@ public class BundledScriptFinder {
         return null;
     }
 
-    @Nullable
-    private Executable getExecutable(@NotNull Bundle bundle, boolean precompiled, @NotNull String match,
-                                     @NotNull String scriptEngineName, @NotNull String scriptExtension) {
-        String path = match + DOT + scriptExtension;
+    Executable getScript(@NotNull Bundle bundle, boolean precompiled, @NotNull String path, @NotNull String scriptEngineName) {
         if (precompiled) {
             String className = JavaEscapeHelper.makeJavaPackage(path);
             try {
@@ -74,12 +71,19 @@ public class BundledScriptFinder {
                 // do nothing here
             }
         } else {
-            URL bundledScriptURL = bundle.getEntry(NS_JAVAX_SCRIPT_CAPABILITY + (match.startsWith("/") ? "" : SLASH) + path);
+            URL bundledScriptURL = bundle.getEntry(NS_JAVAX_SCRIPT_CAPABILITY + (path.startsWith("/") ? "" : SLASH) + path);
             if (bundledScriptURL != null) {
                 return new Script(bundle, path, bundledScriptURL, scriptEngineName);
             }
         }
         return null;
+    }
+
+    @Nullable
+    private Executable getExecutable(@NotNull Bundle bundle, boolean precompiled, @NotNull String match,
+                                     @NotNull String scriptEngineName, @NotNull String scriptExtension) {
+        String path = match + DOT + scriptExtension;
+        return getScript(bundle, precompiled, path, scriptEngineName);
     }
 
     private List<String> buildScriptMatches(Set<ResourceType> resourceTypes, String[] selectors, String method, String extension) {

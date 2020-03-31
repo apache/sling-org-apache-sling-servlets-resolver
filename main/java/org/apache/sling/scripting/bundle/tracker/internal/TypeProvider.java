@@ -27,18 +27,18 @@ import org.osgi.framework.Bundle;
  */
 public class TypeProvider {
 
-    private final ResourceTypeCapability resourceTypeCapability;
+    private final ServletCapability servletCapability;
     private final Bundle bundle;
     private final boolean precompiled;
 
     /**
      * Builds a {@code TypeProvider}.
      *
-     * @param resourceTypeCapability  the resource type capability
+     * @param servletCapability  the resource type capability
      * @param bundle the bundle that provides the resource type
      */
-    TypeProvider(ResourceTypeCapability resourceTypeCapability, Bundle bundle) {
-        this.resourceTypeCapability = resourceTypeCapability;
+    TypeProvider(ServletCapability servletCapability, Bundle bundle) {
+        this.servletCapability = servletCapability;
         this.bundle = bundle;
         precompiled = Boolean.parseBoolean(bundle.getHeaders().get("Sling-ResourceType-Precompiled"));
     }
@@ -48,8 +48,8 @@ public class TypeProvider {
      *
      * @return the resource type capabilities
      */
-    ResourceTypeCapability getResourceTypeCapability() {
-        return resourceTypeCapability;
+    ServletCapability getServletCapability() {
+        return servletCapability;
     }
 
     /**
@@ -72,7 +72,7 @@ public class TypeProvider {
 
     @Override
     public int hashCode() {
-        return Objects.hash(bundle, resourceTypeCapability, precompiled);
+        return Objects.hash(bundle, servletCapability, precompiled);
     }
 
     @Override
@@ -82,7 +82,7 @@ public class TypeProvider {
         }
         if (obj instanceof TypeProvider) {
             TypeProvider other = (TypeProvider) obj;
-            return Objects.equals(bundle, other.bundle) && Objects.equals(resourceTypeCapability, other.resourceTypeCapability) &&
+            return Objects.equals(bundle, other.bundle) && Objects.equals(servletCapability, other.servletCapability) &&
                     Objects.equals(precompiled, other.precompiled);
         }
         return false;
@@ -90,7 +90,7 @@ public class TypeProvider {
 
     @Override
     public String toString() {
-        return String.format("TypeProvider{ resourceTypeCapability=%s; bundle=%s; precompiled=%s }", resourceTypeCapability,
+        return String.format("TypeProvider{ resourceTypeCapability=%s; bundle=%s; precompiled=%s }", servletCapability,
                 bundle.getSymbolicName(), precompiled);
     }
 }

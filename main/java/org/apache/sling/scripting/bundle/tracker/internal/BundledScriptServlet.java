@@ -67,7 +67,7 @@ class BundledScriptServlet extends GenericServlet {
             }
 
             RequestWrapper requestWrapper = new RequestWrapper(request,
-                    wiredTypeProviders.stream().map(typeProvider -> typeProvider.getResourceTypeCapability().getResourceTypes()
+                    wiredTypeProviders.stream().map(typeProvider -> typeProvider.getServletCapability().getResourceTypes()
             ).flatMap(Collection::stream).collect(Collectors.toSet()));
             ScriptContextProvider.ExecutableContext executableContext = scriptContextProvider
                     .prepareScriptContext(requestWrapper, response, executable);
