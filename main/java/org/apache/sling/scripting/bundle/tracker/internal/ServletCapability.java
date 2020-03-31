@@ -34,9 +34,10 @@ import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Version;
 import org.osgi.framework.wiring.BundleCapability;
 
-class ResourceTypeCapability {
+class ServletCapability {
 
     private final Set<ResourceType> resourceTypes;
+    private final String path;
     private final List<String> selectors;
     private final String extension;
     private final String method;
@@ -44,11 +45,12 @@ class ResourceTypeCapability {
     private final String scriptEngineName;
     private final String scriptExtension;
 
-    private ResourceTypeCapability(@NotNull Set<ResourceType> resourceTypes, @NotNull List<String> selectors,
-                                   @Nullable String extension, @Nullable String method,
-                                   @Nullable String extendedResourceType, @Nullable String scriptEngineName,
-                                   @Nullable String scriptExtension) {
+    private ServletCapability(@NotNull Set<ResourceType> resourceTypes, @Nullable String path, @NotNull List<String> selectors,
+                              @Nullable String extension, @Nullable String method,
+                              @Nullable String extendedResourceType, @Nullable String scriptEngineName,
+                              @Nullable String scriptExtension) {
         this.resourceTypes = resourceTypes;
+        this.path = path;
         this.selectors = selectors;
         this.extension = extension;
         this.method = method;
@@ -60,6 +62,11 @@ class ResourceTypeCapability {
     @NotNull
     Set<ResourceType> getResourceTypes() {
         return Collections.unmodifiableSet(resourceTypes);
+    }
+
+    @Nullable
+    public String getPath() {
+        return path;
     }
 
     @NotNull
@@ -94,7 +101,7 @@ class ResourceTypeCapability {
 
     @Override
     public int hashCode() {
-        return Objects.hash(resourceTypes, selectors, extension, method, extendedResourceType, scriptEngineName, scriptExtension);
+        return Objects.hash(resourceTypes, path, selectors, extension, method, extendedResourceType, scriptEngineName, scriptExtension);
     }
 
     @Override
@@ -102,9 +109,10 @@ class ResourceTypeCapability {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof ResourceTypeCapability) {
-            ResourceTypeCapability other = (ResourceTypeCapability) obj;
-            return Objects.equals(resourceTypes, other.resourceTypes) && Objects.equals(selectors, other.selectors) &&
+        if (obj instanceof ServletCapability) {
+            ServletCapability other = (ServletCapability) obj;
+            return Objects.equals(resourceTypes, other.resourceTypes) && Objects.equals(path, other.path) &&
+                    Objects.equals(selectors, other.selectors) &&
                     Objects.equals(extension, other.extension) && Objects.equals(method, other.method) &&
                     Objects.equals(extendedResourceType, other.extendedResourceType) &&
                     Objects.equals(scriptEngineName, other.scriptEngineName) && Objects.equals(scriptExtension, other.scriptExtension);
@@ -112,10 +120,10 @@ class ResourceTypeCapability {
         return false;
     }
 
-    static ResourceTypeCapability fromBundleCapability(@NotNull BundleCapability capability) {
+    static ServletCapability fromBundleCapability(@NotNull BundleCapability capability) {
         Map<String, Object> attributes = capability.getAttributes();
         Set<ResourceType> resourceTypes = new HashSet<>();
-        String[] capabilityResourceTypes = PropertiesUtil.toStringArray(attributes.get(BundledScriptTracker.NS_SLING_RESOURCE_TYPE),
+        String[] capabilityResourceTypes = PropertiesUtil.toStringArray(attributes.get(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES),
                 new String[0]);
         Version version = (Version) attributes.get(BundledScriptTracker.AT_VERSION);
         for (String rt : capabilityResourceTypes) {
@@ -125,10 +133,11 @@ class ResourceTypeCapability {
                 resourceTypes.add(ResourceType.parseResourceType(rt + "/" + version.toString()));
             }
         }
-        return new ResourceTypeCapability(
+        return new ServletCapability(
                 resourceTypes,
-                Arrays.asList(PropertiesUtil.toStringArray(attributes.get(BundledScriptTracker.AT_SLING_SELECTORS), new String[0])),
-                (String) attributes.get(BundledScriptTracker.AT_SLING_EXTENSIONS),
+                (String) attributes.get(ServletResolverConstants.SLING_SERVLET_PATHS),
+                Arrays.asList(PropertiesUtil.toStringArray(attributes.get(ServletResolverConstants.SLING_SERVLET_SELECTORS), new String[0])),
+                (String) attributes.get(ServletResolverConstants.SLING_SERVLET_EXTENSIONS),
                 (String) attributes.get(ServletResolverConstants.SLING_SERVLET_METHODS),
                 (String) attributes.get(BundledScriptTracker.AT_EXTENDS),
                 (String) attributes.get(BundledScriptTracker.AT_SCRIPT_ENGINE),
