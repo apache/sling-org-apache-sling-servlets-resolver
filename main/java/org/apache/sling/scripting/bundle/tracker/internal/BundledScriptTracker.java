@@ -173,7 +173,15 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     List<ServiceRegistration<Servlet>> regs = new ArrayList<>();
 
                     if (executable != null) {
-                        properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, executable.getPath());
+                        Executable finalExecutable = executable;
+                        servletCapability.getResourceTypes().forEach(resourceType -> {
+                            if (finalExecutable.getPath().startsWith(resourceType.toString() + "/")) {
+                                properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, finalExecutable.getPath());
+                            }
+                        });
+                        if (executable.getPath().equals(servletCapability.getPath())) {
+                            properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, executable.getPath());
+                        }
                         regs.add(
                                 bundle.getBundleContext().registerService(
                                         Servlet.class,
@@ -384,20 +392,9 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     if (extendedResourceType.equals(resourceType.getType())) {
                         Bundle providingBundle = wire.getProvider().getBundle();
                         providers.add(new TypeProvider(wiredCapability, providingBundle));
-                        for (BundleWire providedWire : wire.getProvider().getWiring().getRequiredWires(NS_SLING_SERVLET)) {
-                            ServletCapability servletCapability =
-                                    ServletCapability.fromBundleCapability(providedWire.getCapability());
-                            String capabilityExtends = servletCapability.getExtendedResourceType();
-                            for (ResourceType providedResourceType : servletCapability.getResourceTypes()) {
-                                if (providedResourceType.getType().equals(extendedResourceType) && servletCapability.getSelectors().isEmpty()) {
-                                    if (StringUtils.isNotEmpty(capabilityExtends)) {
-                                        collectProvidersChain(providers, providedWire.getProvider().getBundle().adapt(BundleWiring.class),
-                                                capabilityExtends);
-                                    } else {
-                                        providers.add(new TypeProvider(servletCapability, providedWire.getProvider().getBundle()));
-                                    }
-                                }
-                            }
+                        String wiredExtends = wiredCapability.getExtendedResourceType();
+                        if (StringUtils.isNotEmpty(wiredExtends)) {
+                            collectProvidersChain(providers, wire.getProviderWiring(), wiredExtends);
                         }
                     }
                 }
