@@ -388,15 +388,15 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                             ServletCapability servletCapability =
                                     ServletCapability.fromBundleCapability(providedWire.getCapability());
                             String capabilityExtends = servletCapability.getExtendedResourceType();
-                            if (servletCapability.getSelectors().isEmpty() && StringUtils.isNotEmpty(capabilityExtends)) {
-                                for (ResourceType providedResourceType : servletCapability.getResourceTypes()) {
-                                    if (providedResourceType.getType().equals(extendedResourceType)) {
-                                        collectProvidersChain(providers, providedWire.getProvider()
-                                                .getBundle().adapt(BundleWiring.class), capabilityExtends);
+                            for (ResourceType providedResourceType : servletCapability.getResourceTypes()) {
+                                if (providedResourceType.getType().equals(extendedResourceType) && servletCapability.getSelectors().isEmpty()) {
+                                    if (StringUtils.isNotEmpty(capabilityExtends)) {
+                                        collectProvidersChain(providers, providedWire.getProvider().getBundle().adapt(BundleWiring.class),
+                                                capabilityExtends);
+                                    } else {
+                                        providers.add(new TypeProvider(servletCapability, providedWire.getProvider().getBundle()));
                                     }
                                 }
-                            } else {
-                                providers.add(new TypeProvider(servletCapability, providedWire.getProvider().getBundle()));
                             }
                         }
                     }
