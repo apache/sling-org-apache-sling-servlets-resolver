@@ -182,6 +182,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         if (executable.getPath().equals(servletCapability.getPath())) {
                             properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, executable.getPath());
                         }
+                        properties.put(BundledHooks.class.getName(), "true");
                         regs.add(
                                 bundle.getBundleContext().registerService(
                                         Servlet.class,
@@ -238,6 +239,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         "=" + rt + "; " +
                         ServletResolverConstants.SLING_SERVLET_EXTENSIONS + "=" + extensions + "; " +
                         ServletResolverConstants.SLING_SERVLET_METHODS + "=" + methods  + "}");
+                properties.put(BundledHooks.class.getName(), "true");
                 reg = registeringBundle.orElse(m_context).registerService(Servlet.class, new DispatcherServlet(rt), properties);
             } else {
                 if (!new HashSet<>(Arrays.asList(PropertiesUtil
