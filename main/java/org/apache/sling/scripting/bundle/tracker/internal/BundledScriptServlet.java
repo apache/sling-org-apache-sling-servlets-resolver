@@ -32,10 +32,10 @@ import javax.servlet.ServletResponse;
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
+import org.apache.sling.scripting.bundle.tracker.internal.request.RequestWrapper;
 import org.jetbrains.annotations.NotNull;
 
 class BundledScriptServlet extends GenericServlet {
-
 
     private final ScriptContextProvider scriptContextProvider;
     private final LinkedHashSet<TypeProvider> wiredTypeProviders;

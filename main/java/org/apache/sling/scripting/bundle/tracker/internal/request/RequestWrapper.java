@@ -16,8 +16,10 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-package org.apache.sling.scripting.bundle.tracker.internal;
+package org.apache.sling.scripting.bundle.tracker.internal.request;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.Set;
 
 import javax.servlet.RequestDispatcher;
@@ -29,11 +31,12 @@ import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.wrappers.SlingHttpServletRequestWrapper;
 import org.apache.sling.scripting.bundle.tracker.ResourceType;
 
-class RequestWrapper extends SlingHttpServletRequestWrapper {
+public class RequestWrapper extends SlingHttpServletRequestWrapper {
 
     private final Set<ResourceType> wiredResourceTypes;
+    private BufferedReader reader;
 
-    RequestWrapper(SlingHttpServletRequest wrappedRequest, Set<ResourceType> wiredResourceTypes) {
+    public RequestWrapper(SlingHttpServletRequest wrappedRequest, Set<ResourceType> wiredResourceTypes) {
         super(wrappedRequest);
         this.wiredResourceTypes = wiredResourceTypes;
     }
@@ -57,6 +60,14 @@ class RequestWrapper extends SlingHttpServletRequestWrapper {
         }
         RequestDispatcherOptions processedOptions = processOptions(options);
         return super.getRequestDispatcher(path, processedOptions);
+    }
+
+    @Override
+    public BufferedReader getReader() {
+        if (reader == null) {
+            reader = new BufferedReader(new OnDemandReader(getRequest()));
+        }
+        return reader;
     }
 
     private RequestDispatcherOptions processOptions(RequestDispatcherOptions options) {
