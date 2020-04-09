@@ -25,7 +25,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.apache.sling.scripting.bundle.tracker.TypeProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Bundle;
@@ -38,6 +40,7 @@ abstract class AbstractBundledRenderUnit implements Executable {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractBundledRenderUnit.class.getName());
 
+    private final Set<TypeProvider> providers;
     private final Bundle bundle;
     private final BundleContext bundleContext;
     private final String path;
@@ -46,7 +49,9 @@ abstract class AbstractBundledRenderUnit implements Executable {
     private Map<String, Object> services;
 
 
-    AbstractBundledRenderUnit(@NotNull Bundle bundle, @NotNull String path, @NotNull String scriptEngineName) {
+    AbstractBundledRenderUnit(@NotNull Set<TypeProvider> providers, @NotNull Bundle bundle, @NotNull String path,
+                              @NotNull String scriptEngineName) {
+        this.providers = providers;
         this.bundle = bundle;
         this.path = path;
         this.scriptEngineName = scriptEngineName;
@@ -57,6 +62,11 @@ abstract class AbstractBundledRenderUnit implements Executable {
     @NotNull
     public Bundle getBundle() {
         return bundle;
+    }
+
+    @Override
+    public @NotNull Set<TypeProvider> getTypeProviders() {
+        return providers;
     }
 
     @Override

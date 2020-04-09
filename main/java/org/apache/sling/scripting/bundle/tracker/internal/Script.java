@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -32,6 +33,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.sling.scripting.bundle.tracker.TypeProvider;
 import org.apache.sling.scripting.core.ScriptNameAwareReader;
 import org.jetbrains.annotations.NotNull;
 import org.osgi.framework.Bundle;
@@ -45,8 +47,9 @@ class Script extends AbstractBundledRenderUnit {
     private Lock readLock = new ReentrantLock();
 
 
-    Script(@NotNull Bundle bundle, @NotNull String path, @NotNull URL url, @NotNull String scriptEngineName) {
-        super(bundle, path, scriptEngineName);
+    Script(@NotNull Set<TypeProvider> providers, @NotNull Bundle bundle, @NotNull String path, @NotNull URL url,
+           @NotNull String scriptEngineName) {
+        super(providers, bundle, path, scriptEngineName);
         this.url = url;
     }
 

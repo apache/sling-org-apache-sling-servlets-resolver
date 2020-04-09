@@ -20,7 +20,6 @@ package org.apache.sling.scripting.bundle.tracker.internal;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -29,13 +28,14 @@ import java.util.Set;
 
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.commons.osgi.PropertiesUtil;
+import org.apache.sling.scripting.bundle.tracker.BundledRenderUnitCapability;
 import org.apache.sling.scripting.bundle.tracker.ResourceType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Version;
 import org.osgi.framework.wiring.BundleCapability;
 
-class ServletCapability {
+public class BundledRenderUnitCapabilityImpl  implements BundledRenderUnitCapability {
 
     private final Set<ResourceType> resourceTypes;
     private final String path;
@@ -46,10 +46,11 @@ class ServletCapability {
     private final String scriptEngineName;
     private final String scriptExtension;
 
-    private ServletCapability(@NotNull Set<ResourceType> resourceTypes, @Nullable String path, @NotNull List<String> selectors,
-                              @Nullable String extension, @Nullable String method,
-                              @Nullable String extendedResourceType, @Nullable String scriptEngineName,
-                              @Nullable String scriptExtension) {
+    private BundledRenderUnitCapabilityImpl(@NotNull Set<ResourceType> resourceTypes, @Nullable String path,
+                                            @NotNull List<String> selectors,
+                                        @Nullable String extension, @Nullable String method,
+                                        @Nullable String extendedResourceType, @Nullable String scriptEngineName,
+                                        @Nullable String scriptExtension) {
         this.resourceTypes = resourceTypes;
         this.path = path;
         this.selectors = selectors;
@@ -60,43 +61,51 @@ class ServletCapability {
         this.scriptExtension = scriptExtension;
     }
 
+    @Override
     @NotNull
-    Set<ResourceType> getResourceTypes() {
+    public Set<ResourceType> getResourceTypes() {
         return Collections.unmodifiableSet(resourceTypes);
     }
 
+    @Override
     @Nullable
     public String getPath() {
         return path;
     }
 
+    @Override
     @NotNull
-    List<String> getSelectors() {
+    public List<String> getSelectors() {
         return Collections.unmodifiableList(selectors);
     }
 
+    @Override
     @Nullable
-    String getExtension() {
+    public String getExtension() {
         return extension;
     }
 
+    @Override
     @Nullable
-    String getExtendedResourceType() {
+    public String getExtendedResourceType() {
         return extendedResourceType;
     }
 
+    @Override
     @Nullable
-    String getMethod() {
+    public String getMethod() {
         return method;
     }
 
+    @Override
     @Nullable
-    String getScriptEngineName() {
+    public String getScriptEngineName() {
         return scriptEngineName;
     }
 
+    @Override
     @Nullable
-    String getScriptExtension() {
+    public String getScriptExtension() {
         return scriptExtension;
     }
 
@@ -110,22 +119,23 @@ class ServletCapability {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof ServletCapability) {
-            ServletCapability other = (ServletCapability) obj;
-            return Objects.equals(resourceTypes, other.resourceTypes) && Objects.equals(path, other.path) &&
-                    Objects.equals(selectors, other.selectors) &&
-                    Objects.equals(extension, other.extension) && Objects.equals(method, other.method) &&
-                    Objects.equals(extendedResourceType, other.extendedResourceType) &&
-                    Objects.equals(scriptEngineName, other.scriptEngineName) && Objects.equals(scriptExtension, other.scriptExtension);
+        if (obj instanceof BundledRenderUnitCapability) {
+            BundledRenderUnitCapability other = (BundledRenderUnitCapability) obj;
+            return Objects.equals(resourceTypes, other.getResourceTypes()) && Objects.equals(path, other.getPath()) &&
+                    Objects.equals(selectors, other.getSelectors()) &&
+                    Objects.equals(extension, other.getExtension()) && Objects.equals(method, other.getMethod()) &&
+                    Objects.equals(extendedResourceType, other.getExtendedResourceType()) &&
+                    Objects.equals(scriptEngineName, other.getScriptEngineName()) &&
+                    Objects.equals(scriptExtension, other.getScriptExtension());
         }
         return false;
     }
 
-    static ServletCapability fromBundleCapability(@NotNull BundleCapability capability) {
+    public static BundledRenderUnitCapability fromBundleCapability(@NotNull BundleCapability capability) {
         Map<String, Object> attributes = capability.getAttributes();
         Set<ResourceType> resourceTypes = new LinkedHashSet<>();
-        String[] capabilityResourceTypes = PropertiesUtil.toStringArray(attributes.get(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES),
-                new String[0]);
+        String[] capabilityResourceTypes =
+                PropertiesUtil.toStringArray(attributes.get(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES), new String[0]);
         Version version = (Version) attributes.get(BundledScriptTracker.AT_VERSION);
         for (String rt : capabilityResourceTypes) {
             if (version == null) {
@@ -134,10 +144,11 @@ class ServletCapability {
                 resourceTypes.add(ResourceType.parseResourceType(rt + "/" + version.toString()));
             }
         }
-        return new ServletCapability(
+        return new BundledRenderUnitCapabilityImpl(
                 resourceTypes,
                 (String) attributes.get(ServletResolverConstants.SLING_SERVLET_PATHS),
-                Arrays.asList(PropertiesUtil.toStringArray(attributes.get(ServletResolverConstants.SLING_SERVLET_SELECTORS), new String[0])),
+                Arrays.asList(
+                        PropertiesUtil.toStringArray(attributes.get(ServletResolverConstants.SLING_SERVLET_SELECTORS), new String[0])),
                 (String) attributes.get(ServletResolverConstants.SLING_SERVLET_EXTENSIONS),
                 (String) attributes.get(ServletResolverConstants.SLING_SERVLET_METHODS),
                 (String) attributes.get(BundledScriptTracker.AT_EXTENDS),
