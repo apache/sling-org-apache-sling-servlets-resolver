@@ -21,6 +21,7 @@ package org.apache.sling.scripting.bundle.tracker.internal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -122,7 +123,7 @@ class ServletCapability {
 
     static ServletCapability fromBundleCapability(@NotNull BundleCapability capability) {
         Map<String, Object> attributes = capability.getAttributes();
-        Set<ResourceType> resourceTypes = new HashSet<>();
+        Set<ResourceType> resourceTypes = new LinkedHashSet<>();
         String[] capabilityResourceTypes = PropertiesUtil.toStringArray(attributes.get(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES),
                 new String[0]);
         Version version = (Version) attributes.get(BundledScriptTracker.AT_VERSION);
