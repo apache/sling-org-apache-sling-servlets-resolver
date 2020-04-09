@@ -35,7 +35,7 @@ import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Version;
 import org.osgi.framework.wiring.BundleCapability;
 
-public class BundledRenderUnitCapabilityImpl  implements BundledRenderUnitCapability {
+class BundledRenderUnitCapabilityImpl  implements BundledRenderUnitCapability {
 
     private final Set<ResourceType> resourceTypes;
     private final String path;
