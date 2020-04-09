@@ -30,7 +30,7 @@ import org.apache.sling.scripting.bundle.tracker.TypeProvider;
 import org.jetbrains.annotations.NotNull;
 import org.osgi.framework.Bundle;
 
-public class PrecompiledScript extends AbstractBundledRenderUnit {
+class PrecompiledScript extends AbstractBundledRenderUnit {
 
     private static final StringReader EMPTY_READER = new StringReader(StringUtils.EMPTY);
     private final Class<?> clazz;
