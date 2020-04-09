@@ -49,6 +49,8 @@ import org.apache.sling.api.request.RequestDispatcherOptions;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.commons.osgi.PropertiesUtil;
 import org.apache.sling.scripting.bundle.tracker.ResourceType;
+import org.apache.sling.scripting.bundle.tracker.BundledRenderUnitCapability;
+import org.apache.sling.scripting.bundle.tracker.TypeProvider;
 import org.jetbrains.annotations.NotNull;
 import org.osgi.annotation.bundle.Capability;
 import org.osgi.framework.Bundle;
@@ -81,13 +83,13 @@ import org.slf4j.LoggerFactory;
 public class BundledScriptTracker implements BundleTrackerCustomizer<List<ServiceRegistration<Servlet>>> {
     static final String NS_SLING_SCRIPTING_EXTENDER = "sling.scripting";
 
-    static final String NS_SLING_SERVLET = "sling.servlet";
     private static final Logger LOGGER = LoggerFactory.getLogger(BundledScriptTracker.class);
     private static final String REGISTERING_BUNDLE = "org.apache.sling.scripting.bundle.tracker.internal.BundledScriptTracker.registering_bundle";
-    static final String AT_VERSION = "version";
-    static final String AT_SCRIPT_ENGINE = "scriptEngine";
-    static final String AT_SCRIPT_EXTENSION = "scriptExtension";
-    static final String AT_EXTENDS = "extends";
+    public static final String NS_SLING_SERVLET = "sling.servlet";
+    public static final String AT_VERSION = "version";
+    public static final String AT_SCRIPT_ENGINE = "scriptEngine";
+    public static final String AT_SCRIPT_EXTENSION = "scriptExtension";
+    public static final String AT_EXTENDS = "extends";
 
     @Reference
     private BundledScriptFinder bundledScriptFinder;
@@ -125,61 +127,64 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     Hashtable<String, Object> properties = new Hashtable<>();
                     properties.put(ServletResolverConstants.SLING_SERVLET_NAME, BundledScriptServlet.class.getName());
                     properties.put(Constants.SERVICE_DESCRIPTION, BundledScriptServlet.class.getName() + cap.getAttributes());
-                    ServletCapability servletCapability = ServletCapability.fromBundleCapability(cap);
+                    BundledRenderUnitCapability bundledRenderUnitCapability = BundledRenderUnitCapabilityImpl.fromBundleCapability(cap);
                     Executable executable = null;
-                    TypeProvider baseTypeProvider = new TypeProvider(servletCapability, bundle);
+                    TypeProvider baseTypeProvider = new TypeProviderImpl(bundledRenderUnitCapability, bundle);
                     LinkedHashSet<TypeProvider> wiredProviders = new LinkedHashSet<>();
                     wiredProviders.add(baseTypeProvider);
-                    if (!servletCapability.getResourceTypes().isEmpty()) {
-                        String[] resourceTypesRegistrationValue = new String[servletCapability.getResourceTypes().size()];
+                    if (!bundledRenderUnitCapability.getResourceTypes().isEmpty()) {
+                        String[] resourceTypesRegistrationValue = new String[bundledRenderUnitCapability.getResourceTypes().size()];
                         int rtIndex = 0;
-                        for (ResourceType resourceType : servletCapability.getResourceTypes()) {
+                        for (ResourceType resourceType : bundledRenderUnitCapability.getResourceTypes()) {
                             resourceTypesRegistrationValue[rtIndex++] = resourceType.toString();
                         }
                         properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES, resourceTypesRegistrationValue);
 
-                        String extension = servletCapability.getExtension();
+                        String extension = bundledRenderUnitCapability.getExtension();
                         if (StringUtils.isEmpty(extension)) {
                             extension = "html";
                         }
                         properties.put(ServletResolverConstants.SLING_SERVLET_EXTENSIONS, extension);
 
-                        if (!servletCapability.getSelectors().isEmpty()) {
-                            properties.put(ServletResolverConstants.SLING_SERVLET_SELECTORS, servletCapability.getSelectors().toArray());
+                        if (!bundledRenderUnitCapability.getSelectors().isEmpty()) {
+                            properties.put(ServletResolverConstants.SLING_SERVLET_SELECTORS, bundledRenderUnitCapability.getSelectors().toArray());
                         }
 
-                        if (StringUtils.isNotEmpty(servletCapability.getMethod())) {
-                            properties.put(ServletResolverConstants.SLING_SERVLET_METHODS, servletCapability.getMethod());
+                        if (StringUtils.isNotEmpty(bundledRenderUnitCapability.getMethod())) {
+                            properties.put(ServletResolverConstants.SLING_SERVLET_METHODS, bundledRenderUnitCapability.getMethod());
                         }
 
-                        String extendedResourceTypeString = servletCapability.getExtendedResourceType();
+                        String extendedResourceTypeString = bundledRenderUnitCapability.getExtendedResourceType();
                         if (StringUtils.isNotEmpty(extendedResourceTypeString)) {
-                            collectProvidersChain(wiredProviders, bundleWiring, extendedResourceTypeString);
-                            wiredProviders.stream().filter(typeProvider -> typeProvider.getServletCapability().getResourceTypes().stream()
+                            collectInheritanceChain(wiredProviders, bundleWiring, extendedResourceTypeString);
+                            wiredProviders.stream().filter(typeProvider -> typeProvider.getBundledRenderUnitCapability().getResourceTypes().stream()
                                     .anyMatch(resourceType -> resourceType.getType().equals(extendedResourceTypeString))).findFirst()
                                     .ifPresent(typeProvider -> {
-                                        for (ResourceType type : typeProvider.getServletCapability().getResourceTypes()) {
+                                        for (ResourceType type : typeProvider.getBundledRenderUnitCapability().getResourceTypes()) {
                                             if (type.getType().equals(extendedResourceTypeString)) {
                                                 properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_SUPER_TYPE, type.toString());
                                             }
                                         }
                                     });
                         }
+                        collectRequiresChain(wiredProviders, bundleWiring);
                         executable = bundledScriptFinder.getScript(wiredProviders);
-                    } else if (StringUtils.isNotEmpty(servletCapability.getPath()) && StringUtils.isNotEmpty(servletCapability.getScriptEngineName())) {
+                    } else if (StringUtils.isNotEmpty(bundledRenderUnitCapability.getPath()) && StringUtils.isNotEmpty(
+                            bundledRenderUnitCapability.getScriptEngineName())) {
+                        collectRequiresChain(wiredProviders, bundleWiring);
                         executable = bundledScriptFinder.getScript(baseTypeProvider.getBundle(), baseTypeProvider.isPrecompiled(),
-                                servletCapability.getPath(), servletCapability.getScriptEngineName());
+                                bundledRenderUnitCapability.getPath(), bundledRenderUnitCapability.getScriptEngineName(), wiredProviders);
                     }
                     List<ServiceRegistration<Servlet>> regs = new ArrayList<>();
 
                     if (executable != null) {
                         Executable finalExecutable = executable;
-                        servletCapability.getResourceTypes().forEach(resourceType -> {
+                        bundledRenderUnitCapability.getResourceTypes().forEach(resourceType -> {
                             if (finalExecutable.getPath().startsWith(resourceType.toString() + "/")) {
                                 properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, finalExecutable.getPath());
                             }
                         });
-                        if (executable.getPath().equals(servletCapability.getPath())) {
+                        if (executable.getPath().equals(bundledRenderUnitCapability.getPath())) {
                             properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, executable.getPath());
                         }
                         properties.put(BundledHooks.class.getName(), "true");
@@ -386,21 +391,31 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         return resourceTypes;
     }
 
-    private void collectProvidersChain(@NotNull Set<TypeProvider> providers, @NotNull BundleWiring wiring,
-                                       @NotNull String extendedResourceType) {
+    private void collectInheritanceChain(@NotNull Set<TypeProvider> providers, @NotNull BundleWiring wiring,
+                                         @NotNull String extendedResourceType) {
         for (BundleWire wire : wiring.getRequiredWires(NS_SLING_SERVLET)) {
-            ServletCapability wiredCapability = ServletCapability.fromBundleCapability(wire.getCapability());
+            BundledRenderUnitCapability wiredCapability = BundledRenderUnitCapabilityImpl.fromBundleCapability(wire.getCapability());
             if (wiredCapability.getSelectors().isEmpty()) {
                 for (ResourceType resourceType : wiredCapability.getResourceTypes()) {
                     if (extendedResourceType.equals(resourceType.getType())) {
                         Bundle providingBundle = wire.getProvider().getBundle();
-                        providers.add(new TypeProvider(wiredCapability, providingBundle));
+                        providers.add(new TypeProviderImpl(wiredCapability, providingBundle));
                         String wiredExtends = wiredCapability.getExtendedResourceType();
                         if (StringUtils.isNotEmpty(wiredExtends)) {
-                            collectProvidersChain(providers, wire.getProviderWiring(), wiredExtends);
+                            collectInheritanceChain(providers, wire.getProviderWiring(), wiredExtends);
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private void collectRequiresChain(@NotNull Set<TypeProvider> providers, @NotNull BundleWiring wiring) {
+        for (BundleWire wire : wiring.getRequiredWires(NS_SLING_SERVLET)) {
+            BundledRenderUnitCapability wiredCapability = BundledRenderUnitCapabilityImpl.fromBundleCapability(wire.getCapability());
+            if (wiredCapability.getSelectors().isEmpty()) {
+                Bundle providingBundle = wire.getProvider().getBundle();
+                providers.add(new TypeProviderImpl(wiredCapability, providingBundle));
             }
         }
     }

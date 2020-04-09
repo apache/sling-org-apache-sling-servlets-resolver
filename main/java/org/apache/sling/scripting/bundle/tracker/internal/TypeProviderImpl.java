@@ -20,59 +20,42 @@ package org.apache.sling.scripting.bundle.tracker.internal;
 
 import java.util.Objects;
 
+import org.apache.sling.scripting.bundle.tracker.BundledRenderUnitCapability;
+import org.jetbrains.annotations.NotNull;
 import org.osgi.framework.Bundle;
 
-/**
- * A {@code TypeProvider} keeps an association between a versioned resource type and the bundle that provides it.
- */
-public class TypeProvider {
+class TypeProviderImpl implements org.apache.sling.scripting.bundle.tracker.TypeProvider {
 
-    private final ServletCapability servletCapability;
+    private final BundledRenderUnitCapability bundledRenderUnitCapability;
     private final Bundle bundle;
     private final boolean precompiled;
 
-    /**
-     * Builds a {@code TypeProvider}.
-     *
-     * @param servletCapability  the resource type capability
-     * @param bundle the bundle that provides the resource type
-     */
-    TypeProvider(ServletCapability servletCapability, Bundle bundle) {
-        this.servletCapability = servletCapability;
+    TypeProviderImpl(BundledRenderUnitCapability bundledRenderUnitCapability, Bundle bundle) {
+        this.bundledRenderUnitCapability = bundledRenderUnitCapability;
         this.bundle = bundle;
         precompiled = Boolean.parseBoolean(bundle.getHeaders().get("Sling-ResourceType-Precompiled"));
     }
 
-    /**
-     * Returns the resource type capabilities.
-     *
-     * @return the resource type capabilities
-     */
-    ServletCapability getServletCapability() {
-        return servletCapability;
+    @NotNull
+    @Override
+    public BundledRenderUnitCapability getBundledRenderUnitCapability() {
+        return bundledRenderUnitCapability;
     }
 
-    /**
-     * Returns the providing bundle.
-     *
-     * @return the providing bundle
-     */
-    Bundle getBundle() {
+    @NotNull
+    @Override
+    public Bundle getBundle() {
         return bundle;
     }
 
-    /**
-     * Returns {@code true} if the bundle provides precompiled scripts.
-     *
-     * @return {@code true} if the bundle provides precompiled scripts, {@code false} otherwise
-     */
+    @Override
     public boolean isPrecompiled() {
         return precompiled;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(bundle, servletCapability, precompiled);
+        return Objects.hash(bundle, bundledRenderUnitCapability, precompiled);
     }
 
     @Override
@@ -80,9 +63,9 @@ public class TypeProvider {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof TypeProvider) {
-            TypeProvider other = (TypeProvider) obj;
-            return Objects.equals(bundle, other.bundle) && Objects.equals(servletCapability, other.servletCapability) &&
+        if (obj instanceof TypeProviderImpl) {
+            TypeProviderImpl other = (TypeProviderImpl) obj;
+            return Objects.equals(bundle, other.bundle) && Objects.equals(bundledRenderUnitCapability, other.bundledRenderUnitCapability) &&
                     Objects.equals(precompiled, other.precompiled);
         }
         return false;
@@ -90,7 +73,7 @@ public class TypeProvider {
 
     @Override
     public String toString() {
-        return String.format("TypeProvider{ resourceTypeCapability=%s; bundle=%s; precompiled=%s }", servletCapability,
+        return String.format("TypeProvider{ bundledRenderUnitCapability=%s; bundle=%s; precompiled=%s }", bundledRenderUnitCapability,
                 bundle.getSymbolicName(), precompiled);
     }
 }

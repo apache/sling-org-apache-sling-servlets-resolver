@@ -18,6 +18,8 @@
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 package org.apache.sling.scripting.bundle.tracker;
 
+import java.util.Set;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.annotation.versioning.ProviderType;
@@ -70,6 +72,14 @@ public interface BundledRenderUnit {
      * </pre>
      */
     @NotNull Bundle getBundle();
+
+    /**
+     * Returns the {@code Set} of {@link TypeProvider}s which are related to this unit.
+     *
+     * @return the set of providers; if the unit doesn't have any inheritance chains, then the set will contain only one {@link
+     * TypeProvider}
+     */
+    @NotNull Set<TypeProvider> getTypeProviders();
 
     /**
      * Retrieves an OSGi runtime dependency of the wrapped script identified by the passed {@code className} parameter.

@@ -19,12 +19,14 @@
 package org.apache.sling.scripting.bundle.tracker.internal;
 
 import java.io.StringReader;
+import java.util.Set;
 
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.sling.scripting.bundle.tracker.TypeProvider;
 import org.jetbrains.annotations.NotNull;
 import org.osgi.framework.Bundle;
 
@@ -34,8 +36,9 @@ public class PrecompiledScript extends AbstractBundledRenderUnit {
     private final Class<?> clazz;
     private volatile Object instance;
 
-    PrecompiledScript(@NotNull Bundle bundle, @NotNull String path, @NotNull Class<?> clazz, @NotNull String scriptEngineName) {
-        super(bundle, path, scriptEngineName);
+    PrecompiledScript(@NotNull Set<TypeProvider> providers, @NotNull Bundle bundle, @NotNull String path, @NotNull Class<?> clazz,
+                      @NotNull String scriptEngineName) {
+        super(providers, bundle, path, scriptEngineName);
         this.clazz = clazz;
     }
 

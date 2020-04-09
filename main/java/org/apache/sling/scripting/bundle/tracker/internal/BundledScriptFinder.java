@@ -27,7 +27,9 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.commons.compiler.source.JavaEscapeHelper;
+import org.apache.sling.scripting.bundle.tracker.BundledRenderUnitCapability;
 import org.apache.sling.scripting.bundle.tracker.ResourceType;
+import org.apache.sling.scripting.bundle.tracker.TypeProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Bundle;
@@ -44,14 +46,15 @@ public class BundledScriptFinder {
 
     Executable getScript(Set<TypeProvider> providers) {
         for (TypeProvider provider : providers) {
-            ServletCapability capability = provider.getServletCapability();
+            BundledRenderUnitCapability capability = provider.getBundledRenderUnitCapability();
             for (String match : buildScriptMatches(capability.getResourceTypes(),
                     capability.getSelectors().toArray(new String[0]), capability.getMethod(), capability.getExtension())) {
                 String scriptExtension = capability.getScriptExtension();
                 String scriptEngineName = capability.getScriptEngineName();
                 if (StringUtils.isNotEmpty(scriptExtension) && StringUtils.isNotEmpty(scriptEngineName)) {
                     Executable executable =
-                            getExecutable(provider.getBundle(), provider.isPrecompiled(), match, scriptEngineName, scriptExtension);
+                            getExecutable(provider.getBundle(), provider.isPrecompiled(), match, scriptEngineName, scriptExtension,
+                                    providers);
                     if (executable != null) {
                         return executable;
                     }
@@ -61,29 +64,30 @@ public class BundledScriptFinder {
         return null;
     }
 
-    Executable getScript(@NotNull Bundle bundle, boolean precompiled, @NotNull String path, @NotNull String scriptEngineName) {
+    Executable getScript(@NotNull Bundle bundle, boolean precompiled, @NotNull String path, @NotNull String scriptEngineName,
+                         @NotNull Set<TypeProvider> providers) {
         if (precompiled) {
             String className = JavaEscapeHelper.makeJavaPackage(path);
             try {
                 Class<?> clazz = bundle.loadClass(className);
-                return new PrecompiledScript(bundle, path, clazz, scriptEngineName);
+                return new PrecompiledScript(providers, bundle, path, clazz, scriptEngineName);
             } catch (ClassNotFoundException ignored) {
                 // do nothing here
             }
         } else {
             URL bundledScriptURL = bundle.getEntry(NS_JAVAX_SCRIPT_CAPABILITY + (path.startsWith("/") ? "" : SLASH) + path);
             if (bundledScriptURL != null) {
-                return new Script(bundle, path, bundledScriptURL, scriptEngineName);
+                return new Script(providers, bundle, path, bundledScriptURL, scriptEngineName);
             }
         }
         return null;
     }
 
     @Nullable
-    private Executable getExecutable(@NotNull Bundle bundle, boolean precompiled, @NotNull String match,
-                                     @NotNull String scriptEngineName, @NotNull String scriptExtension) {
+    private Executable getExecutable(@NotNull Bundle bundle, boolean precompiled, @NotNull String match, @NotNull String scriptEngineName,
+                                     @NotNull String scriptExtension, @NotNull Set<TypeProvider> providers) {
         String path = match + DOT + scriptExtension;
-        return getScript(bundle, precompiled, path, scriptEngineName);
+        return getScript(bundle, precompiled, path, scriptEngineName, providers);
     }
 
     private List<String> buildScriptMatches(Set<ResourceType> resourceTypes, String[] selectors, String method, String extension) {
