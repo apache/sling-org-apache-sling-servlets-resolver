@@ -68,6 +68,12 @@ final class WeightedResource extends ResourceWrapper implements
      */
     static final int WEIGHT_EXTENSION = 2;
 
+    /**
+     * Weight value added to method/prefix weight if the resource name contains
+     * the request method (value is 1).
+     */
+    static final int WEIGHT_METHOD = 1;
+
     private final int ordinal;
 
     private final int numSelectors;

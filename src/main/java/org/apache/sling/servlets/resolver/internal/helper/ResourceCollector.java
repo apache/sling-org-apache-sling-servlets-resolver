@@ -295,13 +295,13 @@ public class ResourceCollector extends AbstractResourceCollector {
         if (matches(scriptName, parentName, suffix)) {
             addWeightedResource(resources, child, selIdx,
                 WeightedResource.WEIGHT_EXTENSION
-                    + WeightedResource.WEIGHT_PREFIX);
+                    + WeightedResource.WEIGHT_PREFIX + ((htmlSuffix != null) ? WeightedResource.WEIGHT_METHOD : WeightedResource.WEIGHT_NONE));
             return true;
         }
 
         if (scriptName.equals(suffix.substring(1))) {
             addWeightedResource(resources, child, selIdx,
-                WeightedResource.WEIGHT_EXTENSION);
+                WeightedResource.WEIGHT_EXTENSION + ((htmlSuffix != null) ? WeightedResource.WEIGHT_METHOD : WeightedResource.WEIGHT_NONE));
             return true;
         }
 

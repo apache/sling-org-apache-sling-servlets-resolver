@@ -19,6 +19,7 @@
 package org.apache.sling.servlets.resolver.internal.helper;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -138,6 +139,18 @@ public class ResourceCollectorTest extends HelperTestBase {
 
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1 };
         int[] indices = { 10, 9, 3, 4, 1, 2, 0 };
+
+        effectiveTest(names, baseIdxs, indices);
+    }
+
+    public void testGetServletsWithMethod() {
+        String[] names = {
+            "/html.servlet", // 7
+            "/html.GET.servlet"
+        };
+
+        int[] baseIdxs = { 1, 1};
+        int[] indices = { 1, 0};
 
         effectiveTest(names, baseIdxs, indices);
     }
