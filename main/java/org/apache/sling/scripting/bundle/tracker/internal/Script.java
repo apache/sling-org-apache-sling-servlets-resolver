@@ -76,10 +76,11 @@ class Script extends AbstractBundledRenderUnit {
     @Override
     public void eval(@NotNull ScriptEngine scriptEngine, @NotNull ScriptContext context) throws ScriptException {
         try {
-            if (scriptEngine instanceof Compilable && compiledScript == null) {
+            if (scriptEngine instanceof Compilable &&
+                    (compiledScript == null || !scriptEngine.getFactory().equals(compiledScript.getEngine().getFactory()))) {
                 compilationLock.lock();
                 try {
-                    if (compiledScript == null) {
+                    if (compiledScript == null || !scriptEngine.getFactory().equals(compiledScript.getEngine().getFactory())) {
                         compiledScript =
                                 ((Compilable) scriptEngine)
                                         .compile(new ScriptNameAwareReader(new StringReader(getSourceCode()), getName()));
