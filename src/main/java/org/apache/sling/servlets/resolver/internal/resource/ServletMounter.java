@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletContext;
@@ -40,6 +41,7 @@ import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.servlets.ServletResolver;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.servlets.resolver.internal.ResolverConfig;
+import org.apache.sling.servlets.resolver.internal.resolution.ResolutionCache;
 import org.apache.sling.spi.resource.provider.ResourceProvider;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -71,6 +73,8 @@ public class ServletMounter {
 
     private static final String REF_SERVLET = "Servlet";
 
+    private static final String REF_CACHE = "Cache";
+
     private final ServletContext servletContext;
 
     private final Map<ServiceReference<Servlet>, ServletReg> servletsByReference = new HashMap<>();
@@ -78,6 +82,12 @@ public class ServletMounter {
     private volatile boolean active = true;
 
     private final ServletResourceProviderFactory servletResourceProviderFactory;
+
+    private final MergingServletResourceProvider provider;
+
+    private final ServiceRegistration<MergingServletResourceProvider> providerReg;
+
+    private final ConcurrentHashMap<ResolutionCache, ResolutionCache> resolutionCaches = new ConcurrentHashMap<>();
 
     /**
      * Activate this component.
@@ -89,6 +99,15 @@ public class ServletMounter {
         this.servletContext = servletContext;
         servletResourceProviderFactory = new ServletResourceProviderFactory(config.servletresolver_servletRoot(),
                 resourceResolverFactory.getSearchPath());
+
+        if (config.servletresolver_mountInternal()) {
+            provider = new MergingServletResourceProvider();
+            providerReg = context.registerService(MergingServletResourceProvider.class, provider, null);
+        }
+        else {
+            provider = null;
+            providerReg = null;
+        }
     }
 
     /**
@@ -103,8 +122,15 @@ public class ServletMounter {
         synchronized (this.servletsByReference) {
             refs = new ArrayList<>(servletsByReference.keySet());
         }
+        if (provider != null) {
+            provider.clear();
+        }
         // destroy all servlets
         destroyAllServlets(refs);
+
+        if (providerReg != null) {
+            providerReg.unregister();
+        }
 
         // sanity check: clear array (it should be empty now anyway)
         synchronized ( this.servletsByReference ) {
@@ -126,6 +152,21 @@ public class ServletMounter {
 
     protected void unbindServlet(final ServiceReference<Servlet> reference) {
         destroyServlet(reference);
+    }
+
+    @Reference(
+        name = REF_CACHE,
+        service = ResolutionCache.class,
+        cardinality = ReferenceCardinality.MULTIPLE,
+        policy = ReferencePolicy.DYNAMIC
+    )
+    protected void bindResolutionCache(ResolutionCache cache) {
+        cache.flushCache();
+        resolutionCaches.put(cache, cache);
+    }
+
+    protected void unbindResolutionCache(ResolutionCache cache) {
+        resolutionCaches.remove(cache);
     }
 
     private boolean createServlet(final Servlet servlet, final ServiceReference<Servlet> reference) {
@@ -158,13 +199,18 @@ public class ServletMounter {
             if ( bundleContext != null ) {
                 final List<ServiceRegistration<ResourceProvider<Object>>> regs = new ArrayList<>();
                 try {
-                    for(final String root : provider.getServletPaths()) {
-                        @SuppressWarnings("unchecked")
-                        final ServiceRegistration<ResourceProvider<Object>> reg = (ServiceRegistration<ResourceProvider<Object>>) bundleContext.registerService(
-                            ResourceProvider.class.getName(),
-                            provider,
-                            createServiceProperties(reference, root));
-                        regs.add(reg);
+                    if (this.provider != null) {
+                        this.provider.add(provider, reference);
+                        resolutionCaches.values().forEach(ResolutionCache::flushCache);
+                    }
+                    else {
+                        for (final String root : provider.getServletPaths()) {
+                            @SuppressWarnings("unchecked") final ServiceRegistration<ResourceProvider<Object>> reg = (ServiceRegistration<ResourceProvider<Object>>) bundleContext.registerService(
+                                ResourceProvider.class.getName(),
+                                provider,
+                                createServiceProperties(reference, root));
+                            regs.add(reg);
+                        }
                     }
                     registered = true;
                 } catch ( final IllegalStateException ise ) {
@@ -175,7 +221,7 @@ public class ServletMounter {
                         logger.debug("Registered {}", provider);
                     }
                     synchronized (this.servletsByReference) {
-                        servletsByReference.put(reference, new ServletReg(servlet, regs));
+                        servletsByReference.put(reference, new ServletReg(servlet, regs, provider));
                     }
                 }
             }
@@ -224,6 +270,9 @@ public class ServletMounter {
                     // this might happen on shutdown
                 }
             }
+            if (registration.provider != null && provider != null) {
+                provider.remove(registration.provider, reference);
+            }
             final String name = RequestUtil.getServletName(registration.servlet);
             logger.debug("unbindServlet: Servlet {} removed", name);
 
@@ -257,13 +306,15 @@ public class ServletMounter {
         return servletName;
     }
 
-    private static final class ServletReg {
+    static final class ServletReg {
         public final Servlet servlet;
         public final List<ServiceRegistration<ResourceProvider<Object>>> registrations;
+        private final ServletResourceProvider provider;
 
-        public ServletReg(final Servlet s, final List<ServiceRegistration<ResourceProvider<Object>>> srs) {
+        public ServletReg(final Servlet s, final List<ServiceRegistration<ResourceProvider<Object>>> srs, final ServletResourceProvider provider) {
             this.servlet = s;
             this.registrations = srs;
+            this.provider = provider;
         }
     }
 }

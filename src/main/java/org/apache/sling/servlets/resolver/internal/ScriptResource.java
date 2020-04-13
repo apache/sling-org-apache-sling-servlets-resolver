@@ -19,6 +19,7 @@
 package org.apache.sling.servlets.resolver.internal;
 
 import java.util.Iterator;
+import java.util.function.Supplier;
 
 import javax.servlet.Servlet;
 
@@ -28,6 +29,7 @@ import org.apache.sling.api.resource.ResourceMetadata;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.scripting.SlingScript;
+import org.apache.sling.servlets.resolver.internal.resource.ServletResource;
 
 /**
  * ScriptResource is a resource wrapper of a resource fetched by a
@@ -45,12 +47,12 @@ public class ScriptResource extends AbstractResource {
 
     private final ResourceResolver sharedResourceResolver;
 
-    private final ThreadLocal<ResourceResolver> perThreadResourceResolver;
+    private final Supplier<ResourceResolver> perThreadResourceResolver;
 
     private final String path;
 
     public ScriptResource(final Resource resource,
-            final ThreadLocal<ResourceResolver> perThreadScriptResolver,
+            final Supplier<ResourceResolver> perThreadScriptResolver,
             final ResourceResolver sharedResourceResolver) {
         this.path = resource.getPath();
         this.sharedResourceResolver = sharedResourceResolver;
@@ -99,9 +101,11 @@ public class ScriptResource extends AbstractResource {
     @Override
     public <AdapterType> AdapterType adaptTo(final Class<AdapterType> type) {
         if ( type == Servlet.class ) {
-            final Servlet s = (Servlet)super.adaptTo(type);
-            if ( s != null ) {
-                return (AdapterType)s;
+            if (! (this.getActiveResource() instanceof ServletResource)) {
+                final Servlet s = (Servlet) super.adaptTo(type);
+                if ( s != null ) {
+                    return (AdapterType)s;
+                }
             }
         } else if ( type == SlingScript.class ) {
             final SlingScript s = (SlingScript)super.adaptTo(type);

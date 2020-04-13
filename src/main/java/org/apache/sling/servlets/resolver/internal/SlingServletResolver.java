@@ -27,6 +27,7 @@ import static org.apache.sling.api.servlets.ServletResolverConstants.DEFAULT_ERR
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.function.Supplier;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletContext;
@@ -59,7 +60,9 @@ import org.apache.sling.servlets.resolver.internal.helper.AbstractResourceCollec
 import org.apache.sling.servlets.resolver.internal.helper.NamedScriptResourceCollector;
 import org.apache.sling.servlets.resolver.internal.helper.ResourceCollector;
 import org.apache.sling.servlets.resolver.internal.resolution.ResolutionCache;
+import org.apache.sling.servlets.resolver.internal.resource.MergingServletResourceProvider;
 import org.apache.sling.servlets.resolver.internal.resource.SlingServletConfig;
+import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -67,6 +70,7 @@ import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.metatype.annotations.Designate;
+import org.osgi.util.tracker.ServiceTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -117,6 +121,8 @@ public class SlingServletResolver
 
     private volatile ResourceResolver sharedScriptResolver;
 
+    private final ThreadLocal<ResourceResolver> perThreadScriptResolver = new ThreadLocal<>();
+
     /**
      * The allowed execution paths.
      */
@@ -141,7 +147,7 @@ public class SlingServletResolver
     // ---------- ServletResolver interface -----------------------------------
 
     /**
-     * @see org.apache.sling.api.servlets.ServletResolver#resolveServlet(org.apache.sling.api.SlingHttpServletRequest)
+     * @see ServletResolver#resolveServlet(SlingHttpServletRequest)
      */
     @Override
     public Servlet resolveServlet(final SlingHttpServletRequest request) {
@@ -192,7 +198,7 @@ public class SlingServletResolver
     }
 
     /**
-     * @see org.apache.sling.api.servlets.ServletResolver#resolveServlet(org.apache.sling.api.resource.Resource, java.lang.String)
+     * @see ServletResolver#resolveServlet(Resource, java.lang.String)
      */
     @Override
     public Servlet resolveServlet(final Resource resource, final String scriptName) {
@@ -219,7 +225,7 @@ public class SlingServletResolver
     }
 
     /**
-     * @see org.apache.sling.api.servlets.ServletResolver#resolveServlet(org.apache.sling.api.resource.ResourceResolver, java.lang.String)
+     * @see ServletResolver#resolveServlet(ResourceResolver, java.lang.String)
      */
     @Override
     public Servlet resolveServlet(final ResourceResolver resolver, final String scriptName) {
@@ -255,14 +261,14 @@ public class SlingServletResolver
         }
         // if resource is fetched using shared resource resolver
         // or resource is a servlet resource, just adapt to servlet
-        if ( scriptResource.getResourceResolver() == this.sharedScriptResolver
+        if (scriptResource.getResourceResolver() == this.sharedScriptResolver
              || "sling/bundle/resource".equals(scriptResource.getResourceSuperType()) ) {
             return scriptResource.adaptTo(Servlet.class);
         }
         // return a resource wrapper to make sure the implementation
         // switches from the per thread resource resolver to the shared once
         // the per thread resource resolver is closed
-        return new ScriptResource(scriptResource, perThreadScriptResolver, this.sharedScriptResolver).adaptTo(Servlet.class);
+        return new ScriptResource(scriptResource, perThreadScriptResolver::get, this.sharedScriptResolver).adaptTo(Servlet.class);
     }
 
     // ---------- ErrorHandler interface --------------------------------------
@@ -326,7 +332,7 @@ public class SlingServletResolver
     }
 
     /**
-     * @see org.apache.sling.engine.servlets.ErrorHandler#handleError(java.lang.Throwable, org.apache.sling.api.SlingHttpServletRequest, org.apache.sling.api.SlingHttpServletResponse)
+     * @see org.apache.sling.engine.servlets.ErrorHandler#handleError(java.lang.Throwable, SlingHttpServletRequest, SlingHttpServletResponse)
      */
     @Override
     public void handleError(final Throwable throwable, final SlingHttpServletRequest request, final SlingHttpServletResponse response)
@@ -392,10 +398,8 @@ public class SlingServletResolver
         return scriptResolver;
     }
 
-    private final ThreadLocal<ResourceResolver> perThreadScriptResolver = new ThreadLocal<>();
-
     /**
-     * @see org.apache.sling.api.request.SlingRequestListener#onEvent(org.apache.sling.api.request.SlingRequestEvent)
+     * @see SlingRequestListener#onEvent(SlingRequestEvent)
      */
     @Override
     public void onEvent(final SlingRequestEvent event) {
@@ -419,7 +423,7 @@ public class SlingServletResolver
      * error handling. If the resource has not yet been set in the request
      * because the error occurred before the resource could be set (e.g. during
      * resource resolution) a synthetic resource is returned whose type is
-     * {@link ServletResolverConstants#ERROR_HANDLER_PATH}.
+     * {@link ServletResolverConstants#DEFAULT_ERROR_HANDLER_RESOURCE_TYPE}.
      *
      * @param request The request whose resource is to be returned.
      */
@@ -653,13 +657,17 @@ public class SlingServletResolver
 
     // ---------- SCR Integration ----------------------------------------------
 
+    private volatile ServiceTracker tracker;
     /**
      * Activate this component.
      */
     @Activate
-    protected void activate(final ResolverConfig config) throws LoginException {
+    protected void activate(final BundleContext context, final ResolverConfig config) throws LoginException {
+        this.tracker = new ServiceTracker(context, MergingServletResourceProvider.class, null);
+        this.tracker.open();
         this.sharedScriptResolver =
-                resourceResolverFactory.getServiceResourceResolver(Collections.singletonMap(ResourceResolverFactory.SUBSERVICE, (Object)SERVICE_USER));
+                ScriptResourceResolver.wrap(resourceResolverFactory.getServiceResourceResolver(Collections.singletonMap(ResourceResolverFactory.SUBSERVICE, (Object)SERVICE_USER)),
+                    (Supplier) this.tracker::getService);
 
         this.executionPaths = getExecutionPaths(config.servletresolver_paths());
         this.defaultExtensions = config.servletresolver_defaultExtensions();
@@ -669,9 +677,9 @@ public class SlingServletResolver
     }
 
     @Modified
-    protected void modified(final ResolverConfig config) throws LoginException {
+    protected void modified(final BundleContext context, final ResolverConfig config) throws LoginException {
         this.deactivate();
-        this.activate(config);
+        this.activate(context, config);
     }
 
     /**
@@ -679,6 +687,7 @@ public class SlingServletResolver
      */
     @Deactivate
     protected void deactivate() {
+        this.tracker.close();
         this.resolutionCache.flushCache();
         // destroy the fallback error handler servlet
         if (fallbackErrorServlet != null) {

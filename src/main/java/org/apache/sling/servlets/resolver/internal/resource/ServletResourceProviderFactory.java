@@ -34,6 +34,7 @@ import java.util.Set;
 
 import javax.servlet.Servlet;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.servlets.HttpConstants;
@@ -220,8 +221,11 @@ public class ServletResourceProviderFactory {
                 // add the unmodified path
                 pathSet.add(path);
 
-                // ensure we have another entry which has the .servlet ext.
-                pathSet.add(ensureServletNameExtension(path));
+                if (StringUtils.isEmpty(FilenameUtils.getExtension(path))) {
+                    // ensure we have another entry which has the .servlet ext. if there wasn't one to begin with
+                    // Radu says: this will make sure that scripts are equal to servlets in the resolution process
+                    pathSet.add(ensureServletNameExtension(path));
+                }
             }
         }
     }

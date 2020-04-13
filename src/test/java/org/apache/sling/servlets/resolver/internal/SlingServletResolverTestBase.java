@@ -125,7 +125,7 @@ public abstract class SlingServletResolverTestBase {
         Mockito.when(bundle.getBundleContext()).thenReturn(bundleContext);
 
         defineTestServlets(bundle);
-        servletResolver.activate(config);
+        servletResolver.activate(bundleContext, config);
 
     }
 
