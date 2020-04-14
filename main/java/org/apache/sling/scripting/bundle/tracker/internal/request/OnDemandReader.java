@@ -28,7 +28,7 @@ class OnDemandReader extends Reader {
 
     private final ServletRequest request;
 
-    private Reader delegatee;
+    private Reader delegate;
 
     OnDemandReader(ServletRequest request) {
         this.request = request;
@@ -36,8 +36,8 @@ class OnDemandReader extends Reader {
 
     @Override
     public void close() throws IOException {
-        if (delegatee != null) {
-            delegatee.close();
+        if (delegate != null) {
+            delegate.close();
         }
     }
 
@@ -48,7 +48,7 @@ class OnDemandReader extends Reader {
 
     @Override
     public boolean markSupported() {
-        return (delegatee != null) ? delegatee.markSupported() : false;
+        return (delegate != null) && delegate.markSupported();
     }
 
     @Override
@@ -78,8 +78,8 @@ class OnDemandReader extends Reader {
 
     @Override
     public void reset() throws IOException {
-        if (delegatee != null) {
-            delegatee.reset();
+        if (delegate != null) {
+            delegate.reset();
         }
     }
 
@@ -89,9 +89,9 @@ class OnDemandReader extends Reader {
     }
 
     private Reader getReader() throws IOException {
-        if (delegatee == null) {
-            delegatee = request.getReader();
+        if (delegate == null) {
+            delegate = request.getReader();
         }
-        return delegatee;
+        return delegate;
     }
 }

@@ -34,6 +34,7 @@ import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.scripting.bundle.tracker.TypeProvider;
 import org.apache.sling.scripting.bundle.tracker.internal.request.RequestWrapper;
+import org.apache.sling.scripting.bundle.tracker.internal.request.ResponseWrapper;
 import org.jetbrains.annotations.NotNull;
 
 class BundledScriptServlet extends GenericServlet {
@@ -71,7 +72,7 @@ class BundledScriptServlet extends GenericServlet {
                     wiredTypeProviders.stream().map(typeProvider -> typeProvider.getBundledRenderUnitCapability().getResourceTypes()
             ).flatMap(Collection::stream).collect(Collectors.toSet()));
             ScriptContextProvider.ExecutableContext executableContext = scriptContextProvider
-                    .prepareScriptContext(requestWrapper, response, executable);
+                    .prepareScriptContext(requestWrapper, new ResponseWrapper(response), executable);
             try {
                 executableContext.eval();
             } catch (ScriptException se) {
