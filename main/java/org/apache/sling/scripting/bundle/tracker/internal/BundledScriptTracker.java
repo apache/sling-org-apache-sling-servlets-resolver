@@ -21,6 +21,7 @@ package org.apache.sling.scripting.bundle.tracker.internal;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -121,6 +123,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                 .anyMatch(m_context.getBundle()::equals)) {
             LOGGER.debug("Inspecting bundle {} for {} capability.", bundle.getSymbolicName(), NS_SLING_SERVLET);
             List<BundleCapability> capabilities = bundleWiring.getCapabilities(NS_SLING_SERVLET);
+            Set<TypeProvider> requiresChain = collectRequiresChain(bundleWiring);
             if (!capabilities.isEmpty()) {
                 List<ServiceRegistration<Servlet>> serviceRegistrations = capabilities.stream().flatMap(cap ->
                 {
@@ -130,8 +133,8 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     BundledRenderUnitCapability bundledRenderUnitCapability = BundledRenderUnitCapabilityImpl.fromBundleCapability(cap);
                     Executable executable = null;
                     TypeProvider baseTypeProvider = new TypeProviderImpl(bundledRenderUnitCapability, bundle);
-                    LinkedHashSet<TypeProvider> wiredProviders = new LinkedHashSet<>();
-                    wiredProviders.add(baseTypeProvider);
+                    LinkedHashSet<TypeProvider> inheritanceChain = new LinkedHashSet<>();
+                    inheritanceChain.add(baseTypeProvider);
                     if (!bundledRenderUnitCapability.getResourceTypes().isEmpty()) {
                         String[] resourceTypesRegistrationValue = new String[bundledRenderUnitCapability.getResourceTypes().size()];
                         int rtIndex = 0;
@@ -156,8 +159,8 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
 
                         String extendedResourceTypeString = bundledRenderUnitCapability.getExtendedResourceType();
                         if (StringUtils.isNotEmpty(extendedResourceTypeString)) {
-                            collectInheritanceChain(wiredProviders, bundleWiring, extendedResourceTypeString);
-                            wiredProviders.stream().filter(typeProvider -> typeProvider.getBundledRenderUnitCapability().getResourceTypes().stream()
+                            collectInheritanceChain(inheritanceChain, bundleWiring, extendedResourceTypeString);
+                            inheritanceChain.stream().filter(typeProvider -> typeProvider.getBundledRenderUnitCapability().getResourceTypes().stream()
                                     .anyMatch(resourceType -> resourceType.getType().equals(extendedResourceTypeString))).findFirst()
                                     .ifPresent(typeProvider -> {
                                         for (ResourceType type : typeProvider.getBundledRenderUnitCapability().getResourceTypes()) {
@@ -167,13 +170,15 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                                         }
                                     });
                         }
-                        collectRequiresChain(wiredProviders, bundleWiring);
-                        executable = bundledScriptFinder.getScript(wiredProviders);
+                        Set<TypeProvider> aggregate =
+                                Stream.concat(inheritanceChain.stream(), requiresChain.stream()).collect(Collectors.toCollection(LinkedHashSet::new));
+                        executable = bundledScriptFinder.getScript(aggregate);
                     } else if (StringUtils.isNotEmpty(bundledRenderUnitCapability.getPath()) && StringUtils.isNotEmpty(
                             bundledRenderUnitCapability.getScriptEngineName())) {
-                        collectRequiresChain(wiredProviders, bundleWiring);
+                        Set<TypeProvider> aggregate =
+                                Stream.concat(inheritanceChain.stream(), requiresChain.stream()).collect(Collectors.toCollection(LinkedHashSet::new));
                         executable = bundledScriptFinder.getScript(baseTypeProvider.getBundle(), baseTypeProvider.isPrecompiled(),
-                                bundledRenderUnitCapability.getPath(), bundledRenderUnitCapability.getScriptEngineName(), wiredProviders);
+                                bundledRenderUnitCapability.getPath(), bundledRenderUnitCapability.getScriptEngineName(), aggregate);
                     }
                     List<ServiceRegistration<Servlet>> regs = new ArrayList<>();
 
@@ -191,7 +196,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         regs.add(
                                 bundle.getBundleContext().registerService(
                                         Servlet.class,
-                                        new BundledScriptServlet(scriptContextProvider, wiredProviders, executable),
+                                        new BundledScriptServlet(scriptContextProvider, inheritanceChain, executable),
                                         properties
                                 )
                         );
@@ -410,13 +415,15 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         }
     }
 
-    private void collectRequiresChain(@NotNull Set<TypeProvider> providers, @NotNull BundleWiring wiring) {
+    private Set<TypeProvider> collectRequiresChain(@NotNull BundleWiring wiring) {
+        Set<TypeProvider> requiresChain = new LinkedHashSet<>();
         for (BundleWire wire : wiring.getRequiredWires(NS_SLING_SERVLET)) {
             BundledRenderUnitCapability wiredCapability = BundledRenderUnitCapabilityImpl.fromBundleCapability(wire.getCapability());
             if (wiredCapability.getSelectors().isEmpty()) {
                 Bundle providingBundle = wire.getProvider().getBundle();
-                providers.add(new TypeProviderImpl(wiredCapability, providingBundle));
+                requiresChain.add(new TypeProviderImpl(wiredCapability, providingBundle));
             }
         }
+        return requiresChain;
     }
 }
