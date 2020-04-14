@@ -81,8 +81,8 @@ public class RequestWrapper extends SlingHttpServletRequestWrapper {
             if (StringUtils.isNotEmpty(forcedResourceType)) {
                 for (ResourceType wiredResourceType : wiredResourceTypes) {
                     String type = wiredResourceType.getType();
-                    if (type.startsWith(forcedResourceType + "/")) {
-                        requestDispatcherOptions.setForceResourceType(type);
+                    if (type.equals(forcedResourceType)) {
+                        requestDispatcherOptions.setForceResourceType(wiredResourceType.toString());
                         break;
                     }
                 }
