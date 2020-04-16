@@ -52,9 +52,7 @@ public class BundledScriptFinder {
                 String scriptExtension = capability.getScriptExtension();
                 String scriptEngineName = capability.getScriptEngineName();
                 if (StringUtils.isNotEmpty(scriptExtension) && StringUtils.isNotEmpty(scriptEngineName)) {
-                    Executable executable =
-                            getExecutable(provider.getBundle(), provider.isPrecompiled(), match, scriptEngineName, scriptExtension,
-                                    providers);
+                    Executable executable = getExecutable(provider.getBundle(), match, scriptEngineName, scriptExtension, providers);
                     if (executable != null) {
                         return executable;
                     }
@@ -64,30 +62,27 @@ public class BundledScriptFinder {
         return null;
     }
 
-    Executable getScript(@NotNull Bundle bundle, boolean precompiled, @NotNull String path, @NotNull String scriptEngineName,
+    Executable getScript(@NotNull Bundle bundle, @NotNull String path, @NotNull String scriptEngineName,
                          @NotNull Set<TypeProvider> providers) {
-        if (precompiled) {
-            String className = JavaEscapeHelper.makeJavaPackage(path);
-            try {
-                Class<?> clazz = bundle.loadClass(className);
-                return new PrecompiledScript(providers, bundle, path, clazz, scriptEngineName);
-            } catch (ClassNotFoundException ignored) {
-                // do nothing here
-            }
-        } else {
+        String className = JavaEscapeHelper.makeJavaPackage(path);
+        try {
+            Class<?> clazz = bundle.loadClass(className);
+            return new PrecompiledScript(providers, bundle, path, clazz, scriptEngineName);
+        } catch (ClassNotFoundException ignored) {
             URL bundledScriptURL = bundle.getEntry(NS_JAVAX_SCRIPT_CAPABILITY + (path.startsWith("/") ? "" : SLASH) + path);
             if (bundledScriptURL != null) {
                 return new Script(providers, bundle, path, bundledScriptURL, scriptEngineName);
-            }
+            }    // do nothing here
         }
+
         return null;
     }
 
     @Nullable
-    private Executable getExecutable(@NotNull Bundle bundle, boolean precompiled, @NotNull String match, @NotNull String scriptEngineName,
+    private Executable getExecutable(@NotNull Bundle bundle, @NotNull String match, @NotNull String scriptEngineName,
                                      @NotNull String scriptExtension, @NotNull Set<TypeProvider> providers) {
         String path = match + DOT + scriptExtension;
-        return getScript(bundle, precompiled, path, scriptEngineName, providers);
+        return getScript(bundle, path, scriptEngineName, providers);
     }
 
     private List<String> buildScriptMatches(Set<ResourceType> resourceTypes, String[] selectors, String method, String extension) {
