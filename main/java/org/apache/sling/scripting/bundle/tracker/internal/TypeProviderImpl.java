@@ -28,12 +28,10 @@ class TypeProviderImpl implements org.apache.sling.scripting.bundle.tracker.Type
 
     private final BundledRenderUnitCapability bundledRenderUnitCapability;
     private final Bundle bundle;
-    private final boolean precompiled;
 
     TypeProviderImpl(BundledRenderUnitCapability bundledRenderUnitCapability, Bundle bundle) {
         this.bundledRenderUnitCapability = bundledRenderUnitCapability;
         this.bundle = bundle;
-        precompiled = Boolean.parseBoolean(bundle.getHeaders().get("Sling-ResourceType-Precompiled"));
     }
 
     @NotNull
@@ -49,13 +47,8 @@ class TypeProviderImpl implements org.apache.sling.scripting.bundle.tracker.Type
     }
 
     @Override
-    public boolean isPrecompiled() {
-        return precompiled;
-    }
-
-    @Override
     public int hashCode() {
-        return Objects.hash(bundle, bundledRenderUnitCapability, precompiled);
+        return Objects.hash(bundle, bundledRenderUnitCapability);
     }
 
     @Override
@@ -65,15 +58,13 @@ class TypeProviderImpl implements org.apache.sling.scripting.bundle.tracker.Type
         }
         if (obj instanceof TypeProviderImpl) {
             TypeProviderImpl other = (TypeProviderImpl) obj;
-            return Objects.equals(bundle, other.bundle) && Objects.equals(bundledRenderUnitCapability, other.bundledRenderUnitCapability) &&
-                    Objects.equals(precompiled, other.precompiled);
+            return Objects.equals(bundle, other.bundle) && Objects.equals(bundledRenderUnitCapability, other.bundledRenderUnitCapability);
         }
         return false;
     }
 
     @Override
     public String toString() {
-        return String.format("TypeProvider{ bundledRenderUnitCapability=%s; bundle=%s; precompiled=%s }", bundledRenderUnitCapability,
-                bundle.getSymbolicName(), precompiled);
+        return String.format("TypeProvider{ bundledRenderUnitCapability=%s; bundle=%s }", bundledRenderUnitCapability, bundle.getSymbolicName());
     }
 }

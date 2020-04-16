@@ -42,10 +42,4 @@ public interface TypeProvider {
      */
     @NotNull Bundle getBundle();
 
-    /**
-     * Returns {@code true} if the bundle provides precompiled scripts.
-     *
-     * @return {@code true} if the bundle provides precompiled scripts, {@code false} otherwise
-     */
-    boolean isPrecompiled();
 }

@@ -177,7 +177,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                             bundledRenderUnitCapability.getScriptEngineName())) {
                         Set<TypeProvider> aggregate =
                                 Stream.concat(inheritanceChain.stream(), requiresChain.stream()).collect(Collectors.toCollection(LinkedHashSet::new));
-                        executable = bundledScriptFinder.getScript(baseTypeProvider.getBundle(), baseTypeProvider.isPrecompiled(),
+                        executable = bundledScriptFinder.getScript(baseTypeProvider.getBundle(),
                                 bundledRenderUnitCapability.getPath(), bundledRenderUnitCapability.getScriptEngineName(), aggregate);
                     }
                     List<ServiceRegistration<Servlet>> regs = new ArrayList<>();
