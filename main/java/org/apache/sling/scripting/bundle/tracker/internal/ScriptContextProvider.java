@@ -31,7 +31,6 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import javax.script.SimpleBindings;
 
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
@@ -83,7 +82,7 @@ public class ScriptContextProvider {
                     executable.getScriptEngineName(), executable.getPath()));
         }
         // prepare the SlingBindings
-        Bindings bindings = new SimpleBindings();
+        Bindings bindings = new LazyBindings();
         bindings.put("properties", request.getResource().getValueMap());
         bindings.put(SlingBindings.REQUEST, request);
         bindings.put(SlingBindings.RESPONSE, response);

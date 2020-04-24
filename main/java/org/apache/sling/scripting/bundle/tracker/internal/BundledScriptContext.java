@@ -24,18 +24,18 @@ import java.util.Arrays;
 import java.util.List;
 
 import javax.script.Bindings;
-import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
 
+import org.apache.sling.api.scripting.LazyBindings;
 import org.apache.sling.api.scripting.SlingScriptConstants;
 
 class BundledScriptContext extends SimpleScriptContext {
 
     private static final Integer[] SCOPES = {SlingScriptConstants.SLING_SCOPE, GLOBAL_SCOPE, ENGINE_SCOPE};
 
-    private Bindings globalScope = new SimpleBindings();
-    private Bindings engineScope = new SimpleBindings();
-    private Bindings slingScope = new SimpleBindings();
+    private Bindings globalScope = new LazyBindings();
+    private Bindings engineScope = new LazyBindings();
+    private Bindings slingScope = new LazyBindings();
 
     @Override
     public void setBindings(final Bindings bindings, final int scope) {
