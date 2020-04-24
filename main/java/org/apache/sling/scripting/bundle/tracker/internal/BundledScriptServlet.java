@@ -85,4 +85,8 @@ class BundledScriptServlet extends GenericServlet {
             throw new ServletException("Not a Sling HTTP request/response");
         }
     }
+
+    public String toString() {
+        return getClass().getSimpleName() + "(" + executable.getName() + ")";
+    }
 }

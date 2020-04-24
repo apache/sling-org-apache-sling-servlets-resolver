@@ -172,7 +172,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         }
                         Set<TypeProvider> aggregate =
                                 Stream.concat(inheritanceChain.stream(), requiresChain.stream()).collect(Collectors.toCollection(LinkedHashSet::new));
-                        executable = bundledScriptFinder.getScript(aggregate);
+                        executable = bundledScriptFinder.getScript(inheritanceChain, aggregate);
                     } else if (StringUtils.isNotEmpty(bundledRenderUnitCapability.getPath()) && StringUtils.isNotEmpty(
                             bundledRenderUnitCapability.getScriptEngineName())) {
                         Set<TypeProvider> aggregate =
