@@ -44,7 +44,7 @@ public class BundledScriptFinder {
     private static final String SLASH = "/";
     private static final String DOT = ".";
 
-    Executable getScript(Set<TypeProvider> providers) {
+    Executable getScript(Set<TypeProvider> providers, Set<TypeProvider> allProviders) {
         for (TypeProvider provider : providers) {
             BundledRenderUnitCapability capability = provider.getBundledRenderUnitCapability();
             for (String match : buildScriptMatches(capability.getResourceTypes(),
@@ -52,7 +52,7 @@ public class BundledScriptFinder {
                 String scriptExtension = capability.getScriptExtension();
                 String scriptEngineName = capability.getScriptEngineName();
                 if (StringUtils.isNotEmpty(scriptExtension) && StringUtils.isNotEmpty(scriptEngineName)) {
-                    Executable executable = getExecutable(provider.getBundle(), match, scriptEngineName, scriptExtension, providers);
+                    Executable executable = getExecutable(provider.getBundle(), match, scriptEngineName, scriptExtension, allProviders);
                     if (executable != null) {
                         return executable;
                     }
