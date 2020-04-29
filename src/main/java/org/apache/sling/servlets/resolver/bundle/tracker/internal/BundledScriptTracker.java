@@ -16,12 +16,11 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-package org.apache.sling.scripting.bundle.tracker.internal;
+package org.apache.sling.servlets.resolver.bundle.tracker.internal;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -50,9 +48,12 @@ import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.request.RequestDispatcherOptions;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.commons.osgi.PropertiesUtil;
-import org.apache.sling.scripting.bundle.tracker.ResourceType;
-import org.apache.sling.scripting.bundle.tracker.BundledRenderUnitCapability;
-import org.apache.sling.scripting.bundle.tracker.TypeProvider;
+import org.apache.sling.servlets.resolver.bundle.tracker.BundledScriptFinder;
+import org.apache.sling.servlets.resolver.bundle.tracker.Executable;
+import org.apache.sling.servlets.resolver.bundle.tracker.ResourceType;
+import org.apache.sling.servlets.resolver.bundle.tracker.BundledRenderUnitCapability;
+import org.apache.sling.servlets.resolver.bundle.tracker.TypeProvider;
+import org.apache.sling.servlets.resolver.internal.resource.ServletMounter;
 import org.jetbrains.annotations.NotNull;
 import org.osgi.annotation.bundle.Capability;
 import org.osgi.framework.Bundle;
@@ -86,7 +87,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     static final String NS_SLING_SCRIPTING_EXTENDER = "sling.scripting";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BundledScriptTracker.class);
-    private static final String REGISTERING_BUNDLE = "org.apache.sling.scripting.bundle.tracker.internal.BundledScriptTracker.registering_bundle";
+    private static final String REGISTERING_BUNDLE = "BundledScriptTracker.registering_bundle";
     public static final String NS_SLING_SERVLET = "sling.servlet";
     public static final String AT_VERSION = "version";
     public static final String AT_SCRIPT_ENGINE = "scriptEngine";
@@ -97,8 +98,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     private BundledScriptFinder bundledScriptFinder;
 
     @Reference
-    private ScriptContextProvider scriptContextProvider;
-
+    private ServletMounter mounter;
 
     private volatile BundleContext m_context;
     private volatile BundleTracker<List<ServiceRegistration<Servlet>>> m_tracker;
@@ -196,7 +196,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         regs.add(
                                 bundle.getBundleContext().registerService(
                                         Servlet.class,
-                                        new BundledScriptServlet(scriptContextProvider, inheritanceChain, executable),
+                                        new BundledScriptServlet(inheritanceChain, executable),
                                         properties
                                 )
                         );

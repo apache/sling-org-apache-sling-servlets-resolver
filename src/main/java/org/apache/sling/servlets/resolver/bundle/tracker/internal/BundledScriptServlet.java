@@ -16,14 +16,13 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-package org.apache.sling.scripting.bundle.tracker.internal;
+package org.apache.sling.servlets.resolver.bundle.tracker.internal;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.stream.Collectors;
 
-import javax.script.ScriptException;
 import javax.servlet.GenericServlet;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -32,22 +31,19 @@ import javax.servlet.ServletResponse;
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
-import org.apache.sling.scripting.bundle.tracker.TypeProvider;
-import org.apache.sling.scripting.bundle.tracker.internal.request.RequestWrapper;
-import org.apache.sling.scripting.bundle.tracker.internal.request.ResponseWrapper;
+import org.apache.sling.servlets.resolver.bundle.tracker.Executable;
+import org.apache.sling.servlets.resolver.bundle.tracker.TypeProvider;
+import org.apache.sling.servlets.resolver.bundle.tracker.internal.request.RequestWrapper;
 import org.jetbrains.annotations.NotNull;
 
 class BundledScriptServlet extends GenericServlet {
 
-    private final ScriptContextProvider scriptContextProvider;
     private final LinkedHashSet<TypeProvider> wiredTypeProviders;
     private final Executable executable;
 
 
-    BundledScriptServlet(@NotNull ScriptContextProvider scriptContextProvider,
-                         @NotNull LinkedHashSet<TypeProvider> wiredTypeProviders,
+    BundledScriptServlet(@NotNull LinkedHashSet<TypeProvider> wiredTypeProviders,
                          @NotNull Executable executable) {
-        this.scriptContextProvider = scriptContextProvider;
         this.wiredTypeProviders = wiredTypeProviders;
         this.executable = executable;
     }
@@ -71,22 +67,19 @@ class BundledScriptServlet extends GenericServlet {
             RequestWrapper requestWrapper = new RequestWrapper(request,
                     wiredTypeProviders.stream().map(typeProvider -> typeProvider.getBundledRenderUnitCapability().getResourceTypes()
             ).flatMap(Collection::stream).collect(Collectors.toSet()));
-            ScriptContextProvider.ExecutableContext executableContext = scriptContextProvider
-                    .prepareScriptContext(requestWrapper, new ResponseWrapper(response), executable);
             try {
-                executableContext.eval();
-            } catch (ScriptException se) {
+                executable.eval(requestWrapper, response);
+            } catch (Exception se) {
                 Throwable cause = (se.getCause() == null) ? se : se.getCause();
-                throw new ServletException(String.format("Failed executing script %s: %s", executable.getName(), se.getMessage()), cause);
-            } finally {
-                executableContext.clean();
+                throw new ServletException(String.format("Failed executing script %s: %s", executable.getPath(), se.getMessage()), cause);
             }
         } else {
             throw new ServletException("Not a Sling HTTP request/response");
         }
     }
 
+    @Override
     public String toString() {
-        return getClass().getSimpleName() + "(" + executable.getName() + ")";
+        return getClass().getSimpleName() + "(" + executable.getPath() + ")";
     }
 }

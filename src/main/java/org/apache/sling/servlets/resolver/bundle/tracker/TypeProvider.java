@@ -16,35 +16,30 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-package org.apache.sling.scripting.bundle.tracker.internal.request;
+package org.apache.sling.servlets.resolver.bundle.tracker;
 
-import java.io.PrintWriter;
-import java.util.concurrent.atomic.AtomicReference;
+import org.jetbrains.annotations.NotNull;
+import org.osgi.annotation.versioning.ProviderType;
+import org.osgi.framework.Bundle;
 
-import org.apache.sling.api.SlingHttpServletResponse;
-import org.apache.sling.api.wrappers.SlingHttpServletResponseWrapper;
-
-public class ResponseWrapper extends SlingHttpServletResponseWrapper {
-    private final AtomicReference<PrintWriter> writer = new AtomicReference<>();
+/**
+ * A {@code TypeProvider} keeps an association between a {@link BundledRenderUnitCapability} and the bundle that provides it.
+ */
+@ProviderType
+public interface TypeProvider {
 
     /**
-     * Create a wrapper for the supplied wrappedRequest
+     * Returns the {@link BundledRenderUnitCapability}.
      *
-     * @param wrappedResponse The response
+     * @return the {@link BundledRenderUnitCapability}
      */
-    public ResponseWrapper(SlingHttpServletResponse wrappedResponse) {
-        super(wrappedResponse);
-    }
+    @NotNull BundledRenderUnitCapability getBundledRenderUnitCapability();
 
-    @Override
-    public PrintWriter getWriter() {
-        PrintWriter result = writer.get();
-        if (result == null) {
-            result = new PrintWriter(new OnDemandWriter(getResponse()));
-            if (!writer.compareAndSet(null, result)) {
-                result = writer.get();
-            }
-        }
-        return result;
-    }
+    /**
+     * Returns the providing bundle.
+     *
+     * @return the providing bundle
+     */
+    @NotNull Bundle getBundle();
+
 }

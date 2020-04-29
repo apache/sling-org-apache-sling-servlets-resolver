@@ -16,30 +16,7 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-package org.apache.sling.scripting.bundle.tracker;
+@Version("0.2.0")
+package org.apache.sling.servlets.resolver.bundle.tracker;
 
-import org.jetbrains.annotations.NotNull;
-import org.osgi.annotation.versioning.ProviderType;
-import org.osgi.framework.Bundle;
-
-/**
- * A {@code TypeProvider} keeps an association between a {@link BundledRenderUnitCapability} and the bundle that provides it.
- */
-@ProviderType
-public interface TypeProvider {
-
-    /**
-     * Returns the {@link BundledRenderUnitCapability}.
-     *
-     * @return the {@link BundledRenderUnitCapability}
-     */
-    @NotNull BundledRenderUnitCapability getBundledRenderUnitCapability();
-
-    /**
-     * Returns the providing bundle.
-     *
-     * @return the providing bundle
-     */
-    @NotNull Bundle getBundle();
-
-}
+import org.osgi.annotation.versioning.Version;
