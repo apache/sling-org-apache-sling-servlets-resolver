@@ -93,6 +93,6 @@ public class ScriptResourceDecorator implements ResourceDecorator {
                     }
                 };
             }
-        }, path, null, null);
+        }, path);
     }
 }

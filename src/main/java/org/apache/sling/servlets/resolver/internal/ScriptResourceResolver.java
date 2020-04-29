@@ -28,21 +28,22 @@ import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceWrapper;
 import org.apache.sling.api.wrappers.IteratorWrapper;
 import org.apache.sling.api.wrappers.ResourceResolverWrapper;
+import org.apache.sling.servlets.resolver.internal.resource.MergingServletResourceProvider;
 import org.apache.sling.spi.resource.provider.ResolveContext;
 import org.apache.sling.spi.resource.provider.ResourceContext;
 import org.apache.sling.spi.resource.provider.ResourceProvider;
 
 public class ScriptResourceResolver extends ResourceResolverWrapper {
     private final ResourceResolver resolver;
-    private final Supplier<ResourceProvider> provider;
+    private final Supplier<MergingServletResourceProvider> provider;
 
-    public ScriptResourceResolver(ResourceResolver resolver, Supplier<ResourceProvider> provider) {
+    public ScriptResourceResolver(ResourceResolver resolver, Supplier<MergingServletResourceProvider> provider) {
         super(resolver);
         this.resolver = resolver;
         this.provider = provider;
     }
 
-    public static ScriptResourceResolver wrap(ResourceResolver scriptResourceResolver, Supplier<ResourceProvider> provider) {
+    public static ScriptResourceResolver wrap(ResourceResolver scriptResourceResolver, Supplier<MergingServletResourceProvider> provider) {
         return new ScriptResourceResolver(scriptResourceResolver, provider);
     }
 
@@ -52,7 +53,7 @@ public class ScriptResourceResolver extends ResourceResolverWrapper {
     }
 
     public Resource getResource(String scriptPath) {
-        ResourceProvider provider = this.provider.get();
+        MergingServletResourceProvider provider = this.provider.get();
 
         if (provider == null) {
             return super.getResource(scriptPath);
@@ -88,13 +89,13 @@ public class ScriptResourceResolver extends ResourceResolverWrapper {
                         }
                     };
                 }
-            }, scriptPath, null, null));
+            }, scriptPath));
         }
     }
 
     @Override
     public Iterator<Resource> listChildren(Resource parent) {
-        ResourceProvider provider = this.provider.get();
+        MergingServletResourceProvider provider = this.provider.get();
         if (provider == null) {
             return super.listChildren(parent);
         }

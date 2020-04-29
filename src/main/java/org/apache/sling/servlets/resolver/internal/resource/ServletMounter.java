@@ -100,7 +100,7 @@ public class ServletMounter {
         servletResourceProviderFactory = new ServletResourceProviderFactory(config.servletresolver_servletRoot(),
                 resourceResolverFactory.getSearchPath());
 
-        if (config.servletresolver_mountInternal()) {
+        if (!config.servletresolver_mountProviders()) {
             provider = new MergingServletResourceProvider();
             providerReg = context.registerService(MergingServletResourceProvider.class, provider, null);
         }

@@ -33,12 +33,11 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.SyntheticResource;
 import org.apache.sling.spi.resource.provider.ResolveContext;
-import org.apache.sling.spi.resource.provider.ResourceContext;
 import org.apache.sling.spi.resource.provider.ResourceProvider;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceReference;
 
-public class MergingServletResourceProvider extends ResourceProvider<Void> {
+public class MergingServletResourceProvider {
     private final List<Pair<ServletResourceProvider, ServiceReference<?>>> registrations = new ArrayList<>();
 
     private final ConcurrentHashMap<String, Set<String>> tree = new ConcurrentHashMap<>();
@@ -99,18 +98,17 @@ public class MergingServletResourceProvider extends ResourceProvider<Void> {
         }
     }
 
-    @Override
-    public Resource getResource(ResolveContext resolveContext, String path, ResourceContext resourceContext, Resource parent) {
+    public Resource getResource(ResolveContext resolveContext, String path) {
         Resource wrapped = null;
         final ResourceProvider parentProvider = resolveContext.getParentResourceProvider();
         if (parentProvider != null) {
-            wrapped = parentProvider.getResource(resolveContext.getParentResolveContext(), path, resourceContext, parent);
+            wrapped = parentProvider.getResource(resolveContext.getParentResolveContext(), path, null, null);
         }
         Resource result;
         Pair<ServletResourceProvider, ServiceReference<?>> provider = providers.get(path);
 
         if (provider != null) {
-            result = provider.getLeft().getResource(resolveContext, path, resourceContext, parent);
+            result = provider.getLeft().getResource(resolveContext, path, null, null);
             if (result instanceof ServletResource) {
                 ((ServletResource) result).setWrappedResource(wrapped);
             }
@@ -130,7 +128,6 @@ public class MergingServletResourceProvider extends ResourceProvider<Void> {
         return result;
     }
 
-    @Override
     public Iterator<Resource> listChildren(final ResolveContext ctx, final Resource parent) {
         Map<String, Resource> result = new LinkedHashMap<>();
 

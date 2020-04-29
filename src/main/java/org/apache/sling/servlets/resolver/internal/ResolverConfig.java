@@ -59,8 +59,8 @@ public @interface ResolverConfig {
             + "will be used. This means that the last path segment of the resource type can be used as the script name.")
     String[] servletresolver_defaultExtensions() default "html";
 
-    @AttributeDefinition(name = "Mount Internal", description = "Should servlets be mounted internally and not as a resource provider. If true,"
-        + " an internal resource provider will be used for servlet resolving and the servlets be decorated back into the resource tree instead of " +
-        "serveral resource provider per servlet. ")
-    boolean servletresolver_mountInternal() default false;
+    @AttributeDefinition(name = "Mount Providers", description = "Should servlets be mounted as resource providers?" +
+        " If true (the default), servlets will be represented in the content tree using resource provider -" +
+        " otherwise, servlets will be decorated back into the content tree using a decorator.")
+    boolean servletresolver_mountProviders() default true;
 }
