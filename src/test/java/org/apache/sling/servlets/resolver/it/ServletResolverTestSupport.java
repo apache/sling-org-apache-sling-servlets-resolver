@@ -76,6 +76,7 @@ public class ServletResolverTestSupport extends TestSupport {
         final String vmOpt = System.getProperty("pax.vm.options");
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.api");
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.resourceresolver");
+        versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.scripting.api");
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.scripting.core");
         return options(
             composite(
@@ -87,6 +88,7 @@ public class ServletResolverTestSupport extends TestSupport {
                 mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.converter").version("1.0.12"), // new Sling API dependency
                 testBundle("bundle.filename"),
                 mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.servlet-helpers").versionAsInProject(),
+                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.commons.compiler").versionAsInProject(),
                 junitBundles(),
                 newConfiguration("org.apache.sling.jcr.base.internal.LoginAdminWhitelist")
                     .put("whitelist.bundles.regexp", "^PAXEXAM.*$")
