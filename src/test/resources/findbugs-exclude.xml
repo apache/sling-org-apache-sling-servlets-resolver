@@ -20,4 +20,10 @@
     <Match>
         <Bug pattern="SE_BAD_FIELD" />
     </Match>
+    <Match>
+        <Package name="~org\.apache\.sling\.servlets..*"/>
+    </Match>
+    <Match>
+        <Package name="~org\.apache\.sling\.engine\..*"/>
+    </Match>
 </FindBugsFilter>
