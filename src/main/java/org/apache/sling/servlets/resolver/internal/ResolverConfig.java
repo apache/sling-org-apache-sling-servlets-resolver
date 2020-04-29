@@ -58,4 +58,9 @@ public @interface ResolverConfig {
     @AttributeDefinition(name = "Default Extensions", description = "The list of extensions for which the default behavior "
             + "will be used. This means that the last path segment of the resource type can be used as the script name.")
     String[] servletresolver_defaultExtensions() default "html";
+
+    @AttributeDefinition(name = "Mount Providers", description = "Should servlets be mounted as resource providers?" +
+        " If true (the default), servlets will be represented in the content tree using resource provider -" +
+        " otherwise, servlets will be decorated back into the content tree using a decorator.")
+    boolean servletresolver_mountProviders() default true;
 }

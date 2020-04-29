@@ -35,7 +35,7 @@ import org.apache.sling.api.resource.SyntheticResource;
 
 /**
  * The <code>ResourceCollector</code> class provides a single public method -
- * {@link #getServlets(ResourceResolver)} - which is used to find an ordered collection
+ * {@link #getServlets(ResourceResolver,List<String>)} - which is used to find an ordered collection
  * of <code>Resource</code> instances which may be used to find a servlet or
  * script to handle a request to the given resource.
  */
@@ -138,7 +138,6 @@ public abstract class AbstractResourceCollector {
      *            the name of the resource.
      * @param methodPrefixWeight The method/prefix weight assigned to the
      *            resource according to the resource name.
-     * @param scriptExtensionPriority The priority of the script engine used to run this script
      */
     protected final void addWeightedResource(final Set<WeightedResource> resources,
             final Resource resource,

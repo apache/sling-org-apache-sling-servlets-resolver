@@ -25,12 +25,13 @@ import javax.servlet.Servlet;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.AbstractResource;
+import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceMetadata;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ValueMap;
 import org.apache.sling.api.wrappers.ValueMapDecorator;
 
-class ServletResource extends AbstractResource {
+public class ServletResource extends AbstractResource {
 
     private final ResourceResolver resourceResolver;
 
@@ -42,6 +43,8 @@ class ServletResource extends AbstractResource {
     private final String resourceSuperType;
 
     private final ResourceMetadata metadata;
+
+    private volatile Resource wrapped;
 
     public ServletResource(ResourceResolver resourceResolver, Servlet servlet, String path) {
         this(resourceResolver, servlet, path, null);
@@ -57,6 +60,10 @@ class ServletResource extends AbstractResource {
         this.resourceType = ServletResourceProviderFactory.ensureServletNameExtension(path);
         this.resourceSuperType = StringUtils.isEmpty(resourceSuperType) ? "sling/bundle/resource" : resourceSuperType;
         this.metadata = new ResourceMetadata();
+    }
+
+    void setWrappedResource(Resource wrapped) {
+        this.wrapped = wrapped;
     }
 
     @Override
@@ -105,9 +112,14 @@ class ServletResource extends AbstractResource {
     @Override
     @SuppressWarnings("unchecked")
     public <AdapterType> AdapterType adaptTo(Class<AdapterType> type) {
+        Resource wrapped = this.wrapped;
         if (type == Servlet.class && servlet != null) {
             return (AdapterType) servlet; // unchecked cast
-        } else if ( type == ValueMap.class ) {
+        }
+        else if (wrapped != null) {
+            return wrapped.adaptTo(type);
+        }
+        else if ( type == ValueMap.class ) {
             final Map<String, Object> props = new HashMap<>();
             props.put("sling:resourceType", this.getResourceType());
             props.put("sling:resourceSuperType", this.getResourceSuperType());
@@ -127,5 +139,4 @@ class ServletResource extends AbstractResource {
         return getClass().getSimpleName() + ", servlet=" + this.getServletName()
             + ", path=" + getPath();
     }
-
 }
