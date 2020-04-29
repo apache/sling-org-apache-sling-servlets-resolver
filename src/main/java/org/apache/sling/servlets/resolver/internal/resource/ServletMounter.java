@@ -64,8 +64,7 @@ import org.slf4j.LoggerFactory;
  * The resolver uses an own session to find the scripts.
  *
  */
-@Component(configurationPid = ResolverConfig.PID,
-           service = {})
+@Component(configurationPid = ResolverConfig.PID, immediate = true, service = {ServletMounter.class})
 public class ServletMounter {
 
     /** Logger */

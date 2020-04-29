@@ -16,7 +16,27 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-@Version("0.2.0")
-package org.apache.sling.scripting.bundle.tracker;
+package org.apache.sling.servlets.resolver.bundle.tracker;
 
-import org.osgi.annotation.versioning.Version;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.jetbrains.annotations.NotNull;
+
+public interface Executable {
+
+    /**
+     * Returns the path of this executable in the resource type hierarchy. The path can be relative to the search paths or absolute.
+     *
+     * @return the path of this executable in the resource type hierarchy
+     */
+    @NotNull
+    String getPath();
+
+    /**
+     * This method will execute / evaluate the wrapped script or precompiled script with the given request.
+     *
+     * @throws Exception if the execution leads to an error
+     */
+    void eval(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response) throws Exception;
+}

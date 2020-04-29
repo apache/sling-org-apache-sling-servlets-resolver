@@ -16,32 +16,17 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-package org.apache.sling.scripting.bundle.tracker.internal;
+package org.apache.sling.servlets.resolver.bundle.tracker;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 
-import javax.servlet.Servlet;
-
-import org.junit.Test;
+import org.jetbrains.annotations.NotNull;
 import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.BundleEvent;
-import org.osgi.framework.ServiceRegistration;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+public interface BundledScriptFinder {
 
-public class BundledScriptTrackerTest {
+    Executable getScript(Set<TypeProvider> providers, Set<TypeProvider> allProviders);
 
-    @Test
-    public void removedBundle() {
-        BundledScriptTracker tracker = new BundledScriptTracker();
-        tracker.activate(mock(BundleContext.class));
-        List<ServiceRegistration<Servlet>> registrations = new ArrayList<>();
-        ServiceRegistration<Servlet> registration = mock(ServiceRegistration.class);
-        registrations.add(registration);
-        tracker.removedBundle(mock(Bundle.class), mock(BundleEvent.class), registrations);
-        verify(registration).unregister();
-    }
+    Executable getScript(@NotNull Bundle bundle, @NotNull String path, @NotNull String scriptEngineName,
+                         @NotNull Set<TypeProvider> providers);
 }

@@ -62,5 +62,5 @@ public @interface ResolverConfig {
     @AttributeDefinition(name = "Mount Providers", description = "Should servlets be mounted as resource providers?" +
         " If true (the default), servlets will be represented in the content tree using resource provider -" +
         " otherwise, servlets will be decorated back into the content tree using a decorator.")
-    boolean servletresolver_mountProviders() default true;
+    boolean servletresolver_mountProviders() default false;
 }
