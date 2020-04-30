@@ -48,8 +48,8 @@ import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.request.RequestDispatcherOptions;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.commons.osgi.PropertiesUtil;
+import org.apache.sling.servlets.resolver.bundle.tracker.BundledRenderUnit;
 import org.apache.sling.servlets.resolver.bundle.tracker.BundledScriptFinder;
-import org.apache.sling.servlets.resolver.bundle.tracker.Executable;
 import org.apache.sling.servlets.resolver.bundle.tracker.ResourceType;
 import org.apache.sling.servlets.resolver.bundle.tracker.BundledRenderUnitCapability;
 import org.apache.sling.servlets.resolver.bundle.tracker.TypeProvider;
@@ -131,7 +131,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     properties.put(ServletResolverConstants.SLING_SERVLET_NAME, BundledScriptServlet.class.getName());
                     properties.put(Constants.SERVICE_DESCRIPTION, BundledScriptServlet.class.getName() + cap.getAttributes());
                     BundledRenderUnitCapability bundledRenderUnitCapability = BundledRenderUnitCapabilityImpl.fromBundleCapability(cap);
-                    Executable executable = null;
+                    BundledRenderUnit executable = null;
                     TypeProvider baseTypeProvider = new TypeProviderImpl(bundledRenderUnitCapability, bundle);
                     LinkedHashSet<TypeProvider> inheritanceChain = new LinkedHashSet<>();
                     inheritanceChain.add(baseTypeProvider);
@@ -183,7 +183,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     List<ServiceRegistration<Servlet>> regs = new ArrayList<>();
 
                     if (executable != null) {
-                        Executable finalExecutable = executable;
+                        BundledRenderUnit finalExecutable = executable;
                         bundledRenderUnitCapability.getResourceTypes().forEach(resourceType -> {
                             if (finalExecutable.getPath().startsWith(resourceType.toString() + "/")) {
                                 properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, finalExecutable.getPath());
