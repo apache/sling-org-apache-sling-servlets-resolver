@@ -31,7 +31,7 @@ import javax.servlet.ServletResponse;
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
-import org.apache.sling.servlets.resolver.bundle.tracker.Executable;
+import org.apache.sling.servlets.resolver.bundle.tracker.BundledRenderUnit;
 import org.apache.sling.servlets.resolver.bundle.tracker.TypeProvider;
 import org.apache.sling.servlets.resolver.bundle.tracker.internal.request.RequestWrapper;
 import org.jetbrains.annotations.NotNull;
@@ -39,11 +39,11 @@ import org.jetbrains.annotations.NotNull;
 class BundledScriptServlet extends GenericServlet {
 
     private final LinkedHashSet<TypeProvider> wiredTypeProviders;
-    private final Executable executable;
+    private final BundledRenderUnit executable;
 
 
     BundledScriptServlet(@NotNull LinkedHashSet<TypeProvider> wiredTypeProviders,
-                         @NotNull Executable executable) {
+                         @NotNull BundledRenderUnit executable) {
         this.wiredTypeProviders = wiredTypeProviders;
         this.executable = executable;
     }

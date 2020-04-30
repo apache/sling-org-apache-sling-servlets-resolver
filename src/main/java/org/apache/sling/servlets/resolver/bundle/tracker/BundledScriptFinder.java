@@ -25,8 +25,8 @@ import org.osgi.framework.Bundle;
 
 public interface BundledScriptFinder {
 
-    Executable getScript(Set<TypeProvider> providers, Set<TypeProvider> allProviders);
+    BundledRenderUnit getScript(Set<TypeProvider> providers, Set<TypeProvider> allProviders);
 
-    Executable getScript(@NotNull Bundle bundle, @NotNull String path, @NotNull String scriptEngineName,
+    BundledRenderUnit getScript(@NotNull Bundle bundle, @NotNull String path, @NotNull String scriptEngineName,
                          @NotNull Set<TypeProvider> providers);
 }

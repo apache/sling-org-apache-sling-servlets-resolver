@@ -143,14 +143,18 @@ public class ServletMounter {
             cardinality = ReferenceCardinality.MULTIPLE,
             policy = ReferencePolicy.DYNAMIC,
             target="(|(" + ServletResolverConstants.SLING_SERVLET_PATHS + "=*)(" + ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES + "=*))")
-    protected void bindServlet(final Servlet servlet, final ServiceReference<Servlet> reference) {
+    public void bindServlet(final Servlet servlet, final ServiceReference<Servlet> reference) {
         if (this.active) {
             createServlet(servlet, reference);
         }
     }
 
-    protected void unbindServlet(final ServiceReference<Servlet> reference) {
+    public void unbindServlet(final ServiceReference<Servlet> reference) {
         destroyServlet(reference);
+    }
+
+    public boolean mountProviders() {
+        return provider == null;
     }
 
     @Reference(
