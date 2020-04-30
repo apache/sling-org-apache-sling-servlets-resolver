@@ -48,22 +48,28 @@ public class MergingServletResourceProvider {
         index(Arrays.asList(registrations.get(registrations.size() - 1)));
     }
 
-    synchronized void remove(ServletResourceProvider provider, ServiceReference<?> reference) {
+    synchronized boolean remove(ServletResourceProvider provider, ServiceReference<?> reference) {
+        boolean found = false;
         for (Iterator<Pair<ServletResourceProvider, ServiceReference<?>>> regIter = registrations.iterator(); regIter.hasNext(); ) {
             Pair<ServletResourceProvider, ServiceReference<?>> reg = regIter.next();
             if (reg.getLeft() == provider) {
                 regIter.remove();
+                found = true;
             }
             else {
                 Bundle bundle = reg.getRight().getBundle();
                 if (bundle == null || bundle.getState() == Bundle.STOPPING) {
                     regIter.remove();
+                    found = true;
                 }
             }
         }
-        tree.clear();
-        providers.clear();
-        index(registrations);
+        if (found) {
+            tree.clear();
+            providers.clear();
+            index(registrations);
+        }
+        return found;
     }
 
     synchronized void clear() {
