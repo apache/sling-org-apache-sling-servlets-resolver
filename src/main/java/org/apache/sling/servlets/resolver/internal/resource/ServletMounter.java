@@ -164,12 +164,16 @@ public class ServletMounter {
         policy = ReferencePolicy.DYNAMIC
     )
     protected void bindResolutionCache(ResolutionCache cache) {
-        cache.flushCache();
-        resolutionCaches.put(cache, cache);
+        if (this.provider != null) {
+            cache.flushCache();
+            resolutionCaches.put(cache, cache);
+        }
     }
 
     protected void unbindResolutionCache(ResolutionCache cache) {
-        resolutionCaches.remove(cache);
+        if (this.provider != null) {
+            resolutionCaches.remove(cache);
+        }
     }
 
     private boolean createServlet(final Servlet servlet, final ServiceReference<Servlet> reference) {
@@ -274,7 +278,9 @@ public class ServletMounter {
                 }
             }
             if (registration.provider != null && provider != null) {
-                provider.remove(registration.provider, reference);
+                if (provider.remove(registration.provider, reference)) {
+                    resolutionCaches.values().forEach(ResolutionCache::flushCache);
+                }
             }
             final String name = RequestUtil.getServletName(registration.servlet);
             logger.debug("unbindServlet: Servlet {} removed", name);

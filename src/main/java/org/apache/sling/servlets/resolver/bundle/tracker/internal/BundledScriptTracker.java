@@ -19,9 +19,13 @@
 package org.apache.sling.servlets.resolver.bundle.tracker.internal;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -30,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -194,11 +199,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         }
                         properties.put(BundledHooks.class.getName(), "true");
                         regs.add(
-                                bundle.getBundleContext().registerService(
-                                        Servlet.class,
-                                        new BundledScriptServlet(inheritanceChain, executable),
-                                        properties
-                                )
+                            register(bundle.getBundleContext(), new BundledScriptServlet(inheritanceChain, executable),properties)
                         );
                     } else {
                         LOGGER.error(String.format("Unable to locate an executable for capability %s.", cap));
@@ -213,6 +214,119 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
             }
         } else {
             return Collections.emptyList();
+        }
+    }
+
+    private final AtomicLong idCounter = new AtomicLong(0);
+
+    private ServiceRegistration<Servlet> register(BundleContext context, Servlet servlet, Hashtable<String, Object> properties) {
+        if (mounter.mountProviders()) {
+            return context.registerService(Servlet.class, servlet, properties);
+        }
+        else {
+            final Long id = idCounter.getAndIncrement();
+            properties.put(Constants.SERVICE_ID, id);
+            properties.put(BundledHooks.class.getName(), "true");
+            final ServiceReference<Servlet> reference = (ServiceReference<Servlet>) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{ServiceReference.class}, new InvocationHandler() {
+                @Override
+                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                    if (method.equals(ServiceReference.class.getMethod("getProperty", String.class))) {
+                        return properties.get(args[0]);
+                    }
+                    else if (method.equals(ServiceReference.class.getMethod("getPropertyKeys"))) {
+                        return properties.keySet().toArray(new String[0]);
+                    }
+                    else if (method.equals(ServiceReference.class.getMethod("getBundle"))) {
+                        return context.getBundle();
+                    }
+                    else if (method.equals(ServiceReference.class.getMethod("getUsingBundles"))) {
+                        return new Bundle[]{ m_context.getBundle() };
+                    }
+                    else if (method.equals(ServiceReference.class.getMethod("isAssignableTo", Bundle.class, String.class))) {
+                        return Servlet.class.getName().equals(args[1]);
+                    }
+                    else if (method.equals(ServiceReference.class.getMethod("compareTo", Object.class))) {
+                        return compareTo(args[0]);
+                    }
+                    else if (method.getName().equals("equals") && Arrays.equals(method.getParameterTypes(), new Class[]{Object.class})) {
+                        return args[0] instanceof ServiceReference && compareTo(args[0]) == 0;
+                    }
+                    else if (method.getName().equals("hashCode") && method.getParameterCount() == 0) {
+                        return id.intValue();
+                    }
+                    else {
+                        throw new UnsupportedOperationException(method.toGenericString());
+                    }
+                }
+
+                private int compareTo(Object arg) {
+                    ServiceReference other = (ServiceReference) arg;
+                    Long id;
+                    if ("true".equals(other.getProperty(BundledHooks.class.getName()))) {
+                        id = (Long) properties.get(Constants.SERVICE_ID);
+                    }
+                    else {
+                        id = -1L;
+                    }
+
+                    Long otherId = (Long) other.getProperty(Constants.SERVICE_ID);
+
+                    if (id.equals(otherId)) {
+                        return 0; // same service
+                    }
+
+                    Object rankObj = properties.get(Constants.SERVICE_RANKING);
+                    Object otherRankObj = other.getProperty(Constants.SERVICE_RANKING);
+
+                    // If no rank, then spec says it defaults to zero.
+                    rankObj = (rankObj == null) ? new Integer(0) : rankObj;
+                    otherRankObj = (otherRankObj == null) ? new Integer(0) : otherRankObj;
+
+                    // If rank is not Integer, then spec says it defaults to zero.
+                    Integer rank = (rankObj instanceof Integer)
+                        ? (Integer) rankObj : new Integer(0);
+                    Integer otherRank = (otherRankObj instanceof Integer)
+                        ? (Integer) otherRankObj : new Integer(0);
+
+                    // Sort by rank in ascending order.
+                    if (rank.compareTo(otherRank) < 0) {
+                        return -1; // lower rank
+                    }
+                    else if (rank.compareTo(otherRank) > 0) {
+                        return 1; // higher rank
+                    }
+
+                    // If ranks are equal, then sort by service id in descending order.
+                    return (id.compareTo(otherId) < 0) ? 1 : -1;
+                }
+            });
+
+            mounter.bindServlet(servlet, reference);
+
+            return (ServiceRegistration<Servlet>) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{ServiceRegistration.class}, new InvocationHandler(){
+                @Override
+                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                    if (method.equals(ServiceRegistration.class.getMethod("getReference"))) {
+                        return reference;
+                    }
+                    else if (method.equals(ServiceRegistration.class.getMethod("setProperties", Dictionary.class))) {
+                        return null;
+                    }
+                    else if (method.equals(ServiceRegistration.class.getMethod("unregister"))) {
+                        mounter.unbindServlet(reference);
+                        return null;
+                    }
+                    else if (method.getName().equals("equals") && Arrays.equals(method.getParameterTypes(), new Class[]{Object.class})) {
+                        return args[0] instanceof ServiceRegistration && reference.compareTo(((ServiceRegistration) args[0]).getReference()) == 0;
+                    }
+                    else if (method.getName().equals("hashCode") && method.getParameterCount() == 0) {
+                        return id.intValue();
+                    }
+                    else {
+                        throw new UnsupportedOperationException(method.toGenericString());
+                    }
+                };
+            });
         }
     }
 
@@ -251,7 +365,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         ServletResolverConstants.SLING_SERVLET_METHODS + "=" + methods  + "}");
                 properties.put(BundledHooks.class.getName(), "true");
 
-                reg = registeringBundle.orElse(m_context).registerService(Servlet.class, new DispatcherServlet(rt), properties);
+                reg = register(registeringBundle.orElse(m_context), new DispatcherServlet(rt), properties);
             } else {
                 if (!new HashSet<>(Arrays.asList(PropertiesUtil
                         .toStringArray(reg.getReference().getProperty(ServletResolverConstants.SLING_SERVLET_METHODS), new String[0])))
