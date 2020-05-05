@@ -149,10 +149,9 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES, resourceTypesRegistrationValue);
 
                         String extension = bundledRenderUnitCapability.getExtension();
-                        if (StringUtils.isEmpty(extension)) {
-                            extension = "html";
+                        if (!StringUtils.isEmpty(extension)) {
+                            properties.put(ServletResolverConstants.SLING_SERVLET_EXTENSIONS, extension);
                         }
-                        properties.put(ServletResolverConstants.SLING_SERVLET_EXTENSIONS, extension);
 
                         if (!bundledRenderUnitCapability.getSelectors().isEmpty()) {
                             properties.put(ServletResolverConstants.SLING_SERVLET_SELECTORS, bundledRenderUnitCapability.getSelectors().toArray());
