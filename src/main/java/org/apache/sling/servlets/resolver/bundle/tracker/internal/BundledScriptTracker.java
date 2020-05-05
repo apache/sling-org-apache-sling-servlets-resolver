@@ -54,7 +54,7 @@ import org.apache.sling.api.request.RequestDispatcherOptions;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.commons.osgi.PropertiesUtil;
 import org.apache.sling.servlets.resolver.bundle.tracker.BundledRenderUnit;
-import org.apache.sling.servlets.resolver.bundle.tracker.BundledScriptFinder;
+import org.apache.sling.servlets.resolver.bundle.tracker.BundledRenderUnitFinder;
 import org.apache.sling.servlets.resolver.bundle.tracker.ResourceType;
 import org.apache.sling.servlets.resolver.bundle.tracker.BundledRenderUnitCapability;
 import org.apache.sling.servlets.resolver.bundle.tracker.TypeProvider;
@@ -100,7 +100,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     public static final String AT_EXTENDS = "extends";
 
     @Reference
-    private BundledScriptFinder bundledScriptFinder;
+    private BundledRenderUnitFinder bundledRenderUnitFinder;
 
     @Reference
     private ServletMounter mounter;
@@ -177,13 +177,12 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         }
                         Set<TypeProvider> aggregate =
                                 Stream.concat(inheritanceChain.stream(), requiresChain.stream()).collect(Collectors.toCollection(LinkedHashSet::new));
-                        executable = bundledScriptFinder.getScript(inheritanceChain, aggregate);
+                        executable = bundledRenderUnitFinder.findUnit(inheritanceChain, aggregate);
                     } else if (StringUtils.isNotEmpty(bundledRenderUnitCapability.getPath()) && StringUtils.isNotEmpty(
                             bundledRenderUnitCapability.getScriptEngineName())) {
                         Set<TypeProvider> aggregate =
                                 Stream.concat(inheritanceChain.stream(), requiresChain.stream()).collect(Collectors.toCollection(LinkedHashSet::new));
-                        executable = bundledScriptFinder.getScript(baseTypeProvider.getBundle(),
-                                bundledRenderUnitCapability.getPath(), bundledRenderUnitCapability.getScriptEngineName(), aggregate);
+                        executable = bundledRenderUnitFinder.findUnit(baseTypeProvider, aggregate);
                     }
                     List<ServiceRegistration<Servlet>> regs = new ArrayList<>();
 
@@ -279,14 +278,14 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     Object otherRankObj = other.getProperty(Constants.SERVICE_RANKING);
 
                     // If no rank, then spec says it defaults to zero.
-                    rankObj = (rankObj == null) ? new Integer(0) : rankObj;
-                    otherRankObj = (otherRankObj == null) ? new Integer(0) : otherRankObj;
+                    rankObj = (rankObj == null) ? Integer.valueOf(0) : rankObj;
+                    otherRankObj = (otherRankObj == null) ? Integer.valueOf(0) : otherRankObj;
 
                     // If rank is not Integer, then spec says it defaults to zero.
                     Integer rank = (rankObj instanceof Integer)
-                        ? (Integer) rankObj : new Integer(0);
+                        ? (Integer) rankObj : Integer.valueOf(0);
                     Integer otherRank = (otherRankObj instanceof Integer)
-                        ? (Integer) otherRankObj : new Integer(0);
+                        ? (Integer) otherRankObj : Integer.valueOf(0);
 
                     // Sort by rank in ascending order.
                     if (rank.compareTo(otherRank) < 0) {
@@ -325,7 +324,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     else {
                         throw new UnsupportedOperationException(method.toGenericString());
                     }
-                };
+                }
             });
         }
     }
@@ -401,7 +400,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
 
     @Override
     public void modifiedBundle(Bundle bundle, BundleEvent event, List<ServiceRegistration<Servlet>> regs) {
-        LOGGER.warn("Unexpected modified event {} for bundle {}.", event.toString(), bundle.toString());
+        LOGGER.warn("Unexpected modified event {} for bundle {}.", event, bundle);
     }
 
     @Override

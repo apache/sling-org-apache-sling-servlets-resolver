@@ -27,9 +27,9 @@ import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Version;
 
 /**
- * The {@code ResourceTypeParser} provides methods for parsing resource type strings.
+ * The {@code ResourceType} encapsulates details about a Sling resource type and provides methods for parsing resource type strings.
  *
- * <p>The following patterns are supported:</p>
+ * <p>The following patterns are supported for parsing:</p>
  * <ol>
  * <li><tt>a/b/c</tt> - path-based</li>
  * <li><tt>a/b/c/1.0.0</tt> - path-based, versioned</li>

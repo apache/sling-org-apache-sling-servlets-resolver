@@ -20,12 +20,13 @@ package org.apache.sling.servlets.resolver.bundle.tracker;
 
 import java.util.Set;
 
+import javax.script.ScriptException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.osgi.annotation.versioning.ProviderType;
+import org.osgi.annotation.versioning.ConsumerType;
 import org.osgi.framework.Bundle;
 
 /**
@@ -34,12 +35,12 @@ import org.osgi.framework.Bundle;
  * {@link org.apache.sling.api.SlingHttpServletRequest}.
  * </p>
  * <p>
- * If the current {@link org.apache.sling.api.SlingHttpServletRequest} is served by a {@code BundledRenderUnit}, the
- * {@code org.apache.sling.scripting.bundle.tracker} will set the {@code BundledRenderUnit} in the {@link javax.script.Bindings} map associated to the request,
- * under the {@link #VARIABLE} key.
+ * The {@code BundledRenderUnit} provider module is responsible for defining how a unit is executed. However, when executing the unit in
+ * the context of a {@link javax.script.ScriptEngine}, the provider module should add the current executing unit into the
+ * {@link javax.script.ScriptEngine}'s {@link javax.script.ScriptContext} using the {@link #VARIABLE} key.
  * </p>
  */
-@ProviderType
+@ConsumerType
 public interface BundledRenderUnit {
 
     /**
@@ -116,7 +117,7 @@ public interface BundledRenderUnit {
     /**
      * This method will execute / evaluate the wrapped script or precompiled script with the given request.
      *
-     * @throws Exception if the execution leads to an error
+     * @throws ScriptException if the execution leads to an error
      */
-    void eval(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response) throws Exception;
+    void eval(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response) throws ScriptException;
 }
