@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import org.osgi.annotation.versioning.ConsumerType;
 import org.osgi.annotation.versioning.ProviderType;
 import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
 
 /**
  * The {@code BundledScriptFinder} finds the {@link BundledRenderUnit} corresponding to a certain chain of {@link TypeProvider}s or
@@ -37,6 +38,7 @@ public interface BundledRenderUnitFinder {
      * Retrieves the best matching {@link BundledRenderUnit} for the provided {@code inheritanceChain}, by scanning all {@link TypeProvider}
      * bundles for the class or script capable of providing a rendering for resource type chain.
      *
+     * @param context             the bundle context to use.
      * @param inheritanceChain    the resource type chain; the set is ordered from the most specific resource type to the most generic one
      * @param allRelatedProviders this is a super set, containing both the {@code inheritanceChain} but also all the required providers; a
      *                            required provider is a provider that's needed by a {@link ResourceType} in order to delegate rendering to
@@ -44,11 +46,12 @@ public interface BundledRenderUnitFinder {
      * @return a {@link BundledRenderUnit} if one was found, {@code null} otherwise
      */
     @Nullable
-    BundledRenderUnit findUnit(@NotNull Set<TypeProvider> inheritanceChain, @NotNull Set<TypeProvider> allRelatedProviders);
+    BundledRenderUnit findUnit(@NotNull BundleContext context, @NotNull Set<TypeProvider> inheritanceChain, @NotNull Set<TypeProvider> allRelatedProviders);
 
     /**
      * Retrieves a path-based {@link BundledRenderUnit} from the passed {@code provider}.
      *
+     * @param context             the bundle context to use.
      * @param provider            the provider from which to retrieve the unit
      * @param allRelatedProviders this is a super set, containing both the providers connected through an inheritance relationship but also
      *                            all the required providers; a required provider is a provider that's needed by a {@link ResourceType} in
@@ -57,5 +60,5 @@ public interface BundledRenderUnitFinder {
      * @see BundledRenderUnitCapability#getPath()
      */
     @Nullable
-    BundledRenderUnit findUnit(@NotNull TypeProvider provider, @NotNull Set<TypeProvider> allRelatedProviders);
+    BundledRenderUnit findUnit(@NotNull BundleContext context, @NotNull TypeProvider provider, @NotNull Set<TypeProvider> allRelatedProviders);
 }
