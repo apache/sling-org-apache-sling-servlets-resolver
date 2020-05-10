@@ -28,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.annotation.versioning.ConsumerType;
 import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
 
 /**
  * <p>
@@ -76,6 +77,12 @@ public interface BundledRenderUnit {
      * </pre>
      */
     @NotNull Bundle getBundle();
+
+    /**
+     * Returns the {@link BundleContext} to use for this script or precompiled script. This method can be useful for getting an
+     * instance of the publishing bundle's context, when needed to load dependencies at run time.
+     */
+    @NotNull BundleContext getBundleContext();
 
     /**
      * Returns the {@code Set} of {@link TypeProvider}s which are related to this unit.

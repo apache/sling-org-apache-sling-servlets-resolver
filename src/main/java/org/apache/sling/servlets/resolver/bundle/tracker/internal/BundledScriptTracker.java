@@ -176,12 +176,12 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         }
                         Set<TypeProvider> aggregate =
                                 Stream.concat(inheritanceChain.stream(), requiresChain.stream()).collect(Collectors.toCollection(LinkedHashSet::new));
-                        executable = bundledRenderUnitFinder.findUnit(inheritanceChain, aggregate);
+                        executable = bundledRenderUnitFinder.findUnit(bundle.getBundleContext(), inheritanceChain, aggregate);
                     } else if (StringUtils.isNotEmpty(bundledRenderUnitCapability.getPath()) && StringUtils.isNotEmpty(
                             bundledRenderUnitCapability.getScriptEngineName())) {
                         Set<TypeProvider> aggregate =
                                 Stream.concat(inheritanceChain.stream(), requiresChain.stream()).collect(Collectors.toCollection(LinkedHashSet::new));
-                        executable = bundledRenderUnitFinder.findUnit(baseTypeProvider, aggregate);
+                        executable = bundledRenderUnitFinder.findUnit(bundle.getBundleContext(), baseTypeProvider, aggregate);
                     }
                     List<ServiceRegistration<Servlet>> regs = new ArrayList<>();
 
