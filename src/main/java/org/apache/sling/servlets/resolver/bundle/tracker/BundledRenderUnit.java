@@ -33,21 +33,21 @@ import org.osgi.framework.BundleContext;
 
 /**
  * <p>
- * A {@code BundledRenderUnit} represents a pre-packaged script or precompiled script that will be executed in order to render a
- * {@link org.apache.sling.api.SlingHttpServletRequest}.
+ * A {@code BundledRenderUnit} represents a pre-packaged script or precompiled script (Java class) that will be executed in order to
+ * render a {@link org.apache.sling.api.SlingHttpServletRequest}.
  * </p>
  * <p>
- * The {@code BundledRenderUnit} provider module is responsible for defining how a unit is executed. However, when executing the unit in
- * the context of a {@link javax.script.ScriptEngine}, the provider module should add the current executing unit into the
- * {@link javax.script.ScriptEngine}'s {@link javax.script.ScriptContext} using the {@link #VARIABLE} key.
+ * The {@code BundledRenderUnit} provider module is responsible for defining how a unit is executed. However, when executing the unit in the
+ * context of a {@link javax.script.ScriptEngine}, the provider module should add the current executing unit into the {@link
+ * javax.script.ScriptEngine}'s {@link javax.script.ScriptContext} using the {@link #VARIABLE} key.
  * </p>
  */
 @ConsumerType
 public interface BundledRenderUnit {
 
     /**
-     * The variable available in the {@link javax.script.Bindings} associated to a {@link org.apache.sling.api.SlingHttpServletRequest}
-     * if that request is served by a {@code BundledRenderUnit}.
+     * The variable available in the {@link javax.script.Bindings} associated to a {@link org.apache.sling.api.SlingHttpServletRequest} if
+     * that request is served by a {@code BundledRenderUnit}.
      */
     String VARIABLE = BundledRenderUnit.class.getName();
 
@@ -69,8 +69,9 @@ public interface BundledRenderUnit {
     @NotNull String getName();
 
     /**
-     * Returns the {@link Bundle} in which the script or precompiled script is packaged. This method can be useful for getting an
-     * instance of the bundle's classloader, when needed to load dependencies at run time. To do so the following code example can help:
+     * Returns the {@link Bundle} the publishing bundle of this unit (not to be confused with the provider module, which is the module that
+     * instantiates a {@link BundledRenderUnit}). This method can be useful for getting an instance of the bundle's classloader, when
+     * needed to load dependencies at run-time. To do so the following code example can help:
      *
      * <pre>
      * Bundle bundle = bundledRenderUnit.getBundle();
@@ -80,8 +81,10 @@ public interface BundledRenderUnit {
     @NotNull Bundle getBundle();
 
     /**
-     * Returns the {@link BundleContext} to use for this script or precompiled script. This method can be useful for getting an
-     * instance of the publishing bundle's context, when needed to load dependencies at run time.
+     * Returns the {@link BundleContext} to use for this unit. This method can be useful for getting an instance of the publishing bundle's
+     * context, when needed to load dependencies at run-time.
+     *
+     * @return the bundle context of the bundle publishing this unit
      */
     @NotNull BundleContext getBundleContext();
 
@@ -130,12 +133,13 @@ public interface BundledRenderUnit {
     void eval(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response) throws ScriptException;
 
     /**
-     * This method will return an input stream if it is backed by a script that can be interpreted. Otherwise, it returns null.
+     * This method will return an input stream if {@code this} unit is backed by a script that can be interpreted.
      *
-     * @return an inputstream with the script or null if none
+     * @return an {@link InputStream} providing the source code of the backing script; if {@code this} unit is backed by a precompiled
+     * script (essentially a Java class), then this method will return {@code null}
      */
     @Nullable
-    default InputStream getInputStream()  {
+    default InputStream getInputStream() {
         return null;
     }
 }
