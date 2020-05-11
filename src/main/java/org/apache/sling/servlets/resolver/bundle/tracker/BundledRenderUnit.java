@@ -18,6 +18,7 @@
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 package org.apache.sling.servlets.resolver.bundle.tracker;
 
+import java.io.InputStream;
 import java.util.Set;
 
 import javax.script.ScriptException;
@@ -127,4 +128,14 @@ public interface BundledRenderUnit {
      * @throws ScriptException if the execution leads to an error
      */
     void eval(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response) throws ScriptException;
+
+    /**
+     * This method will return an input stream if it is backed by a script that can be interpreted. Otherwise, it returns null.
+     *
+     * @return an inputstream with the script or null if none
+     */
+    @Nullable
+    default InputStream getInputStream()  {
+        return null;
+    }
 }

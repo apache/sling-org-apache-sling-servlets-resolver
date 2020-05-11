@@ -19,6 +19,7 @@
 package org.apache.sling.servlets.resolver.bundle.tracker.internal;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.stream.Collectors;
@@ -36,7 +37,7 @@ import org.apache.sling.servlets.resolver.bundle.tracker.TypeProvider;
 import org.apache.sling.servlets.resolver.bundle.tracker.internal.request.RequestWrapper;
 import org.jetbrains.annotations.NotNull;
 
-class BundledScriptServlet extends GenericServlet {
+public class BundledScriptServlet extends GenericServlet {
 
     private final LinkedHashSet<TypeProvider> wiredTypeProviders;
     private final BundledRenderUnit executable;
@@ -76,6 +77,10 @@ class BundledScriptServlet extends GenericServlet {
         } else {
             throw new ServletException("Not a Sling HTTP request/response");
         }
+    }
+
+    public InputStream getInputStream() {
+        return executable.getInputStream();
     }
 
     @Override
