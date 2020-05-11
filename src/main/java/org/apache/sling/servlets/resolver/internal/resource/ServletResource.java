@@ -18,6 +18,7 @@
  */
 package org.apache.sling.servlets.resolver.internal.resource;
 
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,6 +31,7 @@ import org.apache.sling.api.resource.ResourceMetadata;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ValueMap;
 import org.apache.sling.api.wrappers.ValueMapDecorator;
+import org.apache.sling.servlets.resolver.bundle.tracker.internal.BundledScriptServlet;
 
 public class ServletResource extends AbstractResource {
 
@@ -116,7 +118,14 @@ public class ServletResource extends AbstractResource {
         if (type == Servlet.class && servlet != null) {
             return (AdapterType) servlet; // unchecked cast
         }
-        else if (wrapped != null) {
+        if (type == InputStream.class && servlet instanceof BundledScriptServlet) {
+            InputStream result = ((BundledScriptServlet) servlet).getInputStream();
+            if (result != null) {
+                return (AdapterType) result;
+            }
+        }
+
+        if (wrapped != null) {
             return wrapped.adaptTo(type);
         }
         else if ( type == ValueMap.class ) {
