@@ -221,11 +221,8 @@ public class ServletResourceProviderFactory {
                 // add the unmodified path
                 pathSet.add(path);
 
-                if (StringUtils.isEmpty(FilenameUtils.getExtension(path))) {
-                    // ensure we have another entry which has the .servlet ext. if there wasn't one to begin with
-                    // Radu says: this will make sure that scripts are equal to servlets in the resolution process
-                    pathSet.add(ensureServletNameExtension(path));
-                }
+                // ensure we have another entry which has the .servlet ext.
+                pathSet.add(ensureServletNameExtension(path));
             }
         }
     }
