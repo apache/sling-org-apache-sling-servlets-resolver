@@ -65,7 +65,9 @@ public class ServletResource extends AbstractResource {
     }
 
     void setWrappedResource(Resource wrapped) {
-        this.wrapped = wrapped;
+        if (wrapped != null && !RESOURCE_TYPE_NON_EXISTING.equals(wrapped.getResourceType())) {
+            this.wrapped = wrapped;
+        }
     }
 
     @Override
@@ -126,9 +128,13 @@ public class ServletResource extends AbstractResource {
         }
 
         if (wrapped != null) {
-            return wrapped.adaptTo(type);
+            AdapterType result = wrapped.adaptTo(type);
+            if (result != null) {
+                return result;
+            }
         }
-        else if ( type == ValueMap.class ) {
+
+        if ( type == ValueMap.class ) {
             final Map<String, Object> props = new HashMap<>();
             props.put("sling:resourceType", this.getResourceType());
             props.put("sling:resourceSuperType", this.getResourceSuperType());

@@ -32,6 +32,7 @@ import org.apache.sling.servlets.resolver.internal.resource.MergingServletResour
 import org.apache.sling.spi.resource.provider.ResolveContext;
 import org.apache.sling.spi.resource.provider.ResourceContext;
 import org.apache.sling.spi.resource.provider.ResourceProvider;
+import org.jetbrains.annotations.NotNull;
 
 public class ScriptResourceResolver extends ResourceResolverWrapper {
     private final ResourceResolver resolver;
@@ -91,6 +92,14 @@ public class ScriptResourceResolver extends ResourceResolverWrapper {
                 }
             }, scriptPath));
         }
+    }
+
+    @Override
+    public Resource getResource(Resource base, @NotNull String path) {
+        if (!path.startsWith("/") && base != null) {
+            path = base.getPath() + "/" + path;
+        }
+        return getResource(path);
     }
 
     @Override
