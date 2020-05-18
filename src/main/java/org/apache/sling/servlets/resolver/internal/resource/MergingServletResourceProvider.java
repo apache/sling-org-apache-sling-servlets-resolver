@@ -147,7 +147,7 @@ public class MergingServletResourceProvider {
         Set<String> paths = tree.get(parent.getPath());
 
         if (paths != null) {
-            for (String path : paths) {
+            for (String path : paths.toArray(new String[0])) {
                 Pair<ServletResourceProvider, ServiceReference<?>> provider = providers.get(path);
 
                 if (provider != null) {
