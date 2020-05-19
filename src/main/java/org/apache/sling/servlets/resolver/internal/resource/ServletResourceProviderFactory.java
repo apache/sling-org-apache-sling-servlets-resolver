@@ -221,8 +221,13 @@ public class ServletResourceProviderFactory {
                 // add the unmodified path
                 pathSet.add(path);
 
-                // ensure we have another entry which has the .servlet ext.
-                pathSet.add(ensureServletNameExtension(path));
+                String[] types = PropertiesUtil.toStringArray(ref.getProperty(SLING_SERVLET_RESOURCE_TYPES));
+
+                if ((types == null || types.length == 0) || StringUtils.isEmpty(FilenameUtils.getExtension(path))) {
+                    // ensure we have another entry which has the .servlet ext. if there wasn't one to begin with
+                    // Radu says: this will make sure that scripts are equal to servlets in the resolution process
+                    pathSet.add(ensureServletNameExtension(path));
+                }
             }
         }
     }
