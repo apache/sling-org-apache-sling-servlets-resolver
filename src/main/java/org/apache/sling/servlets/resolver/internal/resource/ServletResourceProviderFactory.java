@@ -262,12 +262,16 @@ public class ServletResourceProviderFactory {
 
             // SLING-512 only, set default methods if no extensions are declared
             if (extensions == null || extensions.length == 0) {
-                if (log.isDebugEnabled()) {
-                    log.debug(
-                        "addByType({}): No methods declared, assuming GET/HEAD",
-                        getServiceReferenceInfo(ref));
+                String[] paths = PropertiesUtil.toStringArray(ref.getProperty(SLING_SERVLET_PATHS));
+                if (paths == null || paths.length == 0) {
+                    if (log.isDebugEnabled())
+                    {
+                        log.debug(
+                            "addByType({}): No methods declared, assuming GET/HEAD",
+                            getServiceReferenceInfo(ref));
+                    }
+                    methods = DEFAULT_SERVLET_METHODS;
                 }
-                methods = DEFAULT_SERVLET_METHODS;
             }
 
         } else if (methods.length == 1 && ALL_METHODS.equals(methods[0])) {

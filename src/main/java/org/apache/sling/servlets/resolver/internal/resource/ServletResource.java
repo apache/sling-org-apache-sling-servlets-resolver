@@ -62,6 +62,7 @@ public class ServletResource extends AbstractResource {
         this.resourceType = ServletResourceProviderFactory.ensureServletNameExtension(path);
         this.resourceSuperType = StringUtils.isEmpty(resourceSuperType) ? "sling/bundle/resource" : resourceSuperType;
         this.metadata = new ResourceMetadata();
+        this.metadata.put("sling.servlet.resource", "true");
     }
 
     void setWrappedResource(Resource wrapped) {
