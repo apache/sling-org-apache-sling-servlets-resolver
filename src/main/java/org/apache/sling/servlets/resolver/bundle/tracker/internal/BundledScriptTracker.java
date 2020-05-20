@@ -195,12 +195,11 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         if (executable.getPath().equals(bundledRenderUnitCapability.getPath())) {
                             properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, executable.getPath());
                         }
-                        properties.put(BundledHooks.class.getName(), "true");
                         regs.add(
                             register(bundle.getBundleContext(), new BundledScriptServlet(inheritanceChain, executable),properties)
                         );
                     } else {
-                        LOGGER.error(String.format("Unable to locate an executable for capability %s.", cap));
+                        LOGGER.warn(String.format("Unable to locate an executable for capability %s.", cap));
                     }
 
                     return regs.stream();
