@@ -56,7 +56,7 @@ class PathBasedServletAcceptor {
         // Get OSGi service properties from the SlingServletConfig
         final ServletConfig rawCfg = servlet.getServletConfig();
         if(!(rawCfg instanceof SlingServletConfig)) {
-            LOGGER.error("Did not get a SlingServletConfig for {}", RequestUtil.getServletName(servlet));
+            LOGGER.debug("Did not get a SlingServletConfig for {}", RequestUtil.getServletName(servlet));
             return true;
         }
         final SlingServletConfig config = (SlingServletConfig)rawCfg;
