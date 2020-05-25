@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceDecorator;
 import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.servlets.resolver.internal.resource.MergingServletResourceProvider;
 import org.apache.sling.spi.resource.provider.ResolveContext;
 import org.apache.sling.spi.resource.provider.ResourceContext;
@@ -43,7 +44,7 @@ public class ScriptResourceDecorator implements ResourceDecorator {
 
     @Override
     public Resource decorate(Resource resource) {
-        String path = resource.getPath();
+        String path = ResourceUtil.normalize(resource.getPath());
         String resolutionPath = resource.getResourceMetadata().getResolutionPath();
         Resource script = getResource(resource, path);
         if (script == resource && Resource.RESOURCE_TYPE_NON_EXISTING.equals(resource.getResourceType())) {
