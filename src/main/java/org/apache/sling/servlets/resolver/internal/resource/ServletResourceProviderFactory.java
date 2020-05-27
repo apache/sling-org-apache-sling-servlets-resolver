@@ -239,6 +239,11 @@ public class ServletResourceProviderFactory {
      */
     private void addByType(Set<String> pathSet, ServiceReference<Servlet> ref) {
         String[] types = PropertiesUtil.toStringArray(ref.getProperty(SLING_SERVLET_RESOURCE_TYPES));
+        String[] paths = PropertiesUtil.toStringArray(ref.getProperty(SLING_SERVLET_PATHS));
+        boolean hasPathRegistration = true;
+        if (paths == null || paths.length == 0) {
+            hasPathRegistration = false;
+        }
         if (types == null || types.length == 0) {
             if (log.isDebugEnabled()) {
                 log.debug("addByType({}): no resource types declared",
@@ -261,17 +266,13 @@ public class ServletResourceProviderFactory {
         if (methods == null || methods.length == 0) {
 
             // SLING-512 only, set default methods if no extensions are declared
-            if (extensions == null || extensions.length == 0) {
-                String[] paths = PropertiesUtil.toStringArray(ref.getProperty(SLING_SERVLET_PATHS));
-                if (paths == null || paths.length == 0) {
-                    if (log.isDebugEnabled())
-                    {
-                        log.debug(
-                            "addByType({}): No methods declared, assuming GET/HEAD",
-                            getServiceReferenceInfo(ref));
-                    }
-                    methods = DEFAULT_SERVLET_METHODS;
+            if ((extensions == null || extensions.length == 0) && !hasPathRegistration) {
+                if (log.isDebugEnabled()) {
+                    log.debug(
+                        "addByType({}): No methods declared, assuming GET/HEAD",
+                        getServiceReferenceInfo(ref));
                 }
+                methods = DEFAULT_SERVLET_METHODS;
             }
 
         } else if (methods.length == 1 && ALL_METHODS.equals(methods[0])) {
@@ -331,8 +332,8 @@ public class ServletResourceProviderFactory {
                     }
                 }
 
-                // if neither methods nore extensions were added
-                if (!pathAdded) {
+                // if neither methods nor extensions were added
+                if (!pathAdded && !hasPathRegistration) {
                     pathSet.add(selPath.substring(0, selPath.length() - 1)
                         + SERVLET_PATH_EXTENSION);
                 }

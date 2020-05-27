@@ -46,17 +46,19 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.request.RequestDispatcherOptions;
+import org.apache.sling.api.servlets.HttpConstants;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.commons.osgi.PropertiesUtil;
 import org.apache.sling.servlets.resolver.bundle.tracker.BundledRenderUnit;
+import org.apache.sling.servlets.resolver.bundle.tracker.BundledRenderUnitCapability;
 import org.apache.sling.servlets.resolver.bundle.tracker.BundledRenderUnitFinder;
 import org.apache.sling.servlets.resolver.bundle.tracker.ResourceType;
-import org.apache.sling.servlets.resolver.bundle.tracker.BundledRenderUnitCapability;
 import org.apache.sling.servlets.resolver.bundle.tracker.TypeProvider;
 import org.apache.sling.servlets.resolver.internal.resource.ServletMounter;
 import org.jetbrains.annotations.NotNull;
@@ -98,6 +100,8 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     public static final String AT_SCRIPT_ENGINE = "scriptEngine";
     public static final String AT_SCRIPT_EXTENSION = "scriptExtension";
     public static final String AT_EXTENDS = "extends";
+    private static final String[] DEFAULT_SERVLET_METHODS = {
+            HttpConstants.METHOD_GET, HttpConstants.METHOD_HEAD };
 
     @Reference
     private BundledRenderUnitFinder bundledRenderUnitFinder;
@@ -192,6 +196,40 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                                 properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, finalExecutable.getPath());
                             }
                         });
+                        if (!bundledRenderUnitCapability.getResourceTypes().isEmpty() && bundledRenderUnitCapability.getSelectors().isEmpty() &&
+                                StringUtils.isEmpty(bundledRenderUnitCapability.getExtension()) &&
+                                StringUtils.isEmpty(bundledRenderUnitCapability.getMethod())) {
+                            String scriptName = FilenameUtils.getName(executable.getPath());
+                            String scriptNameNoExtension = scriptName.substring(0, scriptName.lastIndexOf('.'));
+                            boolean noMatch =
+                                    bundledRenderUnitCapability.getResourceTypes().stream().noneMatch(resourceType -> {
+                                        String resourceTypePath = resourceType.toString();
+                                        String label;
+                                        int lastSlash = resourceTypePath.lastIndexOf('/');
+                                        if (lastSlash > -1) {
+                                            label = resourceTypePath.substring(lastSlash + 1);
+                                        } else {
+                                            label = resourceTypePath;
+                                        }
+                                        return label.equals(scriptNameNoExtension);
+                                    });
+                            if (noMatch) {
+                                List<String> paths = new ArrayList<>();
+                                paths.add(finalExecutable.getPath());
+                                bundledRenderUnitCapability.getResourceTypes().forEach(resourceType -> {
+                                    String resourceTypePath = resourceType.toString();
+                                    String label;
+                                    int lastSlash = resourceTypePath.lastIndexOf('/');
+                                    if (lastSlash > -1) {
+                                        label = resourceTypePath.substring(lastSlash + 1);
+                                    } else {
+                                        label = resourceTypePath;
+                                    }
+                                    paths.add(resourceTypePath + "/" + label + ".servlet");
+                                });
+                                properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, paths.toArray(new String[0]));
+                            }
+                        }
                         if (executable.getPath().equals(bundledRenderUnitCapability.getPath())) {
                             properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, executable.getPath());
                         }
