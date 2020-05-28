@@ -52,6 +52,7 @@ import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.request.RequestDispatcherOptions;
+import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.servlets.HttpConstants;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.commons.osgi.PropertiesUtil;
@@ -191,8 +192,9 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
 
                     if (executable != null) {
                         BundledRenderUnit finalExecutable = executable;
+                        final String executableParentPath = ResourceUtil.getParent(executable.getPath());
                         bundledRenderUnitCapability.getResourceTypes().forEach(resourceType -> {
-                            if (finalExecutable.getPath().startsWith(resourceType.toString() + "/")) {
+                            if (StringUtils.isNotEmpty(executableParentPath) && executableParentPath.equals(resourceType.toString())) {
                                 properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, finalExecutable.getPath());
                             }
                         });
@@ -225,7 +227,9 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                                     } else {
                                         label = resourceTypePath;
                                     }
-                                    paths.add(resourceTypePath + "/" + label + ".servlet");
+                                    if (StringUtils.isNotEmpty(executableParentPath) && executableParentPath.equals(resourceTypePath)) {
+                                        paths.add(resourceTypePath + "/" + label + ".servlet");
+                                    }
                                 });
                                 properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, paths.toArray(new String[0]));
                             }
