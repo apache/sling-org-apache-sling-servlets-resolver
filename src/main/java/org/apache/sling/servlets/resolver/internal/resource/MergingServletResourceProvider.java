@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sling.api.resource.Resource;
@@ -40,12 +41,16 @@ import org.osgi.framework.ServiceReference;
 public class MergingServletResourceProvider {
     private final List<Pair<ServletResourceProvider, ServiceReference<?>>> registrations = new ArrayList<>();
 
-    private final ConcurrentHashMap<String, Set<String>> tree = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Pair<ServletResourceProvider, ServiceReference<?>>> providers = new ConcurrentHashMap<>();
+    private final AtomicReference<ConcurrentHashMap<String, Set<String>>> tree = new AtomicReference<>(new ConcurrentHashMap<>());
+    private final AtomicReference<ConcurrentHashMap<String, Pair<ServletResourceProvider, ServiceReference<?>>>> providers = new AtomicReference<>(new ConcurrentHashMap<>());
 
     synchronized void add(ServletResourceProvider provider, ServiceReference<?> reference) {
         registrations.add(Pair.of(provider, reference));
-        index(Arrays.asList(registrations.get(registrations.size() - 1)));
+        ConcurrentHashMap<String, Set<String>> localTree = localTree();
+        ConcurrentHashMap<String, Pair<ServletResourceProvider, ServiceReference<?>>> localProvs = localProviders();
+        index(localTree, localProvs, Arrays.asList(registrations.get(registrations.size() - 1)));
+        tree.set(localTree);
+        providers.set(localProvs);
     }
 
     synchronized boolean remove(ServletResourceProvider provider, ServiceReference<?> reference) {
@@ -65,20 +70,34 @@ public class MergingServletResourceProvider {
             }
         }
         if (found) {
-            tree.clear();
-            providers.clear();
-            index(registrations);
+            ConcurrentHashMap<String, Set<String>> localTree = new ConcurrentHashMap<>();
+            ConcurrentHashMap<String, Pair<ServletResourceProvider, ServiceReference<?>>> localProvs = new ConcurrentHashMap<>();
+            index(localTree, localProvs, registrations);
+            tree.set(localTree);
+            providers.set(localProvs);
         }
         return found;
     }
 
     synchronized void clear() {
         registrations.clear();
-        tree.clear();
-        providers.clear();
+        tree.set(new ConcurrentHashMap<>());
+        providers.set(new ConcurrentHashMap<>());
     }
 
-    private void index(List<Pair<ServletResourceProvider, ServiceReference<?>>> registrations) {
+    private ConcurrentHashMap<String, Set<String>> localTree() {
+        ConcurrentHashMap<String, Set<String>> localTree = new ConcurrentHashMap<>();
+        for (Map.Entry<String, Set<String>> entry : tree.get().entrySet()) {
+            localTree.put(entry.getKey(), Collections.synchronizedSet(new LinkedHashSet<>(entry.getValue())));
+        }
+        return localTree;
+    }
+
+    private ConcurrentHashMap<String, Pair<ServletResourceProvider, ServiceReference<?>>> localProviders() {
+        return new ConcurrentHashMap<>(providers.get());
+    }
+
+    private void index(ConcurrentHashMap<String, Set<String>> tree, ConcurrentHashMap<String, Pair<ServletResourceProvider, ServiceReference<?>>> providers, List<Pair<ServletResourceProvider, ServiceReference<?>>> registrations) {
         for (Pair<ServletResourceProvider, ServiceReference<?>> reference : registrations) {
             for (String path : reference.getLeft().getServletPaths()) {
                 String current = "";
@@ -111,7 +130,7 @@ public class MergingServletResourceProvider {
             wrapped = parentProvider.getResource(resolveContext.getParentResolveContext(), path, null, null);
         }
         Resource result;
-        Pair<ServletResourceProvider, ServiceReference<?>> provider = providers.get(path);
+        Pair<ServletResourceProvider, ServiceReference<?>> provider = providers.get().get(path);
 
         if (provider != null) {
             result = provider.getLeft().getResource(resolveContext, path, null, null);
@@ -126,7 +145,7 @@ public class MergingServletResourceProvider {
             else {
                 result = null;
             }
-            if (result == null && tree.containsKey(path)) {
+            if (result == null && tree.get().containsKey(path)) {
                 result = new SyntheticResource(resolveContext.getResourceResolver(), path, ResourceProvider.RESOURCE_TYPE_SYNTHETIC);
             }
         }
@@ -144,11 +163,11 @@ public class MergingServletResourceProvider {
                 result.put(resource.getPath(), resource);
             }
         }
-        Set<String> paths = tree.get(parent.getPath());
+        Set<String> paths = tree.get().get(parent.getPath());
 
         if (paths != null) {
             for (String path : paths.toArray(new String[0])) {
-                Pair<ServletResourceProvider, ServiceReference<?>> provider = providers.get(path);
+                Pair<ServletResourceProvider, ServiceReference<?>> provider = providers.get().get(path);
 
                 if (provider != null) {
                     Resource resource = provider.getLeft().getResource(ctx, path, null, parent);
