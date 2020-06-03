@@ -123,6 +123,20 @@ public class MergingServletResourceProvider {
         }
     }
 
+    public boolean isRootOf(String path) {
+        if (path != null && path.startsWith("/")) {
+            int idx = path.indexOf('/', 1);
+            if (idx != -1) {
+                path = path.substring(0, idx);
+                return tree.get().containsKey(path);
+            } else {
+                return true;
+            }
+        } else {
+            return false;
+        }
+    }
+
     public Resource getResource(ResolveContext resolveContext, String path) {
         Resource wrapped = null;
         final ResourceProvider parentProvider = resolveContext.getParentResourceProvider();

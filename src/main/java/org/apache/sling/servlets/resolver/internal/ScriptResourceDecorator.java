@@ -45,22 +45,27 @@ public class ScriptResourceDecorator implements ResourceDecorator {
     @Override
     public Resource decorate(Resource resource) {
         String path = ResourceUtil.normalize(resource.getPath());
-        String resolutionPath = resource.getResourceMetadata().getResolutionPath();
-        Resource script = getResource(resource, path);
-        if (script == resource && Resource.RESOURCE_TYPE_NON_EXISTING.equals(resource.getResourceType())) {
-            int idx = path.indexOf('.');
-            if (idx != -1) {
-                path = path.substring(0, idx);
-                script = getResource(resource, path);
-                resolutionPath = path;
+        if (this.provider.isRootOf(path)) {
+            String resolutionPath = resource.getResourceMetadata().getResolutionPath();
+            Resource script = getResource(resource, path);
+            if (script == resource && Resource.RESOURCE_TYPE_NON_EXISTING.equals(resource.getResourceType())) {
+                int idx = path.indexOf('.');
+                if (idx != -1) {
+                    path = path.substring(0, idx);
+                    script = getResource(resource, path);
+                    resolutionPath = path;
+                }
             }
-        }
-        if (script != resource) {
-            script.getResourceMetadata().putAll(resource.getResourceMetadata());
-            script.getResourceMetadata().setResolutionPath(resolutionPath);
-        }
+            if (script != resource) {
+                script.getResourceMetadata().putAll(resource.getResourceMetadata());
+                script.getResourceMetadata().setResolutionPath(resolutionPath);
+            }
 
-        return script;
+            return script;
+        }
+        else {
+            return resource;
+        }
     }
 
     @Override
