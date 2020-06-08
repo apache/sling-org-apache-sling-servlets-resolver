@@ -193,17 +193,15 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     if (executable != null) {
                         BundledRenderUnit finalExecutable = executable;
                         final String executableParentPath = ResourceUtil.getParent(executable.getPath());
-                        bundledRenderUnitCapability.getResourceTypes().forEach(resourceType -> {
-                            if (StringUtils.isNotEmpty(executableParentPath) && executableParentPath.equals(resourceType.toString())) {
-                                properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, finalExecutable.getPath());
-                            }
-                        });
-                        if (!bundledRenderUnitCapability.getResourceTypes().isEmpty() && bundledRenderUnitCapability.getSelectors().isEmpty() &&
+                        if (executable.getPath().equals(bundledRenderUnitCapability.getPath())) {
+                            properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, executable.getPath());
+                        } else {
+                            if (!bundledRenderUnitCapability.getResourceTypes().isEmpty() && bundledRenderUnitCapability.getSelectors().isEmpty() &&
                                 StringUtils.isEmpty(bundledRenderUnitCapability.getExtension()) &&
                                 StringUtils.isEmpty(bundledRenderUnitCapability.getMethod())) {
-                            String scriptName = FilenameUtils.getName(executable.getPath());
-                            String scriptNameNoExtension = scriptName.substring(0, scriptName.lastIndexOf('.'));
-                            boolean noMatch =
+                                String scriptName = FilenameUtils.getName(executable.getPath());
+                                String scriptNameNoExtension = scriptName.substring(0, scriptName.lastIndexOf('.'));
+                                boolean noMatch =
                                     bundledRenderUnitCapability.getResourceTypes().stream().noneMatch(resourceType -> {
                                         String resourceTypePath = resourceType.toString();
                                         String label;
@@ -215,27 +213,32 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                                         }
                                         return label.equals(scriptNameNoExtension);
                                     });
-                            if (noMatch) {
-                                List<String> paths = new ArrayList<>();
-                                paths.add(finalExecutable.getPath());
+                                if (noMatch) {
+                                    List<String> paths = new ArrayList<>();
+                                    paths.add(finalExecutable.getPath());
+                                    bundledRenderUnitCapability.getResourceTypes().forEach(resourceType -> {
+                                        String resourceTypePath = resourceType.toString();
+                                        String label;
+                                        int lastSlash = resourceTypePath.lastIndexOf('/');
+                                        if (lastSlash > -1) {
+                                            label = resourceTypePath.substring(lastSlash + 1);
+                                        } else {
+                                            label = resourceTypePath;
+                                        }
+                                        if (StringUtils.isNotEmpty(executableParentPath) && executableParentPath.equals(resourceTypePath)) {
+                                            paths.add(resourceTypePath + "/" + label + ".servlet");
+                                        }
+                                    });
+                                    properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, paths.toArray(new String[0]));
+                                }
+                            }
+                            if (!properties.containsKey(ServletResolverConstants.SLING_SERVLET_PATHS)) {
                                 bundledRenderUnitCapability.getResourceTypes().forEach(resourceType -> {
-                                    String resourceTypePath = resourceType.toString();
-                                    String label;
-                                    int lastSlash = resourceTypePath.lastIndexOf('/');
-                                    if (lastSlash > -1) {
-                                        label = resourceTypePath.substring(lastSlash + 1);
-                                    } else {
-                                        label = resourceTypePath;
-                                    }
-                                    if (StringUtils.isNotEmpty(executableParentPath) && executableParentPath.equals(resourceTypePath)) {
-                                        paths.add(resourceTypePath + "/" + label + ".servlet");
+                                    if (StringUtils.isNotEmpty(executableParentPath) && executableParentPath.equals(resourceType.toString())) {
+                                        properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, finalExecutable.getPath());
                                     }
                                 });
-                                properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, paths.toArray(new String[0]));
                             }
-                        }
-                        if (executable.getPath().equals(bundledRenderUnitCapability.getPath())) {
-                            properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, executable.getPath());
                         }
                         regs.add(
                             register(bundle.getBundleContext(), new BundledScriptServlet(inheritanceChain, executable),properties)
