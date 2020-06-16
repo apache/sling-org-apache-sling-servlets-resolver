@@ -41,12 +41,19 @@ public class BundledScriptServlet extends GenericServlet {
 
     private final LinkedHashSet<TypeProvider> wiredTypeProviders;
     private final BundledRenderUnit executable;
+    private final String servletInfo;
 
 
     BundledScriptServlet(@NotNull LinkedHashSet<TypeProvider> wiredTypeProviders,
                          @NotNull BundledRenderUnit executable) {
         this.wiredTypeProviders = wiredTypeProviders;
         this.executable = executable;
+        this.servletInfo = "Script " + executable.getPath();
+    }
+
+    @Override
+    public String getServletInfo() {
+        return servletInfo;
     }
 
     @Override
