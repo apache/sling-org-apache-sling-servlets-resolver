@@ -23,8 +23,6 @@ import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.annotation.versioning.ConsumerType;
-import org.osgi.annotation.versioning.ProviderType;
-import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
 /**
