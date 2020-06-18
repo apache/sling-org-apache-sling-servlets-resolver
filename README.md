@@ -73,6 +73,6 @@ The integration tests for bundled scripts are provided by the [`org.apache.sling
 ## Resources
 [1] - https://semver.org/  
 [2] - https://osgi.org/javadoc/r6/core/org/osgi/util/tracker/BundleTrackerCustomizer.html  
-[3] - https://osgi.org/download/r6/osgi.core-6.0.0.pdf, Page 41, section 3.3.3 "Bundle Capabilities"
+[3] - https://osgi.org/download/r6/osgi.core-6.0.0.pdf, Page 41, section 3.3.3 "Bundle Capabilities"  
 [4] - https://sling.apache.org/documentation/the-sling-engine/servlets.html#servlet-registration-1  
 [5] - https://sling.apache.org/documentation/the-sling-engine/url-to-script-resolution.html
