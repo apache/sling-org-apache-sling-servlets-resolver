@@ -234,7 +234,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                             }
                             if (!properties.containsKey(ServletResolverConstants.SLING_SERVLET_PATHS)) {
                                 bundledRenderUnitCapability.getResourceTypes().forEach(resourceType -> {
-                                    if (StringUtils.isNotEmpty(executableParentPath) && executableParentPath.equals(resourceType.toString())) {
+                                    if (StringUtils.isNotEmpty(executableParentPath) && (executableParentPath + "/").startsWith(resourceType.toString() + "/")) {
                                         properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, finalExecutable.getPath());
                                     }
                                 });
