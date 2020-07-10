@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sling.api.resource.NonExistingResource;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.SyntheticResource;
 import org.apache.sling.spi.resource.provider.ResolveContext;
@@ -153,14 +154,15 @@ public class MergingServletResourceProvider {
             }
         }
         else {
-            if (wrapped != null) {
+            if (wrapped != null && !(wrapped instanceof NonExistingResource)) {
                 result = wrapped;
-            }
-            else {
+            } else {
                 result = null;
             }
             if (result == null && tree.get().containsKey(path)) {
                 result = new SyntheticResource(resolveContext.getResourceResolver(), path, ResourceProvider.RESOURCE_TYPE_SYNTHETIC);
+            } else {
+                return wrapped;
             }
         }
 
