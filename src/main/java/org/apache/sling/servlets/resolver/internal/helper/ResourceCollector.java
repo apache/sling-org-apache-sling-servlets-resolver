@@ -114,15 +114,41 @@ public class ResourceCollector extends AbstractResourceCollector {
      *            is assumed.
      * @param resource the resource to invoke, the resource type and resource
      *            super type are taken from this resource.
+     * @param executionPaths the execution paths to consider
+     * @deprecated use {@link #ResourceCollector(String, String, Resource, String, String[])} instead.
+     */
+    @Deprecated
+    public ResourceCollector(final String methodName,
+            final String baseResourceType, final Resource resource,
+            final String[] executionPaths) {
+       this(methodName, baseResourceType, resource, null, executionPaths);
+    }
+
+    /**
+     * Creates a <code>ResourceCollector</code> finding servlets and scripts for
+     * the given <code>methodName</code>.
+     *
+     * @param methodName The <code>methodName</code> used to find scripts for.
+     *            This must not be <code>null</code>.
+     * @param baseResourceType The basic resource type to use as a final
+     *            resource super type. If this is <code>null</code> the default
+     *            value
+     *            {@link org.apache.sling.servlets.resolver.internal.ServletResolverConstants#DEFAULT_SERVLET_NAME}
+     *            is assumed.
+     * @param resource the resource to invoke, the resource type and resource
+     *            super type are taken from this resource.
+     * @param extension the extension of the request being processed
+     * @param executionPaths the execution paths to consider
      */
     public ResourceCollector(final String methodName,
             final String baseResourceType, final Resource resource,
+            final String extension,
             final String[] executionPaths) {
         super((baseResourceType != null
                 ? baseResourceType
                 : ServletResolverConstants.DEFAULT_RESOURCE_TYPE),
             resource.getResourceType(), resource.getResourceSuperType(),
-            null, executionPaths);
+            extension, executionPaths);
         this.methodName = methodName;
         this.requestSelectors = new String[0];
         this.numRequestSelectors = 0;

@@ -300,9 +300,10 @@ public class SlingServletResolver
             Resource resource = getErrorResource(request);
 
             // find a servlet for the status as the method name
+            String extension = request.getRequestPathInfo().getExtension();
             ResourceCollector locationUtil = new ResourceCollector(String.valueOf(status),
                     DEFAULT_ERROR_HANDLER_RESOURCE_TYPE, resource,
-                    this.executionPaths);
+                    extension, this.executionPaths);
             Servlet servlet = getServletInternal(locationUtil, request, scriptResolver);
 
             // fall back to default servlet if none
@@ -357,9 +358,10 @@ public class SlingServletResolver
             Class<?> tClass = throwable.getClass();
             while (servlet == null && tClass != Object.class) {
                 // find a servlet for the simple class name as the method name
+                String extension = request.getRequestPathInfo().getExtension();
                 ResourceCollector locationUtil = new ResourceCollector(tClass.getSimpleName(),
                         DEFAULT_ERROR_HANDLER_RESOURCE_TYPE, resource,
-                        this.executionPaths);
+                        extension, this.executionPaths);
                 servlet = getServletInternal(locationUtil, request, scriptResolver);
 
                 // go to the base class
@@ -599,10 +601,11 @@ public class SlingServletResolver
 
         // find a default error handler according to the resource type
         // tree of the given resource
+        String extension = request.getRequestPathInfo().getExtension();
         final ResourceCollector locationUtil = new ResourceCollector(
             ServletResolverConstants.DEFAULT_ERROR_HANDLER_METHOD,
             DEFAULT_ERROR_HANDLER_RESOURCE_TYPE, resource,
-            this.executionPaths);
+            extension, this.executionPaths);
         final Servlet servlet = getServletInternal(locationUtil, request, resolver);
         if (servlet != null) {
             return servlet;
