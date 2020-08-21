@@ -138,7 +138,6 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                 List<ServiceRegistration<Servlet>> serviceRegistrations = capabilities.stream().flatMap(cap ->
                 {
                     Hashtable<String, Object> properties = new Hashtable<>();
-                    properties.put(ServletResolverConstants.SLING_SERVLET_NAME, BundledScriptServlet.class.getName());
                     properties.put(Constants.SERVICE_DESCRIPTION, BundledScriptServlet.class.getName() + cap.getAttributes());
                     BundledRenderUnitCapability bundledRenderUnitCapability = BundledRenderUnitCapabilityImpl.fromBundleCapability(cap);
                     BundledRenderUnit executable = null;
@@ -240,6 +239,8 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                                 });
                             }
                         }
+                        properties.put(ServletResolverConstants.SLING_SERVLET_NAME,
+                                String.format("%s (%s)", BundledScriptServlet.class.getSimpleName(), executable.getPath()));
                         regs.add(
                             register(bundle.getBundleContext(), new BundledScriptServlet(inheritanceChain, executable),properties)
                         );
@@ -295,6 +296,8 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     }
                     else if (method.getName().equals("hashCode") && method.getParameterCount() == 0) {
                         return id.intValue();
+                    } else if (method.getName().equals("toString")) {
+                        return "Internal reference: " + id.toString();
                     }
                     else {
                         throw new UnsupportedOperationException(method.toGenericString());
@@ -363,6 +366,8 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     }
                     else if (method.getName().equals("hashCode") && method.getParameterCount() == 0) {
                         return id.intValue();
+                    } else if (method.getName().equals("toString")) {
+                        return "Internal registration: " + id;
                     }
                     else {
                         throw new UnsupportedOperationException(method.toGenericString());
@@ -379,7 +384,8 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
             .map(this::toProperties)
             .collect(Collectors.groupingBy(BundledScriptTracker::getResourceTypes)).forEach((rt, propList) -> {
             Hashtable<String, Object> properties = new Hashtable<>();
-            properties.put(ServletResolverConstants.SLING_SERVLET_NAME, DispatcherServlet.class.getName());
+            properties.put(ServletResolverConstants.SLING_SERVLET_NAME, String.format("%s (%s)", DispatcherServlet.class.getSimpleName(),
+                    rt));
             properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES, rt.toArray());
             Set<String> methods = propList.stream()
                     .map(props -> props.getOrDefault(ServletResolverConstants.SLING_SERVLET_METHODS, new String[]{"GET", "HEAD"}))
