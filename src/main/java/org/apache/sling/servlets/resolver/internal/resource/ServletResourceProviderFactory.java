@@ -36,6 +36,8 @@ import javax.servlet.Servlet;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.servlets.HttpConstants;
 import org.apache.sling.commons.osgi.PropertiesUtil;
@@ -149,7 +151,7 @@ public class ServletResourceProviderFactory {
         }
         String resourceSuperType = PropertiesUtil.toString(ref.getProperty(SLING_SERVLET_RESOURCE_SUPER_TYPE), null);
         Set<String> resourceSuperTypeMarkers = new HashSet<>();
-        if (StringUtils.isNotEmpty(resourceSuperType)) {
+        if (StringUtils.isNotEmpty(resourceSuperType) && !ServletResource.DEFAULT_RESOURCE_SUPER_TYPE.equals(resourceSuperType)) {
             for (String rt : PropertiesUtil.toStringArray(ref.getProperty(SLING_SERVLET_RESOURCE_TYPES))) {
                 if (!rt.startsWith("/")) {
                     rt = getPrefix(ref).concat(ResourceUtil.resourceTypeToPath(rt));
