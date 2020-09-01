@@ -35,6 +35,8 @@ import org.apache.sling.servlets.resolver.bundle.tracker.internal.BundledScriptS
 
 public class ServletResource extends AbstractResource {
 
+    public static final String DEFAULT_RESOURCE_SUPER_TYPE = "sling/bundle/resource";
+
     private final ResourceResolver resourceResolver;
 
     private final Servlet servlet;
@@ -60,7 +62,7 @@ public class ServletResource extends AbstractResource {
         this.servlet = servlet;
         this.path = path;
         this.resourceType = ServletResourceProviderFactory.ensureServletNameExtension(path);
-        this.resourceSuperType = StringUtils.isEmpty(resourceSuperType) ? "sling/bundle/resource" : resourceSuperType;
+        this.resourceSuperType = StringUtils.isEmpty(resourceSuperType) ? DEFAULT_RESOURCE_SUPER_TYPE : resourceSuperType;
         this.metadata = new ResourceMetadata();
         this.metadata.put("sling.servlet.resource", "true");
     }
@@ -86,8 +88,6 @@ public class ServletResource extends AbstractResource {
         return resourceType;
     }
 
-    /** Servlet Resources always returns "sling/bundle/resource" as
-     * the super type. */
     @Override
     public String getResourceSuperType() {
         return resourceSuperType;
