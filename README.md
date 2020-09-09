@@ -67,8 +67,7 @@ Short answer: exactly like you deploy your code, preferably right next to it. Pa
 
 ### Integration Tests
 
-The integration tests for bundled scripts are provided by the [`org.apache.sling.scripting.bundle.tracker.it`](https://github.com/apache
-/sling-org-apache-sling-scripting-bundle-tracker-it) project.
+The integration tests for bundled scripts are provided by the [`org.apache.sling.scripting.bundle.tracker.it`](https://github.com/apache/sling-org-apache-sling-scripting-bundle-tracker-it) project.
 
 ## Resources
 [1] - https://semver.org/  
