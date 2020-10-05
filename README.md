@@ -61,8 +61,7 @@ Short answer: exactly like you deploy your code, preferably right next to it. Pa
   4. add your scripts, using the same naming conventions that you were used to from before [5];
   5. manually define your provide and require capabilities; just kidding; add the
   [`scriptingbundle-maven-plugin`](https://github.com/apache/sling-scriptingbundle-maven-plugin) to your build section and add its required
-  properties in the `maven-bundle-plugin`'s instructions (check [these examples](https://github.com/apache/sling-org-apache-sling-scripting
-  -bundle-tracker-it/tree/master/examples/));
+  properties in the `maven-bundle-plugin`'s instructions (check [these examples](https://github.com/apache/sling-org-apache-sling-scripting-bundle-tracker-it/tree/master/examples/));
   6. `mvn clean sling:install`.
 
 ### Integration Tests
