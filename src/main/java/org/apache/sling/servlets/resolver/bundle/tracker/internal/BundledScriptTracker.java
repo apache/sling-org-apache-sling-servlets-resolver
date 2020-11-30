@@ -133,13 +133,14 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                 .anyMatch(m_context.getBundle()::equals)) {
             LOGGER.debug("Inspecting bundle {} for {} capability.", bundle.getSymbolicName(), NS_SLING_SERVLET);
             List<BundleCapability> capabilities = bundleWiring.getCapabilities(NS_SLING_SERVLET);
-            Set<TypeProvider> requiresChain = collectRequiresChain(bundleWiring);
+            Map<BundleCapability, BundledRenderUnitCapability> cache = new HashMap<>();
+            Set<TypeProvider> requiresChain = collectRequiresChain(bundleWiring, cache);
             if (!capabilities.isEmpty()) {
                 List<ServiceRegistration<Servlet>> serviceRegistrations = capabilities.stream().flatMap(cap ->
                 {
                     Hashtable<String, Object> properties = new Hashtable<>();
                     properties.put(Constants.SERVICE_DESCRIPTION, BundledScriptServlet.class.getName() + cap.getAttributes());
-                    BundledRenderUnitCapability bundledRenderUnitCapability = BundledRenderUnitCapabilityImpl.fromBundleCapability(cap);
+                    BundledRenderUnitCapability bundledRenderUnitCapability = cachedOrNew(cap,cache);
                     BundledRenderUnit executable = null;
                     TypeProvider baseTypeProvider = new TypeProviderImpl(bundledRenderUnitCapability, bundle);
                     LinkedHashSet<TypeProvider> inheritanceChain = new LinkedHashSet<>();
@@ -167,7 +168,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
 
                         String extendedResourceTypeString = bundledRenderUnitCapability.getExtendedResourceType();
                         if (StringUtils.isNotEmpty(extendedResourceTypeString)) {
-                            collectInheritanceChain(inheritanceChain, bundleWiring, extendedResourceTypeString);
+                            collectInheritanceChain(inheritanceChain, bundleWiring, extendedResourceTypeString, cache);
                             inheritanceChain.stream().filter(typeProvider -> typeProvider.getBundledRenderUnitCapability().getResourceTypes().stream()
                                     .anyMatch(resourceType -> resourceType.getType().equals(extendedResourceTypeString))).findFirst()
                                     .ifPresent(typeProvider -> {
@@ -190,10 +191,10 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     List<ServiceRegistration<Servlet>> regs = new ArrayList<>();
 
                     if (executable != null) {
-                        BundledRenderUnit finalExecutable = executable;
-                        final String executableParentPath = ResourceUtil.getParent(executable.getPath());
-                        if (executable.getPath().equals(bundledRenderUnitCapability.getPath())) {
-                            properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, executable.getPath());
+                        String executablePath = executable.getPath();
+                        final String executableParentPath = ResourceUtil.getParent(executablePath);
+                        if (executablePath.equals(bundledRenderUnitCapability.getPath())) {
+                            properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, executablePath);
                         } else {
                             if (!bundledRenderUnitCapability.getResourceTypes().isEmpty() && bundledRenderUnitCapability.getSelectors().isEmpty() &&
                                 StringUtils.isEmpty(bundledRenderUnitCapability.getExtension()) &&
@@ -214,7 +215,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                                     });
                                 if (noMatch) {
                                     List<String> paths = new ArrayList<>();
-                                    paths.add(finalExecutable.getPath());
+                                    paths.add(executablePath);
                                     bundledRenderUnitCapability.getResourceTypes().forEach(resourceType -> {
                                         String resourceTypePath = resourceType.toString();
                                         String label;
@@ -234,15 +235,15 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                             if (!properties.containsKey(ServletResolverConstants.SLING_SERVLET_PATHS)) {
                                 bundledRenderUnitCapability.getResourceTypes().forEach(resourceType -> {
                                     if (StringUtils.isNotEmpty(executableParentPath) && (executableParentPath + "/").startsWith(resourceType.toString() + "/")) {
-                                        properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, finalExecutable.getPath());
+                                        properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, executablePath);
                                     }
                                 });
                             }
                         }
                         properties.put(ServletResolverConstants.SLING_SERVLET_NAME,
-                                String.format("%s (%s)", BundledScriptServlet.class.getSimpleName(), executable.getPath()));
+                                String.format("%s (%s)", BundledScriptServlet.class.getSimpleName(), executablePath));
                         regs.add(
-                            register(bundle.getBundleContext(), new BundledScriptServlet(inheritanceChain, executable),properties)
+                            register(bundle.getBundleContext(), new BundledScriptServlet(inheritanceChain, executable), properties)
                         );
                     } else {
                         LOGGER.warn(String.format("Unable to locate an executable for capability %s.", cap));
@@ -559,9 +560,9 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     }
 
     private void collectInheritanceChain(@NotNull Set<TypeProvider> providers, @NotNull BundleWiring wiring,
-                                         @NotNull String extendedResourceType) {
+                                         @NotNull String extendedResourceType, @NotNull Map<BundleCapability, BundledRenderUnitCapability> cache) {
         for (BundleWire wire : wiring.getRequiredWires(NS_SLING_SERVLET)) {
-            BundledRenderUnitCapability wiredCapability = BundledRenderUnitCapabilityImpl.fromBundleCapability(wire.getCapability());
+            BundledRenderUnitCapability wiredCapability = cachedOrNew(wire.getCapability(), cache);
             if (wiredCapability.getSelectors().isEmpty()) {
                 for (ResourceType resourceType : wiredCapability.getResourceTypes()) {
                     if (extendedResourceType.equals(resourceType.getType())) {
@@ -569,7 +570,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         providers.add(new TypeProviderImpl(wiredCapability, providingBundle));
                         String wiredExtends = wiredCapability.getExtendedResourceType();
                         if (StringUtils.isNotEmpty(wiredExtends)) {
-                            collectInheritanceChain(providers, wire.getProviderWiring(), wiredExtends);
+                            collectInheritanceChain(providers, wire.getProviderWiring(), wiredExtends, cache);
                         }
                     }
                 }
@@ -577,15 +578,24 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         }
     }
 
-    private Set<TypeProvider> collectRequiresChain(@NotNull BundleWiring wiring) {
+    private Set<TypeProvider> collectRequiresChain(@NotNull BundleWiring wiring, Map<BundleCapability, BundledRenderUnitCapability> cache) {
         Set<TypeProvider> requiresChain = new LinkedHashSet<>();
         for (BundleWire wire : wiring.getRequiredWires(NS_SLING_SERVLET)) {
-            BundledRenderUnitCapability wiredCapability = BundledRenderUnitCapabilityImpl.fromBundleCapability(wire.getCapability());
+            BundledRenderUnitCapability wiredCapability = cachedOrNew(wire.getCapability(), cache);
             if (wiredCapability.getSelectors().isEmpty()) {
                 Bundle providingBundle = wire.getProvider().getBundle();
                 requiresChain.add(new TypeProviderImpl(wiredCapability, providingBundle));
             }
         }
         return requiresChain;
+    }
+
+    private BundledRenderUnitCapability cachedOrNew(BundleCapability capability, Map<BundleCapability, BundledRenderUnitCapability> cache) {
+        BundledRenderUnitCapability result = cache.get(capability);
+        if (result == null) {
+            result = BundledRenderUnitCapabilityImpl.fromBundleCapability(capability);
+            cache.put(capability, result);
+        }
+        return result;
     }
 }

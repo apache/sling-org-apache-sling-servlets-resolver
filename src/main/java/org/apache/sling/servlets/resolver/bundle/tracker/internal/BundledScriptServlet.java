@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.servlet.GenericServlet;
@@ -33,6 +34,7 @@ import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.servlets.resolver.bundle.tracker.BundledRenderUnit;
+import org.apache.sling.servlets.resolver.bundle.tracker.ResourceType;
 import org.apache.sling.servlets.resolver.bundle.tracker.TypeProvider;
 import org.apache.sling.servlets.resolver.bundle.tracker.internal.request.RequestWrapper;
 import org.jetbrains.annotations.NotNull;
@@ -42,6 +44,7 @@ public class BundledScriptServlet extends GenericServlet {
     private final LinkedHashSet<TypeProvider> wiredTypeProviders;
     private final BundledRenderUnit executable;
     private final String servletInfo;
+    private final Set<ResourceType> types;
 
 
     BundledScriptServlet(@NotNull LinkedHashSet<TypeProvider> wiredTypeProviders,
@@ -49,6 +52,8 @@ public class BundledScriptServlet extends GenericServlet {
         this.wiredTypeProviders = wiredTypeProviders;
         this.executable = executable;
         this.servletInfo = "Script " + executable.getPath();
+        this.types = wiredTypeProviders.stream().map(typeProvider -> typeProvider.getBundledRenderUnitCapability().getResourceTypes()
+        ).flatMap(Collection::stream).collect(Collectors.toSet());
     }
 
     @Override
@@ -72,14 +77,13 @@ public class BundledScriptServlet extends GenericServlet {
                 }
             }
 
-            RequestWrapper requestWrapper = new RequestWrapper(request,
-                    wiredTypeProviders.stream().map(typeProvider -> typeProvider.getBundledRenderUnitCapability().getResourceTypes()
-            ).flatMap(Collection::stream).collect(Collectors.toSet()));
+            RequestWrapper requestWrapper = new RequestWrapper(request, types);
             try {
                 executable.eval(requestWrapper, response);
             } catch (Exception se) {
                 Throwable cause = (se.getCause() == null) ? se : se.getCause();
-                throw new ServletException(String.format("Failed executing script %s: %s", executable.getPath(), se.getMessage()), cause);
+                throw cause instanceof ServletException ? (ServletException) cause :
+                        new ServletException(String.format("Failed executing script %s: %s", executable.getPath(), se.getMessage()), cause);
             }
         } else {
             throw new ServletException("Not a Sling HTTP request/response");
