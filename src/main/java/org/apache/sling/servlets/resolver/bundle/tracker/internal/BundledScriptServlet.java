@@ -40,8 +40,6 @@ import org.apache.sling.servlets.resolver.bundle.tracker.internal.request.Reques
 import org.jetbrains.annotations.NotNull;
 
 public class BundledScriptServlet extends GenericServlet {
-
-    private final LinkedHashSet<TypeProvider> wiredTypeProviders;
     private final BundledRenderUnit executable;
     private final String servletInfo;
     private final Set<ResourceType> types;
@@ -49,7 +47,6 @@ public class BundledScriptServlet extends GenericServlet {
 
     BundledScriptServlet(@NotNull LinkedHashSet<TypeProvider> wiredTypeProviders,
                          @NotNull BundledRenderUnit executable) {
-        this.wiredTypeProviders = wiredTypeProviders;
         this.executable = executable;
         this.servletInfo = "Script " + executable.getPath();
         this.types = wiredTypeProviders.stream().map(typeProvider -> typeProvider.getBundledRenderUnitCapability().getResourceTypes()

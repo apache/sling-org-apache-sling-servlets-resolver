@@ -140,7 +140,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                 {
                     Hashtable<String, Object> properties = new Hashtable<>();
                     properties.put(Constants.SERVICE_DESCRIPTION, BundledScriptServlet.class.getName() + cap.getAttributes());
-                    BundledRenderUnitCapability bundledRenderUnitCapability = cachedOrNew(cap,cache);
+                    BundledRenderUnitCapability bundledRenderUnitCapability = cache.computeIfAbsent(cap, BundledRenderUnitCapabilityImpl::fromBundleCapability);
                     BundledRenderUnit executable = null;
                     TypeProvider baseTypeProvider = new TypeProviderImpl(bundledRenderUnitCapability, bundle);
                     LinkedHashSet<TypeProvider> inheritanceChain = new LinkedHashSet<>();
@@ -562,7 +562,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     private void collectInheritanceChain(@NotNull Set<TypeProvider> providers, @NotNull BundleWiring wiring,
                                          @NotNull String extendedResourceType, @NotNull Map<BundleCapability, BundledRenderUnitCapability> cache) {
         for (BundleWire wire : wiring.getRequiredWires(NS_SLING_SERVLET)) {
-            BundledRenderUnitCapability wiredCapability = cachedOrNew(wire.getCapability(), cache);
+            BundledRenderUnitCapability wiredCapability = cache.computeIfAbsent(wire.getCapability(), BundledRenderUnitCapabilityImpl::fromBundleCapability);
             if (wiredCapability.getSelectors().isEmpty()) {
                 for (ResourceType resourceType : wiredCapability.getResourceTypes()) {
                     if (extendedResourceType.equals(resourceType.getType())) {
@@ -581,21 +581,12 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     private Set<TypeProvider> collectRequiresChain(@NotNull BundleWiring wiring, Map<BundleCapability, BundledRenderUnitCapability> cache) {
         Set<TypeProvider> requiresChain = new LinkedHashSet<>();
         for (BundleWire wire : wiring.getRequiredWires(NS_SLING_SERVLET)) {
-            BundledRenderUnitCapability wiredCapability = cachedOrNew(wire.getCapability(), cache);
+            BundledRenderUnitCapability wiredCapability = cache.computeIfAbsent(wire.getCapability(), BundledRenderUnitCapabilityImpl::fromBundleCapability);
             if (wiredCapability.getSelectors().isEmpty()) {
                 Bundle providingBundle = wire.getProvider().getBundle();
                 requiresChain.add(new TypeProviderImpl(wiredCapability, providingBundle));
             }
         }
         return requiresChain;
-    }
-
-    private BundledRenderUnitCapability cachedOrNew(BundleCapability capability, Map<BundleCapability, BundledRenderUnitCapability> cache) {
-        BundledRenderUnitCapability result = cache.get(capability);
-        if (result == null) {
-            result = BundledRenderUnitCapabilityImpl.fromBundleCapability(capability);
-            cache.put(capability, result);
-        }
-        return result;
     }
 }
