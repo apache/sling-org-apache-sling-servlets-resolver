@@ -47,11 +47,9 @@ public class MergingServletResourceProvider {
 
     synchronized void add(ServletResourceProvider provider, ServiceReference<?> reference) {
         registrations.add(Pair.of(provider, reference));
-        ConcurrentHashMap<String, Set<String>> localTree = localTree();
-        ConcurrentHashMap<String, Pair<ServletResourceProvider, ServiceReference<?>>> localProvs = localProviders();
+        ConcurrentHashMap<String, Set<String>> localTree = tree.get();
+        ConcurrentHashMap<String, Pair<ServletResourceProvider, ServiceReference<?>>> localProvs = providers.get();
         index(localTree, localProvs, Arrays.asList(registrations.get(registrations.size() - 1)));
-        tree.set(localTree);
-        providers.set(localProvs);
     }
 
     synchronized boolean remove(ServletResourceProvider provider, ServiceReference<?> reference) {
@@ -86,18 +84,6 @@ public class MergingServletResourceProvider {
         providers.set(new ConcurrentHashMap<>());
     }
 
-    private ConcurrentHashMap<String, Set<String>> localTree() {
-        ConcurrentHashMap<String, Set<String>> localTree = new ConcurrentHashMap<>();
-        for (Map.Entry<String, Set<String>> entry : tree.get().entrySet()) {
-            localTree.put(entry.getKey(), Collections.synchronizedSet(new LinkedHashSet<>(entry.getValue())));
-        }
-        return localTree;
-    }
-
-    private ConcurrentHashMap<String, Pair<ServletResourceProvider, ServiceReference<?>>> localProviders() {
-        return new ConcurrentHashMap<>(providers.get());
-    }
-
     private void index(ConcurrentHashMap<String, Set<String>> tree, ConcurrentHashMap<String, Pair<ServletResourceProvider, ServiceReference<?>>> providers, List<Pair<ServletResourceProvider, ServiceReference<?>>> registrations) {
         for (Pair<ServletResourceProvider, ServiceReference<?>> reference : registrations) {
             for (String path : reference.getLeft().getServletPaths()) {
@@ -114,10 +100,12 @@ public class MergingServletResourceProvider {
                     childs.add(current);
                 }
 
-                Pair<ServletResourceProvider, ServiceReference<?>> old = providers.put(path, reference);
-                if (old != null) {
-                    if (reference.getRight().compareTo(old.getRight()) < 0) {
-                        providers.put(path, old);
+                Pair<ServletResourceProvider, ServiceReference<?>> old = providers.get(path);
+                if (old == null) {
+                    providers.put(path, reference);
+                } else {
+                    if (reference.getRight().compareTo(old.getRight()) > 0) {
+                        providers.put(path, reference);
                     }
                 }
             }
