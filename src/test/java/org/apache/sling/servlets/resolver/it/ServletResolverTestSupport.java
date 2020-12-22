@@ -77,6 +77,7 @@ public class ServletResolverTestSupport extends TestSupport {
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.api");
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.resourceresolver");
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.scripting.core");
+        versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.commons.johnzon");
         return options(
             composite(
                 when(vmOpt != null).useOptions(
