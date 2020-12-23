@@ -82,117 +82,117 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
 
         //properly consider the 'Accept' header conditions to decide whether to send json or html back 
         if (req instanceof HttpServletRequest && 
-        		JSON_CONTENT_TYPE.equals(new MediaRangeList((HttpServletRequest)req).prefer(HTML_CONTENT_TYPE, JSON_CONTENT_TYPE))) {
-    		renderJson(req, res, statusMessage, requestUri, servletName, statusCode);
+                JSON_CONTENT_TYPE.equals(new MediaRangeList((HttpServletRequest)req).prefer(HTML_CONTENT_TYPE, JSON_CONTENT_TYPE))) {
+            renderJson(req, res, statusMessage, requestUri, servletName, statusCode);
         } else {
-        	//default to HTML rendering
+            //default to HTML rendering
             renderHtml(req, res, statusMessage, requestUri, servletName, statusCode);
         }
     }
 
-	/**
-	 * Render the error as html
-	 */
-	protected void renderHtml(ServletRequest req, ServletResponse res, String statusMessage, String requestUri,
-			String servletName, int statusCode) throws IOException {
-		// start the response message
-		final PrintWriter pw = sendIntro((HttpServletResponse) res, statusCode,
-		    statusMessage, requestUri, servletName);
+    /**
+     * Render the error as html
+     */
+    protected void renderHtml(ServletRequest req, ServletResponse res, String statusMessage, String requestUri,
+            String servletName, int statusCode) throws IOException {
+        // start the response message
+        final PrintWriter pw = sendIntro((HttpServletResponse) res, statusCode,
+            statusMessage, requestUri, servletName);
 
-		// write the exception message
-		final PrintWriter escapingWriter = new PrintWriter(
-		    ResponseUtil.getXmlEscapingWriter(pw));
+        // write the exception message
+        final PrintWriter escapingWriter = new PrintWriter(
+            ResponseUtil.getXmlEscapingWriter(pw));
 
-		// dump the stack trace
-		if (req.getAttribute(SlingConstants.ERROR_EXCEPTION) instanceof Throwable) {
-		    final Throwable throwable = (Throwable) req.getAttribute(SlingConstants.ERROR_EXCEPTION);
-		    pw.println("<h3>Exception:</h3>");
-		    pw.println("<pre>");
-		    pw.flush();
-		    printStackTrace(escapingWriter, throwable);
-		    escapingWriter.flush();
-		    pw.println("</pre>");
-		}
+        // dump the stack trace
+        if (req.getAttribute(SlingConstants.ERROR_EXCEPTION) instanceof Throwable) {
+            final Throwable throwable = (Throwable) req.getAttribute(SlingConstants.ERROR_EXCEPTION);
+            pw.println("<h3>Exception:</h3>");
+            pw.println("<pre>");
+            pw.flush();
+            printStackTrace(escapingWriter, throwable);
+            escapingWriter.flush();
+            pw.println("</pre>");
+        }
 
-		// dump the request progress tracker
-		if (req instanceof SlingHttpServletRequest) {
-		    final RequestProgressTracker tracker = ((SlingHttpServletRequest) req).getRequestProgressTracker();
-		    pw.println("<h3>Request Progress:</h3>");
-		    pw.println("<pre>");
-		    pw.flush();
-		    tracker.dump(escapingWriter);
-		    escapingWriter.flush();
-		    pw.println("</pre>");
-		}
+        // dump the request progress tracker
+        if (req instanceof SlingHttpServletRequest) {
+            final RequestProgressTracker tracker = ((SlingHttpServletRequest) req).getRequestProgressTracker();
+            pw.println("<h3>Request Progress:</h3>");
+            pw.println("<pre>");
+            pw.flush();
+            tracker.dump(escapingWriter);
+            escapingWriter.flush();
+            pw.println("</pre>");
+        }
 
-		// conclude the response message
-		sendEpilogue(pw);
-	}
+        // conclude the response message
+        sendEpilogue(pw);
+    }
 
-	/**
-	 * Render the error as json
-	 */
-	protected void renderJson(ServletRequest req, ServletResponse res, String statusMessage, String requestUri,
-			String servletName, int statusCode) throws IOException {
-		HttpServletResponse response = (HttpServletResponse)res;
-		if (!response.isCommitted()) {
-			response.reset();
-			response.setStatus(statusCode);
-			response.setContentType(JSON_CONTENT_TYPE);
-			response.setCharacterEncoding("UTF-8");
-		} else {
-		    // Response already committed: don't change status, but report
-		    // the error inline and warn about that
-		    log.warn("Response already committed, unable to change status, output might not be well formed");
-		}
-		
-		// send the error as JSON
-		try (JsonGenerator jsonGenerator = Json.createGenerator(res.getWriter())) {
-			jsonGenerator.writeStartObject();
-			jsonGenerator.write("status", statusCode);
-			
-			String msg = (String)req.getAttribute(SlingConstants.ERROR_MESSAGE);
-			if (msg != null && !msg.isEmpty()) {
-				jsonGenerator.write("message", statusMessage);
-			}
+    /**
+     * Render the error as json
+     */
+    protected void renderJson(ServletRequest req, ServletResponse res, String statusMessage, String requestUri,
+            String servletName, int statusCode) throws IOException {
+        HttpServletResponse response = (HttpServletResponse)res;
+        if (!response.isCommitted()) {
+            response.reset();
+            response.setStatus(statusCode);
+            response.setContentType(JSON_CONTENT_TYPE);
+            response.setCharacterEncoding("UTF-8");
+        } else {
+            // Response already committed: don't change status, but report
+            // the error inline and warn about that
+            log.warn("Response already committed, unable to change status, output might not be well formed");
+        }
+        
+        // send the error as JSON
+        try (JsonGenerator jsonGenerator = Json.createGenerator(res.getWriter())) {
+            jsonGenerator.writeStartObject();
+            jsonGenerator.write("status", statusCode);
+            
+            String msg = (String)req.getAttribute(SlingConstants.ERROR_MESSAGE);
+            if (msg != null && !msg.isEmpty()) {
+                jsonGenerator.write("message", statusMessage);
+            }
 
-			if (requestUri != null && !requestUri.isEmpty()) {
-				jsonGenerator.write("requestUri", requestUri);
-			}
-			
-			if (servletName != null && !servletName.isEmpty()) {
-				jsonGenerator.write("servletName", servletName);
-			}
+            if (requestUri != null && !requestUri.isEmpty()) {
+                jsonGenerator.write("requestUri", requestUri);
+            }
+            
+            if (servletName != null && !servletName.isEmpty()) {
+                jsonGenerator.write("servletName", servletName);
+            }
 
-			String exceptionType = (String)req.getAttribute(SlingConstants.ERROR_EXCEPTION_TYPE);
-			if (exceptionType != null && !exceptionType.isEmpty()) {
-				jsonGenerator.write("exceptionType", exceptionType);
-			}
+            String exceptionType = (String)req.getAttribute(SlingConstants.ERROR_EXCEPTION_TYPE);
+            if (exceptionType != null && !exceptionType.isEmpty()) {
+                jsonGenerator.write("exceptionType", exceptionType);
+            }
 
-		    // dump the stack trace
-		    if (req.getAttribute(SlingConstants.ERROR_EXCEPTION) instanceof Throwable) {
-		        final Throwable throwable = (Throwable) req.getAttribute(SlingConstants.ERROR_EXCEPTION);
-		        try (StringWriter sw = new StringWriter();
-		        		PrintWriter pw = new PrintWriter(sw)) {
-		            printStackTrace(pw, throwable);
-		            jsonGenerator.write("exception", sw.toString());
-		        }
-		    }
+            // dump the stack trace
+            if (req.getAttribute(SlingConstants.ERROR_EXCEPTION) instanceof Throwable) {
+                final Throwable throwable = (Throwable) req.getAttribute(SlingConstants.ERROR_EXCEPTION);
+                try (StringWriter sw = new StringWriter();
+                        PrintWriter pw = new PrintWriter(sw)) {
+                    printStackTrace(pw, throwable);
+                    jsonGenerator.write("exception", sw.toString());
+                }
+            }
 
-		    // dump the request progress tracker
-		    if (req instanceof SlingHttpServletRequest) {
-		        // dump the request progress tracker
-		        final RequestProgressTracker tracker = ((SlingHttpServletRequest)req).getRequestProgressTracker();
-		        StringWriter strWriter = new StringWriter();
-				try (PrintWriter progressWriter = new PrintWriter(strWriter)) {
-			        tracker.dump(progressWriter);
-				}
-				jsonGenerator.write("requestProgress", strWriter.toString());
-		    }
+            // dump the request progress tracker
+            if (req instanceof SlingHttpServletRequest) {
+                // dump the request progress tracker
+                final RequestProgressTracker tracker = ((SlingHttpServletRequest)req).getRequestProgressTracker();
+                StringWriter strWriter = new StringWriter();
+                try (PrintWriter progressWriter = new PrintWriter(strWriter)) {
+                    tracker.dump(progressWriter);
+                }
+                jsonGenerator.write("requestProgress", strWriter.toString());
+            }
 
-		    jsonGenerator.writeEnd();
-		}
-	}
+            jsonGenerator.writeEnd();
+        }
+    }
 
     /**
      * Print the stack trace for the root exception if the throwable is a
