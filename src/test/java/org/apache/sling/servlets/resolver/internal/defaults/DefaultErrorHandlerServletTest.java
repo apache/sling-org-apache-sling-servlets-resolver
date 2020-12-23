@@ -47,7 +47,7 @@ public class DefaultErrorHandlerServletTest {
     @Test
     public void testJsonErrorResponse() throws IOException, ServletException {
         // mock a request that accepts a json response
-        MockSlingHttpServletRequest req = new MockErrorSlingHttpServletRequest("application/json,/;q=0.9");
+        MockSlingHttpServletRequest req = new MockErrorSlingHttpServletRequest("application/json,*/*;q=0.9");
         MockSlingHttpServletResponse res = new MockErrorSlingHttpServletResponse(false);
 
         DefaultErrorHandlerServlet errorServlet = new DefaultErrorHandlerServlet();
@@ -66,6 +66,8 @@ public class DefaultErrorHandlerServletTest {
             assertEquals("/testuri", jsonObj.getString("requestUri"));
             assertEquals("org.apache.sling.test.ServletName", jsonObj.getString("servletName"));
             assertEquals("Test Error Message", jsonObj.getString("message"));
+            assertTrue(jsonObj.getString("exception").contains("Test Exception"));
+            assertEquals(Exception.class.getName(), jsonObj.getString("exceptionType"));
         }
 
     }
@@ -73,7 +75,7 @@ public class DefaultErrorHandlerServletTest {
     @Test
     public void testHtmlErrorResponse() throws IOException, ServletException {
         // mock a request that accepts an html response
-        MockSlingHttpServletRequest req = new MockErrorSlingHttpServletRequest("text/html,application/xhtml+xml,application/xml;q=0.9,/;q=0.8");
+        MockSlingHttpServletRequest req = new MockErrorSlingHttpServletRequest("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         MockSlingHttpServletResponse res = new MockErrorSlingHttpServletResponse(false);
 
         DefaultErrorHandlerServlet errorServlet = new DefaultErrorHandlerServlet();
@@ -87,6 +89,7 @@ public class DefaultErrorHandlerServletTest {
         // check the html content matches what would be sent from the DefaultErrorHandlingServlet
         Pattern regex = Pattern.compile("The requested URL \\/testuri resulted in an error in org.apache.sling.test.ServletName\\.", Pattern.MULTILINE);
         assertTrue("Expected error message", regex.matcher(responseOutput).find());
+        assertTrue(responseOutput.contains("Test Exception"));
     }
 
     /**
@@ -195,6 +198,10 @@ public class DefaultErrorHandlerServletTest {
                 return "/testuri";
             } else if (SlingConstants.ERROR_SERVLET_NAME.equals(name)) {
                 return "org.apache.sling.test.ServletName";
+            } else if (SlingConstants.ERROR_EXCEPTION.equals(name)) {
+                return new Exception("Test Exception");
+            } else if (SlingConstants.ERROR_EXCEPTION_TYPE.equals(name)) {
+                return Exception.class.getName();
             }
             return super.getAttribute(name);
         }
