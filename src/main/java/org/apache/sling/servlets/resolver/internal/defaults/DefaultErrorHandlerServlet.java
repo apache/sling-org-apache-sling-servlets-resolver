@@ -56,6 +56,8 @@ import org.slf4j.LoggerFactory;
             "sling.servlet.prefix=-1"
     })
 public class DefaultErrorHandlerServlet extends GenericServlet {
+    private static final String JSON_CONTENT_TYPE = "application/json";
+    private static final String HTML_CONTENT_TYPE = "text/html";
 
     /** default log */
     private final Logger log = LoggerFactory.getLogger(DefaultErrorHandlerServlet.class);
@@ -80,7 +82,7 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
 
         //properly consider the 'Accept' header conditions to decide whether to send json or html back 
         if (req instanceof HttpServletRequest && 
-        		"application/json".equals(new MediaRangeList((HttpServletRequest)req).prefer("text/html", "application/json"))) {
+        		JSON_CONTENT_TYPE.equals(new MediaRangeList((HttpServletRequest)req).prefer(HTML_CONTENT_TYPE, JSON_CONTENT_TYPE))) {
     		renderJson(req, res, statusMessage, requestUri, servletName, statusCode);
         } else {
         	//default to HTML rendering
@@ -136,7 +138,7 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
 		if (!response.isCommitted()) {
 			response.reset();
 			response.setStatus(statusCode);
-			response.setContentType("application/json");
+			response.setContentType(JSON_CONTENT_TYPE);
 			response.setCharacterEncoding("UTF-8");
 		} else {
 		    // Response already committed: don't change status, but report
@@ -239,7 +241,7 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
 
             response.reset();
             response.setStatus(statusCode);
-            response.setContentType("text/html");
+            response.setContentType(HTML_CONTENT_TYPE);
             response.setCharacterEncoding("UTF-8");
 
             pw = response.getWriter();
