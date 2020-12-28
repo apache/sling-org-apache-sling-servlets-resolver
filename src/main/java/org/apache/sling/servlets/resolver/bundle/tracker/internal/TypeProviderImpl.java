@@ -20,8 +20,8 @@ package org.apache.sling.servlets.resolver.bundle.tracker.internal;
 
 import java.util.Objects;
 
-import org.apache.sling.servlets.resolver.bundle.tracker.BundledRenderUnitCapability;
-import org.apache.sling.servlets.resolver.bundle.tracker.TypeProvider;
+import org.apache.sling.scripting.api.bundle.BundledRenderUnitCapability;
+import org.apache.sling.scripting.api.bundle.TypeProvider;
 import org.jetbrains.annotations.NotNull;
 import org.osgi.framework.Bundle;
 

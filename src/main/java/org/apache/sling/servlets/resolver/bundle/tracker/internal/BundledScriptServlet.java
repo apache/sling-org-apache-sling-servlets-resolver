@@ -33,9 +33,9 @@ import javax.servlet.ServletResponse;
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
-import org.apache.sling.servlets.resolver.bundle.tracker.BundledRenderUnit;
-import org.apache.sling.servlets.resolver.bundle.tracker.ResourceType;
-import org.apache.sling.servlets.resolver.bundle.tracker.TypeProvider;
+import org.apache.sling.api.resource.type.ResourceType;
+import org.apache.sling.scripting.api.bundle.BundledRenderUnit;
+import org.apache.sling.scripting.api.bundle.TypeProvider;
 import org.apache.sling.servlets.resolver.bundle.tracker.internal.request.RequestWrapper;
 import org.jetbrains.annotations.NotNull;
 

@@ -76,6 +76,7 @@ public class ServletResolverTestSupport extends TestSupport {
         final String vmOpt = System.getProperty("pax.vm.options");
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.api");
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.resourceresolver");
+        versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.scripting.api");
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.scripting.core");
         return options(
             composite(
