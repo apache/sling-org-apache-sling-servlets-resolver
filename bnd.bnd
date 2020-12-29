@@ -8,6 +8,16 @@ Provide-Capability:\
 -includeresource:\
   @org.apache.sling.engine-*.jar!/org/apache/sling/engine/impl/request/SlingRequestPathInfo*
 
+-plugin:\
+  org.apache.sling.bnd.plugin.headers.parameters.remove.Plugin;\
+    'Require-Capability'='osgi.service;filter:="(objectClass=org.apache.sling.servlets.resolver.internal.resolution.ResolutionCache)";effective:=active',\
+  org.apache.sling.bnd.plugin.headers.parameters.remove.Plugin;\
+    'Require-Capability'='osgi.service;filter:="(objectClass=org.apache.sling.servlets.resolver.internal.resolution.ResolutionCache)";effective:=active;resolution:=optional;cardinality:=multiple',\
+  org.apache.sling.bnd.plugin.headers.parameters.remove.Plugin;\
+    'Require-Capability'='osgi.service;filter:="(objectClass=org.apache.sling.servlets.resolver.internal.resource.MergingServletResourceProvider)";effective:=active',\
+  org.apache.sling.bnd.plugin.headers.parameters.remove.Plugin;\
+    'Require-Capability'='osgi.service;filter:="(objectClass=org.apache.sling.servlets.resolver.internal.resource.ServletMounter)";effective:=active'
+
 -removeheaders:\
   Include-Resource,\
   Private-Package
