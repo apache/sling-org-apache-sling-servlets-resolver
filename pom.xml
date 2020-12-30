@@ -91,10 +91,6 @@
                                     <pattern>org.apache.sling.engine.impl.request</pattern>
                                     <shadedPattern>org.apache.sling.servlets.resolver.internal.engine</shadedPattern>
                                 </relocation>
-                                <relocation>
-                                    <pattern>org.apache.sling.servlets.post.impl.helper</pattern>
-                                    <shadedPattern>org.apache.sling.servlets.resolver.internal.helper</shadedPattern>
-                                </relocation>
                             </relocations>
                         </configuration>
                     </execution>
@@ -261,12 +257,6 @@
                     <artifactId>org.apache.sling.jcr.resource</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.sling</groupId>
-            <artifactId>org.apache.sling.servlets.post</artifactId>
-            <version>2.3.16</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.sling</groupId>

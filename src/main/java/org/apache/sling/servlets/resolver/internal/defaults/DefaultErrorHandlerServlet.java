@@ -34,9 +34,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.request.MediaRangeList;
 import org.apache.sling.api.request.RequestProgressTracker;
 import org.apache.sling.api.request.ResponseUtil;
-import org.apache.sling.servlets.post.impl.helper.MediaRangeList;
 import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Component;
 import org.slf4j.Logger;
