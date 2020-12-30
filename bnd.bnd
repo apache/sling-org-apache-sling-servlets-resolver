@@ -1,6 +1,5 @@
 Import-Package:\
   !org.apache.sling.engine.impl.*,\
-  !org.apache.sling.servlets.post.impl.helper.*,\
   *
 
 Provide-Capability:\
