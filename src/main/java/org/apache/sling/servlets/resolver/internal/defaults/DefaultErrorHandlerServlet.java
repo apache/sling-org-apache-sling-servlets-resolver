@@ -20,18 +20,23 @@ package org.apache.sling.servlets.resolver.internal.defaults;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 
+import javax.json.Json;
+import javax.json.stream.JsonGenerator;
 import javax.servlet.GenericServlet;
 import javax.servlet.Servlet;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.request.RequestProgressTracker;
 import org.apache.sling.api.request.ResponseUtil;
+import org.apache.sling.servlets.post.impl.helper.MediaRangeList;
 import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Component;
 import org.slf4j.Logger;
@@ -51,6 +56,8 @@ import org.slf4j.LoggerFactory;
             "sling.servlet.prefix=-1"
     })
 public class DefaultErrorHandlerServlet extends GenericServlet {
+    private static final String JSON_CONTENT_TYPE = "application/json";
+    private static final String HTML_CONTENT_TYPE = "text/html";
 
     /** default log */
     private final Logger log = LoggerFactory.getLogger(DefaultErrorHandlerServlet.class);
@@ -73,6 +80,21 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
             statusMessage = statusToString(statusCode);
         }
 
+        //properly consider the 'Accept' header conditions to decide whether to send json or html back 
+        if (req instanceof HttpServletRequest && 
+                JSON_CONTENT_TYPE.equals(new MediaRangeList((HttpServletRequest)req).prefer(HTML_CONTENT_TYPE, JSON_CONTENT_TYPE))) {
+            renderJson(req, res, statusMessage, requestUri, servletName, statusCode);
+        } else {
+            //default to HTML rendering
+            renderHtml(req, res, statusMessage, requestUri, servletName, statusCode);
+        }
+    }
+
+    /**
+     * Render the error as html
+     */
+    protected void renderHtml(ServletRequest req, ServletResponse res, String statusMessage, String requestUri,
+            String servletName, int statusCode) throws IOException {
         // start the response message
         final PrintWriter pw = sendIntro((HttpServletResponse) res, statusCode,
             statusMessage, requestUri, servletName);
@@ -105,6 +127,71 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
 
         // conclude the response message
         sendEpilogue(pw);
+    }
+
+    /**
+     * Render the error as json
+     */
+    protected void renderJson(ServletRequest req, ServletResponse res, String statusMessage, String requestUri,
+            String servletName, int statusCode) throws IOException {
+        HttpServletResponse response = (HttpServletResponse)res;
+        if (!response.isCommitted()) {
+            response.reset();
+            response.setStatus(statusCode);
+            response.setContentType(JSON_CONTENT_TYPE);
+            response.setCharacterEncoding("UTF-8");
+        } else {
+            // Response already committed: don't change status, but report
+            // the error inline and warn about that
+            log.warn("Response already committed, unable to change status, output might not be well formed");
+        }
+        
+        // send the error as JSON
+        try (JsonGenerator jsonGenerator = Json.createGenerator(res.getWriter())) {
+            jsonGenerator.writeStartObject();
+            jsonGenerator.write("status", statusCode);
+            
+            String msg = (String)req.getAttribute(SlingConstants.ERROR_MESSAGE);
+            if (msg != null && !msg.isEmpty()) {
+                jsonGenerator.write("message", statusMessage);
+            }
+
+            if (requestUri != null && !requestUri.isEmpty()) {
+                jsonGenerator.write("requestUri", requestUri);
+            }
+            
+            if (servletName != null && !servletName.isEmpty()) {
+                jsonGenerator.write("servletName", servletName);
+            }
+
+            String exceptionType = (String)req.getAttribute(SlingConstants.ERROR_EXCEPTION_TYPE);
+            if (exceptionType != null && !exceptionType.isEmpty()) {
+                jsonGenerator.write("exceptionType", exceptionType);
+            }
+
+            // dump the stack trace
+            if (req.getAttribute(SlingConstants.ERROR_EXCEPTION) instanceof Throwable) {
+                final Throwable throwable = (Throwable) req.getAttribute(SlingConstants.ERROR_EXCEPTION);
+                try (StringWriter sw = new StringWriter();
+                        PrintWriter pw = new PrintWriter(sw)) {
+                    printStackTrace(pw, throwable);
+                    jsonGenerator.write("exception", sw.toString());
+                }
+            }
+
+            // dump the request progress tracker
+            if (req instanceof SlingHttpServletRequest) {
+                // dump the request progress tracker
+                final RequestProgressTracker tracker = ((SlingHttpServletRequest)req).getRequestProgressTracker();
+                StringWriter strWriter = new StringWriter();
+                try (PrintWriter progressWriter = new PrintWriter(strWriter)) {
+                    tracker.dump(progressWriter);
+                }
+                jsonGenerator.write("requestProgress", strWriter.toString());
+            }
+
+            jsonGenerator.writeEnd();
+        }
     }
 
     /**
@@ -154,7 +241,7 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
 
             response.reset();
             response.setStatus(statusCode);
-            response.setContentType("text/html");
+            response.setContentType(HTML_CONTENT_TYPE);
             response.setCharacterEncoding("UTF-8");
 
             pw = response.getWriter();
