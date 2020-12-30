@@ -82,7 +82,7 @@ public class DefaultErrorHandlerServletTest {
         errorServlet.init(new MockServletConfig());
         errorServlet.service(req, res);
 
-        // verify we got json back
+        // verify we got html back
         assertEquals("text/html", res.getContentType());
         String responseOutput = res.getOutput().toString();
 

@@ -80,8 +80,8 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
             statusMessage = statusToString(statusCode);
         }
 
-        //properly consider the 'Accept' header conditions to decide whether to send json or html back 
-        if (req instanceof HttpServletRequest && 
+        //properly consider the 'Accept' header conditions to decide whether to send json or html back
+        if (req instanceof HttpServletRequest &&
                 JSON_CONTENT_TYPE.equals(new MediaRangeList((HttpServletRequest)req).prefer(HTML_CONTENT_TYPE, JSON_CONTENT_TYPE))) {
             renderJson(req, res, statusMessage, requestUri, servletName, statusCode);
         } else {
@@ -145,12 +145,12 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
             // the error inline and warn about that
             log.warn("Response already committed, unable to change status, output might not be well formed");
         }
-        
+
         // send the error as JSON
         try (JsonGenerator jsonGenerator = Json.createGenerator(res.getWriter())) {
             jsonGenerator.writeStartObject();
             jsonGenerator.write("status", statusCode);
-            
+
             String msg = (String)req.getAttribute(SlingConstants.ERROR_MESSAGE);
             if (msg != null && !msg.isEmpty()) {
                 jsonGenerator.write("message", statusMessage);
@@ -159,7 +159,7 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
             if (requestUri != null && !requestUri.isEmpty()) {
                 jsonGenerator.write("requestUri", requestUri);
             }
-            
+
             if (servletName != null && !servletName.isEmpty()) {
                 jsonGenerator.write("servletName", servletName);
             }
