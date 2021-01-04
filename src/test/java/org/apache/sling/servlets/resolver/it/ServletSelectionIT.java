@@ -18,11 +18,8 @@
  */
 package org.apache.sling.servlets.resolver.it;
 
-import static org.junit.Assert.assertTrue;
-
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -100,20 +97,6 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
         .with(P_SELECTORS, new String[] { ".EMPTY." })
         .with(P_EXTENSIONS, new String[] { ".EMPTY." })
         .register(bundleContext);
-    }
-
-    @Test
-    public void testDefaultJsonServlet() throws Exception {
-        final MockSlingHttpServletResponse response = executeRequest("/.json", 200);
-        final String content = response.getOutputAsString();
-        final String [] expected = {
-            "jcr:primaryType\":\"rep:root",
-            "jcr:mixinTypes\":[\"rep:AccessControllable\"]"
-        };
-        for(final String s : expected) {
-            assertTrue("Expecting in output: " + s + ", got " + content, content.contains(s));
-        }
-
     }
 
     @Test

@@ -28,6 +28,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
+import org.apache.sling.engine.SlingRequestProcessor;
 import org.apache.sling.servlethelpers.MockSlingHttpServletRequest;
 import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
 import org.apache.sling.testing.paxexam.TestSupport;
@@ -37,7 +38,7 @@ import org.ops4j.pax.exam.Option;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
-import static org.apache.sling.testing.paxexam.SlingOptions.slingQuickstartOakTar;
+import static org.apache.sling.testing.paxexam.SlingOptions.slingServlets;
 import static org.apache.sling.testing.paxexam.SlingOptions.versionResolver;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -59,7 +60,8 @@ public class ServletResolverTestSupport extends TestSupport {
     @Inject
     protected BundleContext bundleContext;
 
-    private final static int STARTUP_WAIT_SECONDS = 30;
+    @Inject
+    private SlingRequestProcessor slingRequestProcessor;
 
     public static final String P_PATHS = "sling.servlet.paths";
     public static final String P_RESOURCE_TYPES = "sling.servlet.resourceTypes";
@@ -74,22 +76,34 @@ public class ServletResolverTestSupport extends TestSupport {
     @Configuration
     public Option[] configuration() {
         final String vmOpt = System.getProperty("pax.vm.options");
+        final int httpPort = findFreePort();
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.api");
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.resourceresolver");
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.scripting.api");
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.scripting.core");
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.commons.johnzon");
+        versionResolver.setVersion("org.apache.sling", "org.apache.sling.engine", "2.7.2");
         return options(
             composite(
                 when(vmOpt != null).useOptions(
                     vmOption(vmOpt)
                 ),
                 baseConfiguration(),
-                slingQuickstart(),
+                slingServlets(),
                 mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.converter").version("1.0.12"), // new Sling API dependency
                 testBundle("bundle.filename"),
                 mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.servlet-helpers").versionAsInProject(),
                 junitBundles(),
+                newConfiguration("org.apache.felix.http")
+                    .put("org.osgi.service.http.port", httpPort)
+                    .asOption(),
+                newConfiguration("org.apache.sling.jcr.resource.internal.JcrResourceResolverFactoryImpl")
+                    .put("resource.resolver.required.providernames", "")
+                    .asOption(),
+                buildBundleWithBnd(
+                    TestResourceProvider.class,
+                    TestServiceUserValidator.class
+                ),
                 newConfiguration("org.apache.sling.jcr.base.internal.LoginAdminWhitelist")
                     .put("whitelist.bundles.regexp", "^PAXEXAM.*$")
                     .asOption()
@@ -97,34 +111,6 @@ public class ServletResolverTestSupport extends TestSupport {
                 mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.servlets.resolver").version(versionResolver) // remove bundle from slingQuickstartOakTar, added via testBundle in current version
             )
         );
-    }
-
-    protected Option slingQuickstart() {
-        final int httpPort = findFreePort();
-        final String workingDirectory = workingDirectory();
-        return slingQuickstartOakTar(workingDirectory, httpPort);
-    }
-
-    /**
-     * Injecting the appropriate services to wait for would be more elegant but this is very reliable..
-     */
-    @Before
-    public void waitForSling() throws Exception {
-        final int expectedStatus = 200;
-        final List<Integer> statuses = new ArrayList<>();
-        final String path = "/.json";
-        final long endTime = System.currentTimeMillis() + STARTUP_WAIT_SECONDS * 1000;
-
-        while (System.currentTimeMillis() < endTime) {
-            final int status = executeRequest(path, -1).getStatus();
-            statuses.add(status);
-            if (status == expectedStatus) {
-                return;
-            }
-            Thread.sleep(250);
-        }
-
-        fail("Did not get a " + expectedStatus + " status at " + path + " got " + statuses);
     }
 
     protected MockSlingHttpServletResponse executeRequest(final String path, final int expectedStatus) throws Exception {
