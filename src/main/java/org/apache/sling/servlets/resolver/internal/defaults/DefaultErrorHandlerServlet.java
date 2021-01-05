@@ -34,7 +34,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
-import org.apache.sling.api.request.MediaRangeList;
+import org.apache.sling.api.request.header.MediaRangeList;
 import org.apache.sling.api.request.RequestProgressTracker;
 import org.apache.sling.api.request.ResponseUtil;
 import org.osgi.framework.Constants;
