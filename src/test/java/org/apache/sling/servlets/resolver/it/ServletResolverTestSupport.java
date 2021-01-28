@@ -79,7 +79,6 @@ public class ServletResolverTestSupport extends TestSupport {
         final int httpPort = findFreePort();
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.api");
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.resourceresolver");
-        versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.scripting.api");
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.scripting.core");
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.commons.johnzon");
         versionResolver.setVersion("org.apache.sling", "org.apache.sling.engine", "2.7.2");

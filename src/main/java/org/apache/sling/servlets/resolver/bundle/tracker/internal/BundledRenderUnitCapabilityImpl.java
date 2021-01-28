@@ -26,10 +26,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import org.apache.sling.api.resource.type.ResourceType;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.commons.osgi.PropertiesUtil;
-import org.apache.sling.scripting.api.bundle.BundledRenderUnitCapability;
+import org.apache.sling.servlets.resolver.bundle.tracker.BundledRenderUnitCapability;
+import org.apache.sling.servlets.resolver.bundle.tracker.ResourceType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Version;
