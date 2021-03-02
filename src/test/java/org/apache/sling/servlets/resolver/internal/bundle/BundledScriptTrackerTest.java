@@ -16,13 +16,14 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-package org.apache.sling.servlets.resolver.bundle.tracker.internal;
+package org.apache.sling.servlets.resolver.internal.bundle;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.Servlet;
 
+import org.apache.sling.servlets.resolver.internal.bundle.BundledScriptTracker;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;

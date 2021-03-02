@@ -16,7 +16,7 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-package org.apache.sling.servlets.resolver.bundle.tracker.internal;
+package org.apache.sling.servlets.resolver.internal.bundle;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,8 +28,8 @@ import java.util.Set;
 
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.commons.osgi.PropertiesUtil;
-import org.apache.sling.servlets.resolver.bundle.tracker.BundledRenderUnitCapability;
-import org.apache.sling.servlets.resolver.bundle.tracker.ResourceType;
+import org.apache.sling.scripting.spi.bundle.BundledRenderUnitCapability;
+import org.apache.sling.scripting.spi.bundle.ResourceType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Version;

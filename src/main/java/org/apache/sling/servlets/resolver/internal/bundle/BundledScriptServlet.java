@@ -16,7 +16,7 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-package org.apache.sling.servlets.resolver.bundle.tracker.internal;
+package org.apache.sling.servlets.resolver.internal.bundle;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,10 +33,9 @@ import javax.servlet.ServletResponse;
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
-import org.apache.sling.servlets.resolver.bundle.tracker.BundledRenderUnit;
-import org.apache.sling.servlets.resolver.bundle.tracker.ResourceType;
-import org.apache.sling.servlets.resolver.bundle.tracker.TypeProvider;
-import org.apache.sling.servlets.resolver.bundle.tracker.internal.request.RequestWrapper;
+import org.apache.sling.scripting.spi.bundle.BundledRenderUnit;
+import org.apache.sling.scripting.spi.bundle.ResourceType;
+import org.apache.sling.scripting.spi.bundle.TypeProvider;
 import org.jetbrains.annotations.NotNull;
 
 public class BundledScriptServlet extends GenericServlet {

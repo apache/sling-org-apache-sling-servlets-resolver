@@ -26,7 +26,7 @@ context. As such, scripts should be handled like code:
   3. they have a _developer audience_.
 
 ### How
-Being built around a `BundleTrackerCustomizer` [2], the `org.apache.sling.servlets.resolver.bundle.tracker.internal.BundledScriptTracker`
+Being built around a `BundleTrackerCustomizer` [2], the `org.apache.sling.servlets.resolver.internal.bundle.BundledScriptTracker`
 monitors the instance's bundles wired to the `org.apache.sling.servlets.resolver` bundle and scans the ones providing a `sling.servlet`
 capability [3]. The wiring is created by placing a `Require-Capability` header in the bundles that provide the `sling.servlet` capability:
 

@@ -16,7 +16,7 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-package org.apache.sling.servlets.resolver.bundle.tracker.internal;
+package org.apache.sling.servlets.resolver.internal.bundle;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.sling.servlets.resolver.internal.bundle.BundledHooks;
 import org.junit.Assert;
 import org.junit.Test;
 import org.osgi.framework.Bundle;

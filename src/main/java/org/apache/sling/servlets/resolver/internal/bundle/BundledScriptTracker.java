@@ -16,7 +16,7 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-package org.apache.sling.servlets.resolver.bundle.tracker.internal;
+package org.apache.sling.servlets.resolver.internal.bundle;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
@@ -56,11 +56,11 @@ import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.servlets.HttpConstants;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.commons.osgi.PropertiesUtil;
-import org.apache.sling.servlets.resolver.bundle.tracker.BundledRenderUnit;
-import org.apache.sling.servlets.resolver.bundle.tracker.BundledRenderUnitCapability;
-import org.apache.sling.servlets.resolver.bundle.tracker.BundledRenderUnitFinder;
-import org.apache.sling.servlets.resolver.bundle.tracker.ResourceType;
-import org.apache.sling.servlets.resolver.bundle.tracker.TypeProvider;
+import org.apache.sling.scripting.spi.bundle.BundledRenderUnit;
+import org.apache.sling.scripting.spi.bundle.BundledRenderUnitCapability;
+import org.apache.sling.scripting.spi.bundle.BundledRenderUnitFinder;
+import org.apache.sling.scripting.spi.bundle.ResourceType;
+import org.apache.sling.scripting.spi.bundle.TypeProvider;
 import org.apache.sling.servlets.resolver.internal.resource.ServletMounter;
 import org.jetbrains.annotations.NotNull;
 import org.osgi.annotation.bundle.Capability;

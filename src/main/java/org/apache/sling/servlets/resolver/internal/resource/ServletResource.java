@@ -31,7 +31,7 @@ import org.apache.sling.api.resource.ResourceMetadata;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ValueMap;
 import org.apache.sling.api.wrappers.ValueMapDecorator;
-import org.apache.sling.servlets.resolver.bundle.tracker.internal.BundledScriptServlet;
+import org.apache.sling.servlets.resolver.internal.bundle.BundledScriptServlet;
 
 public class ServletResource extends AbstractResource {
 

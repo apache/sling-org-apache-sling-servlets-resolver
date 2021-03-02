@@ -91,7 +91,7 @@ public class ServletResolverTestSupport extends TestSupport {
                 slingServlets(),
                 mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.converter").version("1.0.12"), // new Sling API dependency
                 testBundle("bundle.filename"),
-                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.servlets.resolver.api").versionAsInProject(),
+                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.scripting.spi").versionAsInProject(),
                 mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.servlet-helpers").versionAsInProject(),
                 junitBundles(),
                 newConfiguration("org.apache.felix.http")

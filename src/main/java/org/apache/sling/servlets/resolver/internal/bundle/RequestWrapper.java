@@ -16,7 +16,7 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-package org.apache.sling.servlets.resolver.bundle.tracker.internal.request;
+package org.apache.sling.servlets.resolver.internal.bundle;
 
 import java.util.Set;
 
@@ -27,7 +27,7 @@ import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.request.RequestDispatcherOptions;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.wrappers.SlingHttpServletRequestWrapper;
-import org.apache.sling.servlets.resolver.bundle.tracker.ResourceType;
+import org.apache.sling.scripting.spi.bundle.ResourceType;
 
 public class RequestWrapper extends SlingHttpServletRequestWrapper {
 
