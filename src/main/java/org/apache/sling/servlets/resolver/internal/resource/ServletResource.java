@@ -31,6 +31,7 @@ import org.apache.sling.api.resource.ResourceMetadata;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ValueMap;
 import org.apache.sling.api.wrappers.ValueMapDecorator;
+import org.apache.sling.scripting.spi.bundle.BundledRenderUnit;
 import org.apache.sling.servlets.resolver.internal.bundle.BundledScriptServlet;
 
 public class ServletResource extends AbstractResource {
@@ -126,6 +127,10 @@ public class ServletResource extends AbstractResource {
             if (result != null) {
                 return (AdapterType) result;
             }
+        }
+
+        if (type == BundledRenderUnit.class && servlet instanceof BundledScriptServlet) {
+            return (AdapterType) ((BundledScriptServlet) servlet).getBundledRenderUnit();
         }
 
         if (wrapped != null) {

@@ -44,7 +44,7 @@ public class BundledScriptServlet extends GenericServlet {
     private final Set<ResourceType> types;
 
 
-    BundledScriptServlet(@NotNull LinkedHashSet<TypeProvider> wiredTypeProviders,
+    public BundledScriptServlet(@NotNull LinkedHashSet<TypeProvider> wiredTypeProviders,
                          @NotNull BundledRenderUnit executable) {
         this.executable = executable;
         this.servletInfo = "Script " + executable.getPath();
@@ -84,6 +84,11 @@ public class BundledScriptServlet extends GenericServlet {
         } else {
             throw new ServletException("Not a Sling HTTP request/response");
         }
+    }
+
+    @NotNull
+    public BundledRenderUnit getBundledRenderUnit() {
+        return executable;
     }
 
     public InputStream getInputStream() {
