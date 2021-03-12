@@ -29,6 +29,7 @@ import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -134,13 +135,18 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
             LOGGER.debug("Inspecting bundle {} for {} capability.", bundle.getSymbolicName(), NS_SLING_SERVLET);
             List<BundleCapability> capabilities = bundleWiring.getCapabilities(NS_SLING_SERVLET);
             Map<BundleCapability, BundledRenderUnitCapability> cache = new HashMap<>();
+            capabilities.forEach(bundleCapability -> {
+                BundledRenderUnitCapability bundledRenderUnitCapability =
+                        BundledRenderUnitCapabilityImpl.fromBundleCapability(bundleCapability);
+                cache.put(bundleCapability, bundledRenderUnitCapability);
+            });
             Set<TypeProvider> requiresChain = collectRequiresChain(bundleWiring, cache);
             if (!capabilities.isEmpty()) {
-                List<ServiceRegistration<Servlet>> serviceRegistrations = capabilities.stream().flatMap(cap ->
+                Set<BundledRenderUnitCapability> bundledRenderUnitCapabilities = new HashSet<>(cache.values());
+                bundledRenderUnitCapabilities = reduce(bundledRenderUnitCapabilities);
+                List<ServiceRegistration<Servlet>> serviceRegistrations = bundledRenderUnitCapabilities.stream().flatMap(bundledRenderUnitCapability ->
                 {
                     Hashtable<String, Object> properties = new Hashtable<>();
-                    properties.put(Constants.SERVICE_DESCRIPTION, BundledScriptServlet.class.getName() + cap.getAttributes());
-                    BundledRenderUnitCapability bundledRenderUnitCapability = cache.computeIfAbsent(cap, BundledRenderUnitCapabilityImpl::fromBundleCapability);
                     BundledRenderUnit executable = null;
                     TypeProvider baseTypeProvider = new TypeProviderImpl(bundledRenderUnitCapability, bundle);
                     LinkedHashSet<TypeProvider> inheritanceChain = new LinkedHashSet<>();
@@ -242,11 +248,13 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         }
                         properties.put(ServletResolverConstants.SLING_SERVLET_NAME,
                                 String.format("%s (%s)", BundledScriptServlet.class.getSimpleName(), executablePath));
+                        properties.put(Constants.SERVICE_DESCRIPTION,
+                                BundledScriptServlet.class.getName() + "{" + bundledRenderUnitCapability + "}");
                         regs.add(
                             register(bundle.getBundleContext(), new BundledScriptServlet(inheritanceChain, executable), properties)
                         );
                     } else {
-                        LOGGER.warn(String.format("Unable to locate an executable for capability %s.", cap));
+                        LOGGER.warn(String.format("Unable to locate an executable for capability %s.", bundledRenderUnitCapability.toString()));
                     }
 
                     return regs.stream();
@@ -588,5 +596,53 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
             }
         }
         return requiresChain;
+    }
+
+    /**
+     * Given a {@code capabilities} set, this method will merge a capability providing a non-null {@link
+     * BundledRenderUnitCapability#getExtendedResourceType()} and just a resource type information with the other capabilities describing
+     * the same resource type.
+     *
+     * @param capabilities the original capabilities set
+     * @return a new set with merged capabilities or the original set, if no merges had to be performed
+     */
+    private Set<BundledRenderUnitCapability> reduce(Set<BundledRenderUnitCapability> capabilities) {
+        Set<BundledRenderUnitCapability> extenders =
+                capabilities.stream().filter(cap -> cap.getExtendedResourceType() != null && !cap.getResourceTypes().isEmpty() &&
+                        cap.getSelectors().isEmpty() && cap.getMethod() == null && cap.getExtension() == null && cap.getScriptEngineName() == null).collect(Collectors.toSet());
+        if (extenders.isEmpty()) {
+            return capabilities;
+        }
+        Set<BundledRenderUnitCapability> originalCapabilities = new HashSet<>(capabilities);
+        Set<BundledRenderUnitCapability> newSet = new HashSet<>();
+        originalCapabilities.removeAll(extenders);
+        if (originalCapabilities.isEmpty()) {
+            return extenders;
+        }
+        Iterator<BundledRenderUnitCapability> extendersIterator = extenders.iterator();
+        while (extendersIterator.hasNext()) {
+            BundledRenderUnitCapability extender = extendersIterator.next();
+            Iterator<BundledRenderUnitCapability> mergeCandidates = originalCapabilities.iterator();
+            boolean processedExtender = false;
+            while (mergeCandidates.hasNext()) {
+                BundledRenderUnitCapability mergeCandidate = mergeCandidates.next();
+                if (extender.getResourceTypes().equals(mergeCandidate.getResourceTypes())) {
+                    BundledRenderUnitCapability mergedCapability =
+                            BundledRenderUnitCapabilityImpl.builder()
+                                    .fromCapability(mergeCandidate)
+                                    .withExtendedResourceType(extender.getExtendedResourceType()).build();
+                    newSet.add(mergedCapability);
+                    mergeCandidates.remove();
+                    processedExtender = true;
+                }
+            }
+            if (processedExtender) {
+                extendersIterator.remove();
+            }
+        }
+        // add extenders for which we couldn't merge their properties
+        newSet.addAll(extenders);
+        newSet.addAll(originalCapabilities);
+        return newSet;
     }
 }

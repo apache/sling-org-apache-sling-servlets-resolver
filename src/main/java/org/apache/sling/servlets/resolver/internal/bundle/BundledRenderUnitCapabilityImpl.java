@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.commons.osgi.PropertiesUtil;
 import org.apache.sling.scripting.spi.bundle.BundledRenderUnitCapability;
@@ -131,6 +132,37 @@ class BundledRenderUnitCapabilityImpl  implements BundledRenderUnitCapability {
         return false;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(BundledRenderUnitCapability.class.getSimpleName()).append("[");
+        if (!resourceTypes.isEmpty()) {
+            sb.append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES).append("=").append(resourceTypes);
+        }
+        if (!selectors.isEmpty()) {
+            sb.append("; ").append(ServletResolverConstants.SLING_SERVLET_SELECTORS).append("=").append(selectors);
+        }
+        if (StringUtils.isNotEmpty(extension)) {
+            sb.append("; ").append(ServletResolverConstants.SLING_SERVLET_EXTENSIONS).append("=").append(extension);
+        }
+        if (StringUtils.isNotEmpty(method)) {
+            sb.append("; ").append(ServletResolverConstants.SLING_SERVLET_METHODS).append("=").append(method);
+        }
+        if (StringUtils.isNotEmpty(path)) {
+            sb.append("; ").append(ServletResolverConstants.SLING_SERVLET_PATHS).append("=").append(path);
+        }
+        if (StringUtils.isNotEmpty(extendedResourceType)) {
+            sb.append("; ").append(BundledScriptTracker.AT_EXTENDS).append("=").append(extendedResourceType);
+        }
+        if (StringUtils.isNotEmpty(scriptEngineName)) {
+            sb.append("; ").append(BundledScriptTracker.AT_SCRIPT_ENGINE).append("=").append(scriptEngineName);
+        }
+        if (StringUtils.isNotEmpty(scriptExtension)) {
+            sb.append("; ").append(BundledScriptTracker.AT_SCRIPT_EXTENSION).append("=").append(scriptExtension);
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
     public static BundledRenderUnitCapability fromBundleCapability(@NotNull BundleCapability capability) {
         Map<String, Object> attributes = capability.getAttributes();
         Set<ResourceType> resourceTypes = new LinkedHashSet<>();
@@ -155,5 +187,77 @@ class BundledRenderUnitCapabilityImpl  implements BundledRenderUnitCapability {
                 (String) attributes.get(BundledScriptTracker.AT_SCRIPT_ENGINE),
                 (String) attributes.get(BundledScriptTracker.AT_SCRIPT_EXTENSION)
         );
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private Set<ResourceType> resourceTypes;
+        private String path;
+        private List<String> selectors;
+        private String extension;
+        private String method;
+        private String extendedResourceType;
+        private String scriptEngineName;
+        private String scriptExtension;
+
+        public Builder withResourceTypes(@NotNull Set<ResourceType> resourceTypes) {
+            this.resourceTypes = resourceTypes;
+            return this;
+        }
+
+        public Builder withPath(@Nullable String path) {
+            this.path = path;
+            return this;
+        }
+
+        public Builder withSelectors(@NotNull List<String> selectors) {
+            this.selectors = selectors;
+            return this;
+        }
+
+        public Builder withExtension(@Nullable String extension) {
+            this.extension = extension;
+            return this;
+        }
+
+        public Builder withMethod(@Nullable String method) {
+            this.method = method;
+            return this;
+        }
+
+        public Builder withExtendedResourceType(@Nullable String extendedResourceType) {
+            this.extendedResourceType = extendedResourceType;
+            return this;
+        }
+
+        public Builder withScriptEngineName(@Nullable String scriptEngineName) {
+            this.scriptEngineName = scriptEngineName;
+            return this;
+        }
+
+        public Builder withScriptEngineExtension(@Nullable String scriptExtension) {
+            this.scriptExtension = scriptExtension;
+            return this;
+        }
+
+        public Builder fromCapability(@NotNull BundledRenderUnitCapability capability) {
+            this.extendedResourceType = capability.getExtendedResourceType();
+            this.extension = capability.getExtension();
+            this.method = capability.getMethod();
+            this.path = capability.getPath();
+            this.resourceTypes = capability.getResourceTypes();
+            this.scriptEngineName = capability.getScriptEngineName();
+            this.scriptExtension = capability.getScriptExtension();
+            this.selectors = capability.getSelectors();
+            return this;
+        }
+
+        public BundledRenderUnitCapability build() {
+            return new BundledRenderUnitCapabilityImpl(resourceTypes, path, selectors, extension, method, extendedResourceType,
+                    scriptEngineName, scriptExtension);
+        }
     }
 }
