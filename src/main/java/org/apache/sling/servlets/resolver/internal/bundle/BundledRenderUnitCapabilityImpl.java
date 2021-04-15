@@ -27,10 +27,10 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.sling.api.resource.type.ResourceType;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.commons.osgi.PropertiesUtil;
 import org.apache.sling.scripting.spi.bundle.BundledRenderUnitCapability;
-import org.apache.sling.scripting.spi.bundle.ResourceType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Version;
@@ -173,7 +173,7 @@ class BundledRenderUnitCapabilityImpl  implements BundledRenderUnitCapability {
             if (version == null) {
                 resourceTypes.add(ResourceType.parseResourceType(rt));
             } else {
-                resourceTypes.add(ResourceType.parseResourceType(rt + "/" + version.toString()));
+                resourceTypes.add(ResourceType.parseResourceType(rt + "/" + version));
             }
         }
         return new BundledRenderUnitCapabilityImpl(

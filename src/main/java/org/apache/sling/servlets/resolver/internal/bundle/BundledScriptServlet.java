@@ -33,8 +33,8 @@ import javax.servlet.ServletResponse;
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
+import org.apache.sling.api.resource.type.ResourceType;
 import org.apache.sling.scripting.spi.bundle.BundledRenderUnit;
-import org.apache.sling.scripting.spi.bundle.ResourceType;
 import org.apache.sling.scripting.spi.bundle.TypeProvider;
 import org.jetbrains.annotations.NotNull;
 

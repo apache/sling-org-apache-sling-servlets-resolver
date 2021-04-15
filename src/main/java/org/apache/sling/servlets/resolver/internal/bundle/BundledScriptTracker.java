@@ -54,16 +54,17 @@ import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.request.RequestDispatcherOptions;
 import org.apache.sling.api.resource.ResourceUtil;
+import org.apache.sling.api.resource.type.ResourceType;
 import org.apache.sling.api.servlets.HttpConstants;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.commons.osgi.PropertiesUtil;
 import org.apache.sling.scripting.spi.bundle.BundledRenderUnit;
 import org.apache.sling.scripting.spi.bundle.BundledRenderUnitCapability;
 import org.apache.sling.scripting.spi.bundle.BundledRenderUnitFinder;
-import org.apache.sling.scripting.spi.bundle.ResourceType;
 import org.apache.sling.scripting.spi.bundle.TypeProvider;
 import org.apache.sling.servlets.resolver.internal.resource.ServletMounter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.osgi.annotation.bundle.Capability;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -102,8 +103,6 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     public static final String AT_SCRIPT_ENGINE = "scriptEngine";
     public static final String AT_SCRIPT_EXTENSION = "scriptExtension";
     public static final String AT_EXTENDS = "extends";
-    private static final String[] DEFAULT_SERVLET_METHODS = {
-            HttpConstants.METHOD_GET, HttpConstants.METHOD_HEAD };
 
     @Reference
     private BundledRenderUnitFinder bundledRenderUnitFinder;
@@ -506,8 +505,15 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                                 .toStringArray(toProperties(right).get(ServletResolverConstants.SLING_SERVLET_SELECTORS), new String[0]))
                                 .containsAll(Arrays.asList(slingRequest.getRequestPathInfo().getSelectors()));
                         if ((la && ra) || (!la && !ra)) {
-                            return new Version(getResourceTypeVersion(right.getReference()))
-                                    .compareTo(new Version(getResourceTypeVersion(left.getReference())));
+                            Version rightVersion = getResourceTypeVersion(right.getReference());
+                            if (rightVersion == null) {
+                                rightVersion = Version.emptyVersion;
+                            }
+                            Version leftVersion = getResourceTypeVersion(left.getReference());
+                            if (leftVersion == null) {
+                                leftVersion = Version.emptyVersion;
+                            }
+                            return rightVersion.compareTo(leftVersion);
                         } else if (la) {
                             return -1;
                         } else {
@@ -548,7 +554,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         }
     }
 
-    private static String getResourceTypeVersion(ServiceReference<?> ref) {
+    private static @Nullable Version getResourceTypeVersion(ServiceReference<?> ref) {
         String[] values = PropertiesUtil.toStringArray(ref.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES));
         if (values != null) {
             String resourceTypeValue = values[0];
