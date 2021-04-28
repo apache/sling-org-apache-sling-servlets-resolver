@@ -28,6 +28,7 @@ import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceMetadata;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceUtil;
+import org.apache.sling.api.resource.ResourceWrapper;
 import org.apache.sling.api.scripting.SlingScript;
 import org.apache.sling.servlets.resolver.internal.resource.ServletResource;
 
@@ -101,7 +102,11 @@ public class ScriptResource extends AbstractResource {
     @Override
     public <AdapterType> AdapterType adaptTo(final Class<AdapterType> type) {
         if ( type == Servlet.class ) {
-            if (! (this.getActiveResource() instanceof ServletResource)) {
+            Resource activeResource = this.getActiveResource();
+            while (activeResource instanceof ResourceWrapper) {
+                activeResource = ((ResourceWrapper) activeResource).getResource();
+            }
+            if (! (activeResource instanceof ServletResource)) {
                 final Servlet s = (Servlet) super.adaptTo(type);
                 if ( s != null ) {
                     return (AdapterType)s;
