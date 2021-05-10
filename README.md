@@ -6,7 +6,7 @@
 
 This module is part of the [Apache Sling](https://sling.apache.org) project.
 
-Bundle implementing the Sling API ServletResolver.
+Bundle implementing the Sling API ServletResolver. See the [servlets & scripts documentation](https://sling.apache.org/documentation/the-sling-engine/servlets.html) for how this works.
 
 ## Bundled scripts
 Version 2.7.0 of this bundle has added support for executing bundled scripts (precompiled or not), through the
