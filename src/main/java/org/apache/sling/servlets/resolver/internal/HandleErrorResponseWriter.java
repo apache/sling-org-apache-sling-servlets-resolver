@@ -27,7 +27,7 @@ import java.io.Writer;
  */
 class HandleErrorResponseWriter extends PrintWriter {
 
-    private boolean open;
+    private boolean open = true;
 
     HandleErrorResponseWriter(Writer out) {
         super(out);
