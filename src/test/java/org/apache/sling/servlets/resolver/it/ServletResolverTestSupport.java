@@ -45,6 +45,7 @@ import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
 import org.apache.sling.testing.paxexam.TestSupport;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
+import org.ops4j.pax.exam.options.extra.VMOption;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
@@ -72,8 +73,24 @@ public class ServletResolverTestSupport extends TestSupport {
     @Configuration
     public Option[] configuration() {
         final String debugPort = System.getProperty("debugPort");
-        final String vmOpt = System.getProperty("pax.vm.options");
+        VMOption debugOption = null;
+        if (debugPort != null && !debugPort.isEmpty()) {
+            debugOption = vmOption(String.format("-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=%s", debugPort));
+        }
 
+        final String vmOpt = System.getProperty("pax.vm.options");
+        VMOption vmOption = null;
+        if (vmOpt != null && !vmOpt.isEmpty()) {
+            vmOption = vmOption(vmOpt);
+        }
+
+        final String jacocoOpt = System.getProperty("jacoco.command");
+        VMOption jacocoCommand = null;
+        if (jacocoOpt != null && !jacocoOpt.isEmpty()) {
+            jacocoCommand = vmOption(jacocoOpt);
+        }
+
+        
         final int httpPort = findFreePort();
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.api");
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.resourceresolver");
@@ -82,12 +99,9 @@ public class ServletResolverTestSupport extends TestSupport {
         versionResolver.setVersion("org.apache.sling", "org.apache.sling.engine", "2.7.2");
         return options(
             composite(
-                when(debugPort != null).useOptions(
-                    vmOption(String.format("-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=%s", debugPort))
-                ),
-                when(vmOpt != null).useOptions(
-                    vmOption(vmOpt)
-                ),
+                when(debugOption != null).useOptions(debugOption),
+                when(vmOption != null).useOptions(vmOption),
+                when(jacocoCommand != null).useOptions(jacocoCommand),
                 baseConfiguration(),
                 slingServlets(),
                 mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.converter").version("1.0.12"), // new Sling API dependency
