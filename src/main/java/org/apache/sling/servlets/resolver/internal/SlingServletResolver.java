@@ -628,7 +628,7 @@ public class SlingServletResolver
         return fallbackErrorServlet;
     }
 
-    private void handleError(final Servlet errorHandler, final HttpServletRequest request, final HttpServletResponse response)
+    private void handleError(final Servlet errorHandler, final SlingHttpServletRequest request, final SlingHttpServletResponse response)
             throws IOException {
 
         request.setAttribute(SlingConstants.ERROR_REQUEST_URI, request.getRequestURI());
@@ -643,11 +643,19 @@ public class SlingServletResolver
         // forward all exceptions if it fails.
         // Before SLING-4143 we only forwarded IOExceptions.
         try {
-            errorHandler.service(request, response);
-            // commit the response
-            response.flushBuffer();
-            // close the response (SLING-2724)
-            response.getWriter().close();
+            // SLING-10478 - wrap the response to track if the writer is still open
+            // after the errorHandler has serviced the request
+            HandleErrorSlingHttpServletResponse wrappedResponse = new HandleErrorSlingHttpServletResponse(response);
+
+            errorHandler.service(request, wrappedResponse);
+
+            // SLING-10478 - if the response writer has not already been closed, then flush and close it
+            if (wrappedResponse.isOpen()) {
+                // commit the response
+                wrappedResponse.flushBuffer();
+                // close the response (SLING-2724)
+                wrappedResponse.getWriter().close();
+            }
         } catch (final Throwable t) {
             LOGGER.error("Calling the error handler resulted in an error", t);
             LOGGER.error("Original error " + request.getAttribute(SlingConstants.ERROR_EXCEPTION_TYPE),

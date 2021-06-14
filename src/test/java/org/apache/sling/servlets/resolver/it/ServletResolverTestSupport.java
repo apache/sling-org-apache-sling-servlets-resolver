@@ -75,6 +75,7 @@ public class ServletResolverTestSupport extends TestSupport {
 
     @Configuration
     public Option[] configuration() {
+        final String debugPort = System.getProperty("debugPort");
         final String vmOpt = System.getProperty("pax.vm.options");
         final int httpPort = findFreePort();
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.api");
@@ -84,6 +85,9 @@ public class ServletResolverTestSupport extends TestSupport {
         versionResolver.setVersion("org.apache.sling", "org.apache.sling.engine", "2.7.2");
         return options(
             composite(
+                when(debugPort != null).useOptions(
+                    vmOption(String.format("-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=%s", debugPort))
+                ),
                 when(vmOpt != null).useOptions(
                     vmOption(vmOpt)
                 ),
@@ -127,7 +131,7 @@ public class ServletResolverTestSupport extends TestSupport {
             }
         };
         request.setPathInfo(path);
-        final MockSlingHttpServletResponse response = new MockSlingHttpServletResponse();
+        final MockSlingHttpServletResponse response = createMockSlingHttpServletResponse();
 
         // Get SlingRequestProcessor.processRequest method and execute request
         // This module depends on an older version of the sling.engine module and I don't want
@@ -155,6 +159,10 @@ public class ServletResolverTestSupport extends TestSupport {
         }
 
         return response;
+    }
+
+    protected MockSlingHttpServletResponse createMockSlingHttpServletResponse() {
+        return new MockSlingHttpServletResponse();
     }
 
     protected void assertTestServlet(final String path, int expectedStatus) throws Exception {
