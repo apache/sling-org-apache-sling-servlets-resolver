@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache.sling</groupId>
         <artifactId>sling-bundle-parent</artifactId>
-        <version>39</version>
+        <version>43</version>
         <relativePath />
     </parent>
 
@@ -43,9 +43,9 @@
   </scm>
 
     <properties>
+        <project.build.outputTimestamp>2021-06-07T16:53:27Z</project.build.outputTimestamp>
         <site.jira.version.id>12314292</site.jira.version.id>
         <org.ops4j.pax.exam.version>4.13.3</org.ops4j.pax.exam.version>
-        <jacoco.maven.plugin.version>0.8.2</jacoco.maven.plugin.version>
         <!-- To debug the pax process, override this with -D -->
         <pax.vm.options>-Xmx512M</pax.vm.options>
     </properties>
@@ -116,29 +116,6 @@
                         <goals>
                             <goal>check</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <argLine>@{argLine}</argLine>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>${jacoco.maven.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>prepare-agent</id>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                        <configuration>
-                            <destFile>${project.build.directory}/jacoco-unit.exec</destFile>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

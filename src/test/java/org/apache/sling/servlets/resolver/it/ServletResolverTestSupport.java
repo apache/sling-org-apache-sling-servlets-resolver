@@ -18,9 +18,20 @@
  */
 package org.apache.sling.servlets.resolver.it;
 
+import static org.apache.sling.testing.paxexam.SlingOptions.slingServlets;
+import static org.apache.sling.testing.paxexam.SlingOptions.versionResolver;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.ops4j.pax.exam.CoreOptions.composite;
+import static org.ops4j.pax.exam.CoreOptions.junitBundles;
+import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
+import static org.ops4j.pax.exam.CoreOptions.options;
+import static org.ops4j.pax.exam.CoreOptions.vmOption;
+import static org.ops4j.pax.exam.CoreOptions.when;
+import static org.ops4j.pax.exam.cm.ConfigurationAdminOptions.newConfiguration;
+
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -32,25 +43,10 @@ import org.apache.sling.engine.SlingRequestProcessor;
 import org.apache.sling.servlethelpers.MockSlingHttpServletRequest;
 import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
 import org.apache.sling.testing.paxexam.TestSupport;
-import org.junit.Before;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
-
-import static org.apache.sling.testing.paxexam.SlingOptions.slingServlets;
-import static org.apache.sling.testing.paxexam.SlingOptions.versionResolver;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.ops4j.pax.exam.CoreOptions.composite;
-import static org.ops4j.pax.exam.CoreOptions.junitBundles;
-import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
-import static org.ops4j.pax.exam.CoreOptions.options;
-import static org.ops4j.pax.exam.CoreOptions.vmOption;
-import static org.ops4j.pax.exam.CoreOptions.when;
-import static org.ops4j.pax.exam.cm.ConfigurationAdminOptions.newConfiguration;
 
 public class ServletResolverTestSupport extends TestSupport {
 
@@ -77,6 +73,8 @@ public class ServletResolverTestSupport extends TestSupport {
     public Option[] configuration() {
         final String debugPort = System.getProperty("debugPort");
         final String vmOpt = System.getProperty("pax.vm.options");
+        final String jacocoOpt = System.getProperty("jacoco.command");
+
         final int httpPort = findFreePort();
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.api");
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.resourceresolver");
@@ -90,6 +88,9 @@ public class ServletResolverTestSupport extends TestSupport {
                 ),
                 when(vmOpt != null).useOptions(
                     vmOption(vmOpt)
+                ),
+                when(jacocoOpt != null).useOptions(
+                    vmOption(jacocoOpt)
                 ),
                 baseConfiguration(),
                 slingServlets(),
