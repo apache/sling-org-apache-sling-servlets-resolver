@@ -73,7 +73,6 @@ public class ServletResolverTestSupport extends TestSupport {
     public Option[] configuration() {
         final String debugPort = System.getProperty("debugPort");
         final String vmOpt = System.getProperty("pax.vm.options");
-        final String jacocoOpt = System.getProperty("jacoco.command");
 
         final int httpPort = findFreePort();
         versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.api");
@@ -88,9 +87,6 @@ public class ServletResolverTestSupport extends TestSupport {
                 ),
                 when(vmOpt != null).useOptions(
                     vmOption(vmOpt)
-                ),
-                when(jacocoOpt != null).useOptions(
-                    vmOption(jacocoOpt)
                 ),
                 baseConfiguration(),
                 slingServlets(),
