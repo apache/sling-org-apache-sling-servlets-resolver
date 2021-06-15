@@ -25,6 +25,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.management.NotCompliantMBeanException;
 import javax.management.StandardMBean;
@@ -32,7 +33,6 @@ import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.servlet.Servlet;
 
-import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.observation.ExternalResourceChangeListener;
 import org.apache.sling.api.resource.observation.ResourceChange;
 import org.apache.sling.api.resource.observation.ResourceChangeListener;
@@ -68,10 +68,10 @@ public class ResolutionCache
     @Reference
     private ScriptEngineManager scriptEngineManager;
 
-    private volatile List<String> scriptEnginesExtensions = Collections.emptyList();
+    private AtomicReference<List<String>> scriptEnginesExtensions = new AtomicReference<>(Collections.emptyList());
 
     /** The script resolution cache. */
-    private volatile Map<AbstractResourceCollector, Servlet> cache;
+    private AtomicReference<Map<AbstractResourceCollector, Servlet>> cache = new AtomicReference<>();
 
     /** The cache size. */
     private volatile int cacheSize;
@@ -80,39 +80,39 @@ public class ResolutionCache
     private volatile boolean logCacheSizeWarning;
 
     /** Registration as event handler. */
-    private volatile ServiceRegistration<EventHandler> eventHandlerRegistration;
+    private AtomicReference<ServiceRegistration<EventHandler>> eventHandlerRegistration = new AtomicReference<>();
 
-    private volatile ServiceRegistration<ResourceChangeListener> resourceListenerRegistration;
+    private AtomicReference<ServiceRegistration<ResourceChangeListener>> resourceListenerRegistration = new AtomicReference<>();
 
-    private volatile ServiceRegistration<SlingServletResolverCacheMBean> mbeanRegistration;
+    private AtomicReference<ServiceRegistration<SlingServletResolverCacheMBean>> mbeanRegistration = new AtomicReference<>();
 
     /**
      * Activate this component.
      */
     @Activate
     protected void activate(final BundleContext context,
-            final ResolverConfig config) throws LoginException {
+            final ResolverConfig config) {
         // create cache - if a cache size is configured
         this.cacheSize = config.servletresolver_cacheSize();
         if (this.cacheSize > 5) {
-            this.cache = new ConcurrentHashMap<>(cacheSize);
+            this.cache.set(new ConcurrentHashMap<>(cacheSize));
             this.logCacheSizeWarning = true;
 
             // register MBean
             try {
-                Dictionary<String, String> mbeanProps = new Hashtable<>();
+                Dictionary<String, String> mbeanProps = new Hashtable<>(); // NOSONAR
                 mbeanProps.put("jmx.objectname", "org.apache.sling:type=servletResolver,service=SlingServletResolverCache");
 
                 ServletResolverCacheMBeanImpl mbean = new ServletResolverCacheMBeanImpl();
-                mbeanRegistration = context.registerService(SlingServletResolverCacheMBean.class, mbean, mbeanProps);
-            } catch (final Throwable t) {
+                mbeanRegistration.set(context.registerService(SlingServletResolverCacheMBean.class, mbean, mbeanProps));
+            } catch (final Throwable t) { // NOSONAR
                 logger.warn("Unable to register servlets resolver cache MBean", t);
             }
         }
 
         // and finally register as event listener
         // to invalidate cache and script extensions
-        final Dictionary<String, Object> props = new Hashtable<>();
+        final Dictionary<String, Object> props = new Hashtable<>(); // NOSONAR
         props.put(Constants.SERVICE_DESCRIPTION, "Apache Sling Servlet Resolver Event Handler");
         props.put(Constants.SERVICE_VENDOR,"The Apache Software Foundation");
 
@@ -122,7 +122,7 @@ public class ResolutionCache
                 "org/apache/sling/api/adapter/AdapterFactory/*",
                 "org/apache/sling/scripting/core/BindingsValuesProvider/*" });
 
-        this.eventHandlerRegistration = context.registerService(EventHandler.class, this, props);
+        this.eventHandlerRegistration.set(context.registerService(EventHandler.class, this, props));
 
         // we need a resource change listener to invalidate the cache
         if ( this.cache != null ) {
@@ -132,11 +132,11 @@ public class ResolutionCache
                 listenerPaths[i] = p.getPath();
             }
 
-            final Dictionary<String, Object> listenerProps = new Hashtable<>();
+            final Dictionary<String, Object> listenerProps = new Hashtable<>(); // NOSONAR
             listenerProps.put(Constants.SERVICE_DESCRIPTION, "Apache Sling Servlet Resolver Resource Listener");
             listenerProps.put(Constants.SERVICE_VENDOR,"The Apache Software Foundation");
             listenerProps.put(ResourceChangeListener.PATHS, listenerPaths);
-            this.resourceListenerRegistration = context.registerService(ResourceChangeListener.class, this, listenerProps);
+            this.resourceListenerRegistration.set(context.registerService(ResourceChangeListener.class, this, listenerProps));
         }
 
         updateScriptEngineExtensions();
@@ -144,7 +144,7 @@ public class ResolutionCache
 
     @Modified
     protected void modified(final BundleContext context,
-            final ResolverConfig config) throws LoginException {
+            final ResolverConfig config) {
         this.deactivate();
         this.activate(context, config);
     }
@@ -157,21 +157,24 @@ public class ResolutionCache
         this.cache = null;
 
         // unregister mbean
-        if ( this.mbeanRegistration != null ) {
-            this.mbeanRegistration.unregister();
-            this.mbeanRegistration = null;
+        ServiceRegistration<SlingServletResolverCacheMBean> mbRegistration = this.mbeanRegistration.get();
+        if ( mbRegistration != null ) {
+            mbRegistration.unregister();
+            this.mbeanRegistration.set(null);
         }
 
         // unregister event handler
-        if (this.eventHandlerRegistration != null) {
-            this.eventHandlerRegistration.unregister();
-            this.eventHandlerRegistration = null;
+        ServiceRegistration<EventHandler> ehRegistration = this.eventHandlerRegistration.get();
+        if (ehRegistration != null) {
+            ehRegistration.unregister();
+            this.eventHandlerRegistration.set(null);
         }
 
         // unregister event handler
-        if (this.resourceListenerRegistration != null) {
-            this.resourceListenerRegistration.unregister();
-            this.resourceListenerRegistration = null;
+        ServiceRegistration<ResourceChangeListener> rlRegistration = this.resourceListenerRegistration.get();
+        if (rlRegistration != null) {
+            rlRegistration.unregister();
+            this.resourceListenerRegistration.set(null);
         }
     }
 
@@ -180,18 +183,18 @@ public class ResolutionCache
      * @return The list of script engine extensions
      */
     public List<String> getScriptEngineExtensions() {
-        return this.scriptEnginesExtensions;
+        return this.scriptEnginesExtensions.get();
     }
 
     private void updateScriptEngineExtensions() {
         final ScriptEngineManager localScriptEngineManager = scriptEngineManager;
         // use local variable to avoid racing with deactivate
         if ( localScriptEngineManager != null ) {
-            final List<String> scriptEnginesExtensions = new ArrayList<>();
+            final List<String> newScriptEnginesExtensions = new ArrayList<>();
             for (ScriptEngineFactory factory : localScriptEngineManager.getEngineFactories()) {
-                scriptEnginesExtensions.addAll(factory.getExtensions());
+                newScriptEnginesExtensions.addAll(factory.getExtensions());
             }
-            this.scriptEnginesExtensions = Collections.unmodifiableList(scriptEnginesExtensions);
+            this.scriptEnginesExtensions.set(Collections.unmodifiableList(newScriptEnginesExtensions));
         }
     }
 
@@ -210,7 +213,7 @@ public class ResolutionCache
 
     public void flushCache() {
         // use local variable to avoid racing with deactivate
-        final Map<AbstractResourceCollector, Servlet> localCache = this.cache;
+        final Map<AbstractResourceCollector, Servlet> localCache = this.cache.get();
         if ( localCache != null ) {
             localCache.clear();
             this.logCacheSizeWarning = true;
@@ -236,7 +239,7 @@ public class ResolutionCache
         @Override
         public int getCacheSize() {
             // use local variable to avoid racing with deactivate
-            final Map<AbstractResourceCollector, Servlet> localCache = cache;
+            final Map<AbstractResourceCollector, Servlet> localCache = cache.get();
             return localCache != null ? localCache.size() : 0;
         }
 
@@ -253,7 +256,7 @@ public class ResolutionCache
     }
 
     public Servlet get(final AbstractResourceCollector context) {
-        final Map<AbstractResourceCollector, Servlet> localCache = this.cache;
+        final Map<AbstractResourceCollector, Servlet> localCache = this.cache.get();
         if ( localCache != null ) {
             return localCache.get(context);
         }
@@ -261,7 +264,7 @@ public class ResolutionCache
     }
 
     public void put(final AbstractResourceCollector context, final Servlet candidate) {
-        final Map<AbstractResourceCollector, Servlet> localCache = this.cache;
+        final Map<AbstractResourceCollector, Servlet> localCache = this.cache.get();
         if ( localCache != null ) {
             if ( localCache.size() < this.cacheSize ) {
                 localCache.put(context, candidate);

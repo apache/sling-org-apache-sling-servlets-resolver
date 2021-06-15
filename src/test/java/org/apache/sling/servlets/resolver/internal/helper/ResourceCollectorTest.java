@@ -19,7 +19,6 @@
 package org.apache.sling.servlets.resolver.internal.helper;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -177,7 +176,9 @@ public class ResourceCollectorTest extends HelperTestBase {
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0 , 0 , 1, 0};
         int[] indices = {12, 13, 11, 10, 9, 3, 4, 1, 2, 0};
 
-        effectiveTest(names, baseIdxs, indices, new ArrayList<String>(){{
+        effectiveTest(names, baseIdxs, indices, new ArrayList<String>(){
+            private static final long serialVersionUID = -2278401285444759128L;
+        {
             add("esp");
             add("js");
             add("jsp");
@@ -208,7 +209,9 @@ public class ResourceCollectorTest extends HelperTestBase {
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0 , 0 , 1, 0};
         int[] indices = {12, 13, 11, 10, 9, 3, 4, 1, 2, 0};
 
-        effectiveTest(names, baseIdxs, indices, new ArrayList<String>(){{
+        effectiveTest(names, baseIdxs, indices, new ArrayList<String>(){
+            private static final long serialVersionUID = 4918721764309621104L;
+        {
             add("esp");
             add("js");
         }});
@@ -237,7 +240,9 @@ public class ResourceCollectorTest extends HelperTestBase {
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0 , 0 , 1, 0};
         int[] indices = {12, 13, 11, 10, 9, 3, 4, 1, 2, 0};
 
-        effectiveTest(names, baseIdxs, indices, new ArrayList<String>(){{
+        effectiveTest(names, baseIdxs, indices, new ArrayList<String>(){
+            private static final long serialVersionUID = 1527098044127506711L;
+        {
             add("esp");
             add("js");
         }});
@@ -384,7 +389,9 @@ public class ResourceCollectorTest extends HelperTestBase {
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0 , 0 , 1, 0};
         int[] indices = {12, 13, 11, 10, 9, 3, 4, 1, 2, 0};
 
-        effectiveTest(names, baseIdxs, indices, new ArrayList<String>(){{
+        effectiveTest(names, baseIdxs, indices, new ArrayList<String>(){
+            private static final long serialVersionUID = 3909592432283252117L;
+        {
             add("esp");
             add("js");
             add("jsp");
@@ -416,7 +423,7 @@ public class ResourceCollectorTest extends HelperTestBase {
         if (scriptEngineExtensions != null) {
             res = lu.getServlets(request.getResourceResolver(), scriptEngineExtensions);
         } else {
-            res = lu.getServlets(request.getResourceResolver(), Collections.EMPTY_LIST);
+            res = lu.getServlets(request.getResourceResolver(), Collections.emptyList());
         }
         Iterator<Resource> rIter = res.iterator();
 

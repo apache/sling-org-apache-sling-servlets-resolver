@@ -18,6 +18,8 @@
  */
 package org.apache.sling.servlets.resolver.internal.helper;
 
+import static org.junit.Assert.assertNotEquals;
+
 import junit.framework.TestCase;
 
 public class WeightedResourceTest extends TestCase {
@@ -27,13 +29,13 @@ public class WeightedResourceTest extends TestCase {
         WeightedResource lr2 = new WeightedResource(0, null, 0, WeightedResource.WEIGHT_NONE);
         
         // expect same objects to be equal
-        assertTrue(lr1.equals(lr1));
+        assertEquals(lr1, lr1);
         
         // expect different instances to not be equal
-        assertFalse(lr1.equals(lr2));
-        assertFalse(lr2.equals(lr1));
-        assertFalse(lr1.equals(null));
-        assertFalse(lr2.equals(null));
+        assertNotEquals(lr1, lr2);
+        assertNotEquals(lr2, lr1);
+        assertNotNull(lr1);
+        assertNotNull(lr2);
     }
     
     public void testCompareToSelectors() {

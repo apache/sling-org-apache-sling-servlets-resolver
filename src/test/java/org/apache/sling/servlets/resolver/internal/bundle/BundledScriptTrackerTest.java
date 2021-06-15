@@ -18,20 +18,19 @@
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 package org.apache.sling.servlets.resolver.internal.bundle;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.Servlet;
 
-import org.apache.sling.servlets.resolver.internal.bundle.BundledScriptTracker;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.ServiceRegistration;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 public class BundledScriptTrackerTest {
 
@@ -40,6 +39,7 @@ public class BundledScriptTrackerTest {
         BundledScriptTracker tracker = new BundledScriptTracker();
         tracker.activate(mock(BundleContext.class));
         List<ServiceRegistration<Servlet>> registrations = new ArrayList<>();
+        @SuppressWarnings("unchecked")
         ServiceRegistration<Servlet> registration = mock(ServiceRegistration.class);
         registrations.add(registration);
         tracker.removedBundle(mock(Bundle.class), mock(BundleEvent.class), registrations);

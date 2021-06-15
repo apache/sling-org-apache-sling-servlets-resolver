@@ -18,6 +18,7 @@
  */
 package org.apache.sling.servlets.resolver.internal.helper;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -225,7 +226,7 @@ public class ResourceCollector extends AbstractResourceCollector {
                     : null;
 
             Iterator<Resource> children = resolver.listChildren(current);
-            while (children.hasNext()) {
+            while (children.hasNext()) { // NOSONAR
                 Resource child = children.next();
 
                 if (!SlingServletResolver.isPathAllowed(child.getPath(), this.executionPaths)) {
@@ -265,7 +266,6 @@ public class ResourceCollector extends AbstractResourceCollector {
                 if (scriptName.equals(methodName)) {
                     addWeightedResource(resources, child, selIdx,
                         WeightedResource.WEIGHT_NONE);
-                    continue;
                 }
             }
 
@@ -325,7 +325,7 @@ public class ResourceCollector extends AbstractResourceCollector {
             return true;
         }
 
-        if (scriptName.equals(suffix.substring(1))) {
+        if (suffix != null && !suffix.isEmpty() && scriptName.equals(suffix.substring(1))) {
             addWeightedResource(resources, child, selIdx,
                 WeightedResource.WEIGHT_EXTENSION + ((htmlSuffix != null) ? WeightedResource.WEIGHT_METHOD : WeightedResource.WEIGHT_NONE));
             return true;
@@ -375,28 +375,38 @@ public class ResourceCollector extends AbstractResourceCollector {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof ResourceCollector)) {
-            return false;
-        }
-        if (obj == this) {
-            return true;
-        }
-        if (super.equals(obj)) {
-            final ResourceCollector o = (ResourceCollector) obj;
-            if (isGet == o.isGet && isDefaultExtension == o.isDefaultExtension
-                && numRequestSelectors == o.numRequestSelectors
-                && stringEquals(methodName, o.methodName)) {
-                // now compare selectors
-                for (int i = 0; i < numRequestSelectors; i++) {
-                    if (!stringEquals(requestSelectors[i],
-                        o.requestSelectors[i])) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-        }
-        return false;
+    public int hashCode() {
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + (isDefaultExtension ? 1231 : 1237);
+        result = prime * result + (isGet ? 1231 : 1237);
+        result = prime * result + ((methodName == null) ? 0 : methodName.hashCode());
+        result = prime * result + numRequestSelectors;
+        result = prime * result + Arrays.hashCode(requestSelectors);
+        return result;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (!super.equals(obj))
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        ResourceCollector other = (ResourceCollector) obj;
+        if (isDefaultExtension != other.isDefaultExtension)
+            return false;
+        if (isGet != other.isGet)
+            return false;
+        if (methodName == null) {
+            if (other.methodName != null)
+                return false;
+        } else if (!methodName.equals(other.methodName))
+            return false;
+        if (numRequestSelectors != other.numRequestSelectors)
+            return false;
+        return Arrays.equals(requestSelectors, other.requestSelectors);
+    }
+
 }

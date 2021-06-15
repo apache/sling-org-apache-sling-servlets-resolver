@@ -21,6 +21,7 @@ package org.apache.sling.servlets.resolver.internal.resource;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.servlet.Servlet;
 
@@ -49,7 +50,7 @@ public class ServletResource extends AbstractResource {
 
     private final ResourceMetadata metadata;
 
-    private volatile Resource wrapped;
+    private AtomicReference<Resource> wrapped = new AtomicReference<>();
 
     public ServletResource(ResourceResolver resourceResolver, Servlet servlet, String path) {
         this(resourceResolver, servlet, path, null);
@@ -70,7 +71,7 @@ public class ServletResource extends AbstractResource {
 
     void setWrappedResource(Resource wrapped) {
         if (wrapped != null && !RESOURCE_TYPE_NON_EXISTING.equals(wrapped.getResourceType())) {
-            this.wrapped = wrapped;
+            this.wrapped.set(wrapped);
         }
     }
 
@@ -117,24 +118,24 @@ public class ServletResource extends AbstractResource {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <AdapterType> AdapterType adaptTo(Class<AdapterType> type) {
-        Resource wrapped = this.wrapped;
+    public <T> T adaptTo(Class<T> type) {
+        Resource wrappedResource = this.wrapped.get();
         if (type == Servlet.class && servlet != null) {
-            return (AdapterType) servlet; // unchecked cast
+            return (T) servlet; // unchecked cast
         }
         if (type == InputStream.class && servlet instanceof BundledScriptServlet) {
             InputStream result = ((BundledScriptServlet) servlet).getInputStream();
             if (result != null) {
-                return (AdapterType) result;
+                return (T) result;
             }
         }
 
         if (type == BundledRenderUnit.class && servlet instanceof BundledScriptServlet) {
-            return (AdapterType) ((BundledScriptServlet) servlet).getBundledRenderUnit();
+            return (T) ((BundledScriptServlet) servlet).getBundledRenderUnit();
         }
 
-        if (wrapped != null) {
-            AdapterType result = wrapped.adaptTo(type);
+        if (wrappedResource != null) {
+            T result = wrappedResource.adaptTo(type);
             if (result != null) {
                 return result;
             }
@@ -149,7 +150,7 @@ public class ServletResource extends AbstractResource {
                 props.put("servletClass", this.servlet.getClass().getName());
             }
 
-            return (AdapterType) new ValueMapDecorator(props); // unchecked cast
+            return (T) new ValueMapDecorator(props); // unchecked cast
         }
 
         return super.adaptTo(type);

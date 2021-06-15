@@ -18,8 +18,8 @@
  */
 package org.apache.sling.servlets.resolver.internal;
 
-import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +34,6 @@ import org.apache.sling.api.servlets.OptingServlet;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.commons.testing.osgi.MockServiceReference;
 import org.apache.sling.commons.testing.sling.MockResource;
-import org.apache.sling.commons.testing.sling.MockResourceResolver;
 import org.apache.sling.commons.testing.sling.MockSlingHttpServletRequest;
 import org.apache.sling.servlets.resolver.internal.resource.MockServletResource;
 import org.junit.Test;
@@ -90,8 +89,8 @@ public class SecureRequestsOptingServletTest extends SlingServletResolverTestBas
         insecureRequest.setResourceResolver(mockResourceResolver);
         insecureRequest.setSecure(false);
         Servlet result = servletResolver.resolveServlet(insecureRequest);
-        assertTrue("Expecting a different servlet than our own",
-            result.getClass() != SecureRequestsOptingServlet.class);
+        assertNotSame("Expecting a different servlet than our own",
+            result.getClass(), SecureRequestsOptingServlet.class);
     }
 
     @SuppressWarnings("serial")

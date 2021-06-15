@@ -181,8 +181,8 @@ public class ServletMounter {
         final String name = getName(reference);
 
         // check for Sling properties in the service registration
-        final ServletResourceProvider provider = servletResourceProviderFactory.create(reference, servlet);
-        if (provider == null) {
+        final ServletResourceProvider srProvider = servletResourceProviderFactory.create(reference, servlet);
+        if (srProvider == null) {
             // this is expected if the servlet is not destined for Sling
             return false;
         }
@@ -194,7 +194,7 @@ public class ServletMounter {
         } catch (final ServletException ce) {
             logger.error("bindServlet: Servlet " + ServletResourceProviderFactory.getServiceReferenceInfo(reference) + " failed to initialize", ce);
             return false;
-        } catch (final Throwable t) {
+        } catch (final Throwable t) { // NOSONAR
             logger.error("bindServlet: Unexpected problem initializing servlet " + ServletResourceProviderFactory.getServiceReferenceInfo(reference), t);
             return false;
         }
@@ -207,14 +207,14 @@ public class ServletMounter {
                 final List<ServiceRegistration<ResourceProvider<Object>>> regs = new ArrayList<>();
                 try {
                     if (this.provider != null) {
-                        this.provider.add(provider, reference);
+                        this.provider.add(srProvider, reference);
                         resolutionCaches.values().forEach(ResolutionCache::flushCache);
                     }
                     else {
-                        for (final String root : provider.getServletPaths()) {
+                        for (final String root : srProvider.getServletPaths()) {
                             @SuppressWarnings("unchecked") final ServiceRegistration<ResourceProvider<Object>> reg = (ServiceRegistration<ResourceProvider<Object>>) bundleContext.registerService(
                                 ResourceProvider.class.getName(),
-                                provider,
+                                srProvider,
                                 createServiceProperties(reference, root));
                             regs.add(reg);
                         }
@@ -225,10 +225,10 @@ public class ServletMounter {
                 }
                 if ( registered ) {
                     if ( logger.isDebugEnabled() ) {
-                        logger.debug("Registered {}", provider);
+                        logger.debug("Registered {}", srProvider);
                     }
                     synchronized (this.servletsByReference) {
-                        servletsByReference.put(reference, new ServletReg(servlet, regs, provider));
+                        servletsByReference.put(reference, new ServletReg(servlet, regs, srProvider));
                     }
                 }
             }
@@ -243,7 +243,7 @@ public class ServletMounter {
     private Dictionary<String, Object> createServiceProperties(final ServiceReference<Servlet> reference,
             final String root) {
 
-        final Dictionary<String, Object> params = new Hashtable<>();
+        final Dictionary<String, Object> params = new Hashtable<>(); // NOSONAR
         params.put(ResourceProvider.PROPERTY_ROOT, root);
         params.put(Constants.SERVICE_DESCRIPTION,
             "ServletResourceProvider for Servlet at " + root);
@@ -277,17 +277,16 @@ public class ServletMounter {
                     // this might happen on shutdown
                 }
             }
-            if (registration.provider != null && provider != null) {
-                if (provider.remove(registration.provider, reference)) {
-                    resolutionCaches.values().forEach(ResolutionCache::flushCache);
-                }
+            if (registration.provider != null && provider != null &&
+                    provider.remove(registration.provider)) {
+                resolutionCaches.values().forEach(ResolutionCache::flushCache);
             }
             final String name = RequestUtil.getServletName(registration.servlet);
             logger.debug("unbindServlet: Servlet {} removed", name);
 
             try {
                 registration.servlet.destroy();
-            } catch (Throwable t) {
+            } catch (Throwable t) { // NOSONAR
                 logger.error("unbindServlet: Unexpected problem destroying servlet " + name, t);
             }
         }

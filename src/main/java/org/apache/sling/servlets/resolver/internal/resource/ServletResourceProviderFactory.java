@@ -372,7 +372,6 @@ public class ServletResourceProviderFactory {
                 }
                 sb.append("component=");
                 sb.append(componentName);
-                needsComma = true;
             }
             sb.append(")");
         }

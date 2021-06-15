@@ -25,6 +25,7 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletException;
@@ -75,23 +76,23 @@ public class WebConsolePlugin extends HttpServlet {
     private static final String SERVICE_USER_CONSOLE = "console";
 
     @Reference(target="("+ServiceUserMapped.SUBSERVICENAME+"=" + SERVICE_USER_CONSOLE + ")")
-    private ServiceUserMapped consoleServiceUserMapped;
+    private ServiceUserMapped consoleServiceUserMapped; // NOSONAR
 
     @Reference
-    private ResourceResolverFactory resourceResolverFactory;
+    private ResourceResolverFactory resourceResolverFactory; // NOSONAR
 
     @Reference
-    private ResolutionCache resolutionCache;
+    private ResolutionCache resolutionCache; // NOSONAR
 
     /**
      * The allowed execution paths.
      */
-    private volatile String[] executionPaths;
+    private AtomicReference<String[]> executionPaths = new AtomicReference<>(); // NOSONAR
 
     /**
      * The default extensions
      */
-    private volatile String[] defaultExtensions;
+    private AtomicReference<String[]> defaultExtensions = new AtomicReference<>(); // NOSONAR
 
     /**
      * Activate this component.
@@ -99,8 +100,8 @@ public class WebConsolePlugin extends HttpServlet {
     @Activate
     @Modified
     protected void activate(final ResolverConfig config) {
-        this.executionPaths = SlingServletResolver.getExecutionPaths(config.servletresolver_paths());
-        this.defaultExtensions = config.servletresolver_defaultExtensions();
+        this.executionPaths.set(SlingServletResolver.getExecutionPaths(config.servletresolver_paths()));
+        this.defaultExtensions.set(config.servletresolver_defaultExtensions());
     }
 
     @Override
@@ -169,13 +170,13 @@ public class WebConsolePlugin extends HttpServlet {
                 tdContent(pw);
                 pw.println("<dl>");
                 pw.println("<dt>Path</dt>");
-                pw.print("<dd>");
+                dd(pw);
                 pw.print(ResponseUtil.escapeXml(requestPathInfo.getResourcePath()));
                 pw.print("<br/>");
                 pw.print(CONSOLE_PATH_WARNING);
-                pw.println("</dd>");
+                closeDd(pw);
                 pw.println("<dt>Selectors</dt>");
-                pw.print("<dd>");
+                dd(pw);
                 if (requestPathInfo.getSelectors().length == 0) {
                     pw.print("&lt;none&gt;");
                 } else {
@@ -183,17 +184,17 @@ public class WebConsolePlugin extends HttpServlet {
                     pw.print(ResponseUtil.escapeXml(StringUtils.join(requestPathInfo.getSelectors(), ", ")));
                     pw.print("]");
                 }
-                pw.println("</dd>");
+                closeDd(pw);
                 pw.println("<dt>Extension</dt>");
-                pw.print("<dd>");
+                dd(pw);
                 pw.print(ResponseUtil.escapeXml(requestPathInfo.getExtension()));
-                pw.println("</dd>");
+                closeDd(pw);
                 pw.println("</dl>");
-                pw.println("</dd>");
+                closeDd(pw);
                 pw.println("<dt>Suffix</dt>");
-                pw.print("<dd>");
+                dd(pw);
                 pw.print(ResponseUtil.escapeXml(requestPathInfo.getSuffix()));
-                pw.println("</dd>");
+                closeDd(pw);
                 pw.println("</dl>");
                 closeTd(pw);
                 closeTr(pw);
@@ -208,8 +209,8 @@ public class WebConsolePlugin extends HttpServlet {
                     final ResourceCollector locationUtil = ResourceCollector.create(
                             resource,
                             requestPathInfo.getExtension(),
-                            executionPaths,
-                            defaultExtensions,
+                            executionPaths.get(),
+                            defaultExtensions.get(),
                             method,
                             requestPathInfo.getSelectors());
                     servlets = locationUtil.getServlets(resourceResolver, resolutionCache.getScriptEngineExtensions());
@@ -234,7 +235,7 @@ public class WebConsolePlugin extends HttpServlet {
                     outputServlets(pw, servlets.iterator());
                     pw.println("</ol>");
                 }
-                pw.println("</td>");
+                closeTd(pw);
                 closeTr(pw);
             }
 
@@ -251,6 +252,13 @@ public class WebConsolePlugin extends HttpServlet {
 
     private void closeTd(final PrintWriter pw) {
         pw.print("</td>");
+    }
+
+    private void dd(final PrintWriter pw) {
+        pw.println("<dd>");
+    }
+    private void closeDd(final PrintWriter pw) {
+        pw.print("</dd>");
     }
 
     @SuppressWarnings("unused")
@@ -281,7 +289,7 @@ public class WebConsolePlugin extends HttpServlet {
             Resource candidateResource = iterator.next();
             Servlet candidate = candidateResource.adaptTo(Servlet.class);
             if (candidate != null) {
-                final boolean allowed = SlingServletResolver.isPathAllowed(candidateResource.getPath(), this.executionPaths);
+                final boolean allowed = SlingServletResolver.isPathAllowed(candidateResource.getPath(), this.executionPaths.get());
                 pw.print("<li>");
                 if ( !allowed ) {
                     pw.print("<del>");
@@ -333,14 +341,16 @@ public class WebConsolePlugin extends HttpServlet {
             try {
                 fullPath = new URL(urlString).getPath();
             } catch(MalformedURLException ignore) {
+                // ignored
             }
         }
         final int firstDot = fullPath.indexOf(".");
 
         final ResourceMetadata metadata = new ResourceMetadata();
-        final Resource r = new SyntheticResource(null, metadata, null);
+        final Resource r = new SyntheticResource(null, metadata, null); // NOSONAR
         metadata.setResolutionPath(firstDot < 0 ? fullPath : fullPath.substring(0, firstDot));
         metadata.setResolutionPathInfo(firstDot < 0 ? null : fullPath.substring(firstDot));
         return new SlingRequestPathInfo(r);
     }
+
 }

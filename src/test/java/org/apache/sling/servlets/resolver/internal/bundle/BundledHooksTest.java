@@ -18,6 +18,9 @@
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 package org.apache.sling.servlets.resolver.internal.bundle;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,7 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.sling.servlets.resolver.internal.bundle.BundledHooks;
 import org.junit.Assert;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
@@ -33,8 +35,6 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.hooks.service.ListenerHook;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class BundledHooksTest {
     @Test
@@ -75,6 +75,7 @@ public class BundledHooksTest {
         Assert.assertEquals(1, services.size());
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testEventHookFiltersOther() {
         BundledHooks hooks = new BundledHooks();
@@ -83,6 +84,7 @@ public class BundledHooksTest {
 
         BundleContext context = mock(BundleContext.class);
         Bundle bundle = mock(Bundle.class);
+        @SuppressWarnings("rawtypes")
         ServiceReference ref = mock(ServiceReference.class);
 
         when(event.getServiceReference()).thenReturn(ref);
@@ -101,6 +103,7 @@ public class BundledHooksTest {
         Assert.assertTrue(listeners.isEmpty());
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testEventHookDoesNotFilterResolver() {
         BundledHooks hooks = new BundledHooks();
@@ -109,6 +112,7 @@ public class BundledHooksTest {
 
         BundleContext context = mock(BundleContext.class);
         Bundle bundle = mock(Bundle.class);
+        @SuppressWarnings("rawtypes")
         ServiceReference ref = mock(ServiceReference.class);
 
         when(event.getServiceReference()).thenReturn(ref);

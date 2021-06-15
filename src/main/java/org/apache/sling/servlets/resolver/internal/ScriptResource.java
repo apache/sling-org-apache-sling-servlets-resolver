@@ -19,6 +19,7 @@
 package org.apache.sling.servlets.resolver.internal;
 
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import javax.servlet.Servlet;
@@ -44,7 +45,7 @@ import org.apache.sling.servlets.resolver.internal.resource.ServletResource;
  */
 public class ScriptResource extends AbstractResource {
 
-    private volatile Resource sharedResource;
+    private AtomicReference<Resource> sharedResource = new AtomicReference<>();
 
     private final ResourceResolver sharedResourceResolver;
 
@@ -65,10 +66,12 @@ public class ScriptResource extends AbstractResource {
         if ( perThreadResolver != null && perThreadResolver.isLive() ) {
             return perThreadResolver.getResource(this.path);
         }
-        if ( this.sharedResource == null ) {
-            this.sharedResource = this.sharedResourceResolver.getResource(this.path);
+        Resource resource = this.sharedResource.get();
+        if ( resource == null ) {
+            resource = this.sharedResourceResolver.getResource(this.path);
+            this.sharedResource.set(resource);
         }
-        return this.sharedResource;
+        return resource;
     }
 
     /**
@@ -100,7 +103,7 @@ public class ScriptResource extends AbstractResource {
      */
     @SuppressWarnings("unchecked")
     @Override
-    public <AdapterType> AdapterType adaptTo(final Class<AdapterType> type) {
+    public <T> T adaptTo(final Class<T> type) {
         if ( type == Servlet.class ) {
             Resource activeResource = this.getActiveResource();
             while (activeResource instanceof ResourceWrapper) {
@@ -109,13 +112,13 @@ public class ScriptResource extends AbstractResource {
             if (! (activeResource instanceof ServletResource)) {
                 final Servlet s = (Servlet) super.adaptTo(type);
                 if ( s != null ) {
-                    return (AdapterType)s;
+                    return (T)s;
                 }
             }
         } else if ( type == SlingScript.class ) {
             final SlingScript s = (SlingScript)super.adaptTo(type);
             if ( s != null ) {
-                return (AdapterType)s;
+                return (T)s;
             }
         }
         return this.getActiveResource().adaptTo(type);

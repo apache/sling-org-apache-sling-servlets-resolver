@@ -49,10 +49,6 @@ import org.slf4j.LoggerFactory;
  */
 public class LocationIterator implements Iterator<String> {
 
-    // The resource for which this iterator is created. This resource
-    // gives the initial resource type and the first resource super type
-    //private final Resource resource;
-
     // The resource resolver used to find resource super types of
     // resource types
     private final ResourceResolver resolver;
@@ -85,7 +81,7 @@ public class LocationIterator implements Iterator<String> {
     private String nextLocation;
 
     /** Set of used resource types to detect a circular resource type hierarchy. */
-    private final Set<String> usedResourceTypes = new HashSet<String>();
+    private final Set<String> usedResourceTypes = new HashSet<>();
 
     /**
      * Creates an instance of this iterator starting with a location built from
@@ -103,7 +99,7 @@ public class LocationIterator implements Iterator<String> {
         this.baseResourceType = baseResourceType;
 
         String[] tmpPath = resolver.getSearchPath();
-        if (tmpPath == null || tmpPath.length == 0) {
+        if (tmpPath.length == 0) {
             tmpPath = new String[] { "/" };
         }
         searchPath = tmpPath;
@@ -144,6 +140,7 @@ public class LocationIterator implements Iterator<String> {
     /**
      * @throws UnsupportedOperationException
      */
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }
@@ -230,7 +227,7 @@ public class LocationIterator implements Iterator<String> {
         // get the resource type resource and check its super type
         String resourceSuperType = null;
         // if the path is absolute, use it directly
-        if ( rtPath != null && rtPath.startsWith("/") ) {
+        if ( rtPath.startsWith("/") ) {
             final String candidatePath = rtPath;
 
             final Resource rtResource = resourceResolver.getResource(candidatePath);
@@ -240,8 +237,8 @@ public class LocationIterator implements Iterator<String> {
 
         } else {
             // if the path is relative we use the search paths
-            for(final String searchPath : this.searchPath) {
-                final String candidatePath = searchPath + rtPath;
+            for (final String path : this.searchPath) {
+                final String candidatePath = path + rtPath;
                 final Resource rtResource = resourceResolver.getResource(candidatePath);
                 if ( rtResource != null && rtResource.getResourceSuperType() != null ) {
                     resourceSuperType = rtResource.getResourceSuperType();

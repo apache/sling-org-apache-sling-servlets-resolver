@@ -18,6 +18,11 @@
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 package org.apache.sling.servlets.resolver.internal;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
 import javax.servlet.Servlet;
 
 import org.apache.sling.api.adapter.AdapterManager;
@@ -28,12 +33,6 @@ import org.apache.sling.api.resource.ResourceWrapper;
 import org.apache.sling.api.scripting.SlingScript;
 import org.apache.sling.servlets.resolver.internal.resource.ServletResource;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 public class ScriptResourceTest {
 
@@ -55,7 +54,7 @@ public class ScriptResourceTest {
         ScriptResource scriptResource = new ScriptResource(resource, () -> perThreadRR, sharedRR);
 
         AdapterManager adapterManager = mock(AdapterManager.class);
-        when(adapterManager.getAdapter(eq(scriptResource), eq(Servlet.class))).thenReturn(mock(Servlet.class));
+        when(adapterManager.getAdapter(scriptResource, Servlet.class)).thenReturn(mock(Servlet.class));
         SlingAdaptable.setAdapterManager(adapterManager);
 
         Servlet adaptedServlet = scriptResource.adaptTo(Servlet.class);
@@ -81,7 +80,7 @@ public class ScriptResourceTest {
         ScriptResource scriptResource = new ScriptResource(resource, () -> perThreadRR, sharedRR);
 
         AdapterManager adapterManager = mock(AdapterManager.class);
-        when(adapterManager.getAdapter(eq(scriptResource), eq(Servlet.class))).thenReturn(mock(Servlet.class));
+        when(adapterManager.getAdapter(scriptResource, Servlet.class)).thenReturn(mock(Servlet.class));
         SlingAdaptable.setAdapterManager(adapterManager);
 
         Servlet adaptedServlet = scriptResource.adaptTo(Servlet.class);
@@ -107,7 +106,7 @@ public class ScriptResourceTest {
         ScriptResource scriptResource = new ScriptResource(resource, () -> perThreadRR, sharedRR);
 
         AdapterManager adapterManager = mock(AdapterManager.class);
-        when(adapterManager.getAdapter(eq(scriptResource), eq(Servlet.class))).thenReturn(mock(Servlet.class));
+        when(adapterManager.getAdapter(scriptResource, Servlet.class)).thenReturn(mock(Servlet.class));
         SlingAdaptable.setAdapterManager(adapterManager);
 
         Servlet adaptedServlet = scriptResource.adaptTo(Servlet.class);
@@ -131,7 +130,7 @@ public class ScriptResourceTest {
         ScriptResource scriptResource = new ScriptResource(resource, () -> perThreadRR, sharedRR);
 
         AdapterManager adapterManager = mock(AdapterManager.class);
-        when(adapterManager.getAdapter(eq(scriptResource), eq(Servlet.class))).thenReturn(servlet);
+        when(adapterManager.getAdapter(scriptResource, Servlet.class)).thenReturn(servlet);
         SlingAdaptable.setAdapterManager(adapterManager);
 
         Servlet adaptedServlet = scriptResource.adaptTo(Servlet.class);
@@ -155,7 +154,7 @@ public class ScriptResourceTest {
         ScriptResource scriptResource = new ScriptResource(resource, () -> perThreadRR, sharedRR);
 
         AdapterManager adapterManager = mock(AdapterManager.class);
-        when(adapterManager.getAdapter(eq(scriptResource), eq(SlingScript.class))).thenReturn(script);
+        when(adapterManager.getAdapter(scriptResource, SlingScript.class)).thenReturn(script);
         SlingAdaptable.setAdapterManager(adapterManager);
 
         SlingScript adaptedScript = scriptResource.adaptTo(SlingScript.class);

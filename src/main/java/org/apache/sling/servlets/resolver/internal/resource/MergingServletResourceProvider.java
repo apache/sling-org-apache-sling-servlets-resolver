@@ -35,6 +35,7 @@ import org.apache.sling.api.resource.NonExistingResource;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.SyntheticResource;
 import org.apache.sling.spi.resource.provider.ResolveContext;
+import org.apache.sling.spi.resource.provider.ResourceContext;
 import org.apache.sling.spi.resource.provider.ResourceProvider;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceReference;
@@ -52,7 +53,7 @@ public class MergingServletResourceProvider {
         index(localTree, localProvs, Arrays.asList(registrations.get(registrations.size() - 1)));
     }
 
-    synchronized boolean remove(ServletResourceProvider provider, ServiceReference<?> reference) {
+    synchronized boolean remove(ServletResourceProvider provider) {
         boolean found = false;
         for (Iterator<Pair<ServletResourceProvider, ServiceReference<?>>> regIter = registrations.iterator(); regIter.hasNext(); ) {
             Pair<ServletResourceProvider, ServiceReference<?>> reg = regIter.next();
@@ -87,17 +88,16 @@ public class MergingServletResourceProvider {
     private void index(ConcurrentHashMap<String, Set<String>> tree, ConcurrentHashMap<String, Pair<ServletResourceProvider, ServiceReference<?>>> providers, List<Pair<ServletResourceProvider, ServiceReference<?>>> registrations) {
         for (Pair<ServletResourceProvider, ServiceReference<?>> reference : registrations) {
             for (String path : reference.getLeft().getServletPaths()) {
-                String current = "";
+                StringBuilder currentBuilder = new StringBuilder();
                 for (String part : path.split("/")) {
-                    Set<String> childs = tree.get(current);
-                    if (childs == null) {
-                        childs = Collections.synchronizedSet(new LinkedHashSet<>());
-                        tree.put(current, childs);
-                    }
-                    current += "/" + part;
-                    current = current.trim().replace("//", "/");
+                    Set<String> childs = tree.computeIfAbsent(currentBuilder.toString(), k -> Collections.synchronizedSet(new LinkedHashSet<>()));
+                    currentBuilder.append("/").append(part);
+                    String cleanedCurrent = currentBuilder.toString().trim().replace("//", "/");
+                    // replace the buffer with the cleaned string
+                    currentBuilder.setLength(0);
+                    currentBuilder.append(cleanedCurrent);
 
-                    childs.add(current);
+                    childs.add(currentBuilder.toString());
                 }
 
                 Pair<ServletResourceProvider, ServiceReference<?>> old = providers.get(path);
@@ -126,11 +126,12 @@ public class MergingServletResourceProvider {
         }
     }
 
-    public Resource getResource(ResolveContext resolveContext, String path) {
+    @SuppressWarnings("unchecked")
+    public Resource getResource(@SuppressWarnings("rawtypes") ResolveContext resolveContext, String path) {
         Resource wrapped = null;
-        final ResourceProvider parentProvider = resolveContext.getParentResourceProvider();
+        final ResourceProvider<?> parentProvider = resolveContext.getParentResourceProvider();
         if (parentProvider != null) {
-            wrapped = parentProvider.getResource(resolveContext.getParentResolveContext(), path, null, null);
+            wrapped = parentProvider.getResource(resolveContext.getParentResolveContext(), path, ResourceContext.EMPTY_CONTEXT, null);
         }
         Resource result;
         Pair<ServletResourceProvider, ServiceReference<?>> provider = providers.get().get(path);
@@ -157,10 +158,11 @@ public class MergingServletResourceProvider {
         return result;
     }
 
-    public Iterator<Resource> listChildren(final ResolveContext ctx, final Resource parent) {
+    @SuppressWarnings("unchecked")
+    public Iterator<Resource> listChildren(@SuppressWarnings("rawtypes") final ResolveContext ctx, final Resource parent) {
         Map<String, Resource> result = new LinkedHashMap<>();
 
-        final ResourceProvider parentProvider = ctx.getParentResourceProvider();
+        final ResourceProvider<?> parentProvider = ctx.getParentResourceProvider();
         if (parentProvider != null) {
             for (Iterator<Resource> iter = parentProvider.listChildren(ctx.getParentResolveContext(), parent); iter != null && iter.hasNext(); ) {
                 Resource resource = iter.next();
@@ -181,9 +183,9 @@ public class MergingServletResourceProvider {
                             ((ServletResource) resource).setWrappedResource(wrapped);
                         }
                     }
-                }
-                else if (!result.containsKey(path)) {
-                    result.put(path, new SyntheticResource(ctx.getResourceResolver(), path, ResourceProvider.RESOURCE_TYPE_SYNTHETIC));
+                } else {
+                    result.computeIfAbsent(path, key -> new SyntheticResource(ctx.getResourceResolver(), key, 
+                            ResourceProvider.RESOURCE_TYPE_SYNTHETIC));
                 }
             }
         }
