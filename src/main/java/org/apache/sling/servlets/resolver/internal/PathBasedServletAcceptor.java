@@ -23,11 +23,11 @@ import java.util.Arrays;
 import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.request.RequestUtil;
 import org.apache.sling.api.servlets.ServletResolverConstants;
-import org.apache.sling.engine.RequestUtil;
 import org.apache.sling.servlets.resolver.internal.resource.SlingServletConfig;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +46,11 @@ class PathBasedServletAcceptor {
     // a valid selector or extension to avoid collisions
     private static final String EMPTY_VALUE = ".EMPTY.";
 
+    private static final String[] EMPTY_STRINGS = new String[0];
+
     static class InvalidPropertyException extends RuntimeException {
+        private static final long serialVersionUID = -119036154771528511L;
+
         InvalidPropertyException(String reason) {
             super(reason);
         }
@@ -79,7 +83,7 @@ class PathBasedServletAcceptor {
 
     private boolean accept(String servletName, SlingServletConfig config, String servicePropertyKey, boolean emptyValueApplies, String ... requestValues) {
         final String [] propValues = toStringArray(config.getServiceProperty(servicePropertyKey));
-        if(propValues == null) {
+        if(propValues.length == 0) {
             LOGGER.debug("Property {} is null or empty, not checking that value for {}", servicePropertyKey, servletName);
             return true;
         }
@@ -109,7 +113,7 @@ class PathBasedServletAcceptor {
         return accepted;
     }
 
-    private static String [] toStringArray(final Object value) {
+    private static @NotNull String [] toStringArray(final Object value) {
         if(value instanceof String) {
             return new String[] { (String)value };
         } else if(value instanceof String []) {
@@ -118,6 +122,6 @@ class PathBasedServletAcceptor {
             final Object [] objArray = (Object[])value;
             return Arrays.copyOf(objArray, objArray.length, String[].class);
         }
-        return null;
+        return EMPTY_STRINGS;
     }
 }

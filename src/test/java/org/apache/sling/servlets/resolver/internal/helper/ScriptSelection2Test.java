@@ -80,7 +80,7 @@ public class ScriptSelection2Test {
                 ResourceResolver.PROPERTY_RESOURCE_TYPE, "test");
 
         // /content/test.html (sling:resourceType=test) --> /apps/test/test.html
-        assertScript(contentResource, "GET", null, "html", Collections.EMPTY_LIST,
+        assertScript(contentResource, "GET", null, "html", Collections.emptyList(),
                 "/apps/test/test.html",
                 "/libs/test/test.jsp"
         );
@@ -96,7 +96,7 @@ public class ScriptSelection2Test {
                 JcrConstants.JCR_PRIMARYTYPE, JcrConstants.NT_UNSTRUCTURED,
                 ResourceResolver.PROPERTY_RESOURCE_TYPE, "test2");
         // /content/test.html (sling:resourceType=test2) --> /apps/test2/test2.jsp
-        assertScript(contentResource, "GET", null, "html", Collections.EMPTY_LIST,
+        assertScript(contentResource, "GET", null, "html", Collections.emptyList(),
                 "/apps/test2/test2.jsp",
                 "/apps/test/test.html",
                 "/libs/test/test.jsp"
@@ -147,7 +147,7 @@ public class ScriptSelection2Test {
         );
 
         // /content/test.sel.html (sling:resourceType=test2) --> /apps/test/sel.html
-        assertScript(contentResource, "GET", "sel", "html", Collections.EMPTY_LIST,
+        assertScript(contentResource, "GET", "sel", "html", Collections.emptyList(),
                 "/apps/test/sel.html",
                 "/libs/test/sel.jsp",
                 "/apps/test2/test2.jsp",

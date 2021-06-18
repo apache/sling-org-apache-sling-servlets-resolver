@@ -57,6 +57,7 @@ public class ServletResolverTestSupport extends TestSupport {
     @Inject
     protected BundleContext bundleContext;
 
+    @SuppressWarnings("unused")
     @Inject
     private SlingRequestProcessor slingRequestProcessor;
 

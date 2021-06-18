@@ -114,36 +114,44 @@ public class NamedScriptResourceCollector extends AbstractResourceCollector {
         while (children.hasNext()) {
             final Resource child = children.next();
 
-            if ( !SlingServletResolver.isPathAllowed(child.getPath(), this.executionPaths) ) {
-                continue;
-            }
-            final String currentScriptName = child.getName();
-            final int lastDot = currentScriptName.lastIndexOf('.');
-            if (lastDot < 0) {
-                // no extension in the name, this is not a script
-                continue;
-            }
+            if ( SlingServletResolver.isPathAllowed(child.getPath(), this.executionPaths) ) {
+                final String currentScriptName = child.getName();
+                final int lastDot = currentScriptName.lastIndexOf('.');
+                if (lastDot < 0) {
+                    // no extension in the name, this is not a script
+                    continue;
+                }
 
-            if ( currentScriptName.substring(0, lastDot).equals(name) ) {
-                this.addWeightedResource(resources, child, 0, WeightedResource.WEIGHT_PREFIX);
+                if ( currentScriptName.substring(0, lastDot).equals(name) ) {
+                    this.addWeightedResource(resources, child, 0, WeightedResource.WEIGHT_PREFIX);
+                }
             }
         }
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if ( !(obj instanceof NamedScriptResourceCollector) ) {
-            return false;
-        }
-        if ( obj == this ) {
-            return true;
-        }
-        if ( super.equals(obj) ) {
-            final NamedScriptResourceCollector o = (NamedScriptResourceCollector)obj;
-            if ( stringEquals(scriptName, o.scriptName)) {
-                return true;
-            }
-        }
-        return false;
+    public int hashCode() {
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + ((scriptName == null) ? 0 : scriptName.hashCode());
+        return result;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (!super.equals(obj))
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        NamedScriptResourceCollector other = (NamedScriptResourceCollector) obj;
+        if (scriptName == null) {
+            if (other.scriptName != null)
+                return false;
+        } else if (!scriptName.equals(other.scriptName))
+            return false;
+        return true;
+    }
+
 }

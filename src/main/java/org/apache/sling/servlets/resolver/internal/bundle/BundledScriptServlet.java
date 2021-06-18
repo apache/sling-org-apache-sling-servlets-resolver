@@ -21,7 +21,6 @@ package org.apache.sling.servlets.resolver.internal.bundle;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -39,12 +38,13 @@ import org.apache.sling.scripting.spi.bundle.TypeProvider;
 import org.jetbrains.annotations.NotNull;
 
 public class BundledScriptServlet extends GenericServlet {
-    private final BundledRenderUnit executable;
+    private static final long serialVersionUID = 6320375093932073555L;
+    private final BundledRenderUnit executable; // NOSONAR
     private final String servletInfo;
-    private final Set<ResourceType> types;
+    private final Set<ResourceType> types; // NOSONAR
 
 
-    public BundledScriptServlet(@NotNull LinkedHashSet<TypeProvider> wiredTypeProviders,
+    public BundledScriptServlet(@NotNull Set<TypeProvider> wiredTypeProviders,
                          @NotNull BundledRenderUnit executable) {
         this.executable = executable;
         this.servletInfo = "Script " + executable.getPath();

@@ -92,6 +92,7 @@ public class PathBasedServletAcceptorTest {
         void assertAccept(boolean expected) {
 
             // Stub the ServiceReference with our service properties
+            @SuppressWarnings("unchecked")
             final ServiceReference<Servlet> reference = mock(ServiceReference.class);
             final String [] keys = Collections.list(serviceProperties.keys()).toArray(STRING_ARRAY);
             when(reference.getPropertyKeys()).thenReturn(keys);

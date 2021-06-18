@@ -36,12 +36,12 @@ import org.jetbrains.annotations.NotNull;
 
 public class ScriptResourceResolver extends ResourceResolverWrapper {
     private final ResourceResolver resolver;
-    private final Supplier<MergingServletResourceProvider> provider;
+    private final Supplier<MergingServletResourceProvider> providerSupplier;
 
     public ScriptResourceResolver(ResourceResolver resolver, Supplier<MergingServletResourceProvider> provider) {
         super(resolver);
         this.resolver = resolver;
-        this.provider = provider;
+        this.providerSupplier = provider;
     }
 
     public static ScriptResourceResolver wrap(ResourceResolver scriptResourceResolver, Supplier<MergingServletResourceProvider> provider) {
@@ -53,14 +53,15 @@ public class ScriptResourceResolver extends ResourceResolverWrapper {
         return () -> listChildren(parent);
     }
 
+    @Override
     public Resource getResource(String scriptPath) {
-        MergingServletResourceProvider provider = this.provider.get();
+        MergingServletResourceProvider provider = this.providerSupplier.get();
 
         if (provider == null) {
             return super.getResource(scriptPath);
         }
         else {
-            return wrap(provider.getResource(new ResolveContext() {
+            return wrap(provider.getResource(new ResolveContext<Object>() {
                 @Override
                 public ResourceResolver getResourceResolver() {
                     return ScriptResourceResolver.this;
@@ -78,14 +79,14 @@ public class ScriptResourceResolver extends ResourceResolverWrapper {
 
                 @Override
                 public ResourceProvider<?> getParentResourceProvider() {
-                    return new ResourceProvider() {
+                    return new ResourceProvider<Object>() {
                         @Override
-                        public Resource getResource(ResolveContext ctx, String path, ResourceContext resourceContext, Resource parent) {
+                        public Resource getResource(ResolveContext<Object> ctx, String path, ResourceContext resourceContext, Resource parent) {
                             return resolver.getResource(path);
                         }
 
                         @Override
-                        public Iterator<Resource> listChildren(ResolveContext ctx, Resource parent) {
+                        public Iterator<Resource> listChildren(ResolveContext<Object> ctx, Resource parent) {
                             return resolver.listChildren(parent);
                         }
                     };
@@ -97,19 +98,19 @@ public class ScriptResourceResolver extends ResourceResolverWrapper {
     @Override
     public Resource getResource(Resource base, @NotNull String path) {
         if (!path.startsWith("/") && base != null) {
-            path = base.getPath() + "/" + path;
+            path = String.format("%s/%s", base.getPath(), path);
         }
         return getResource(path);
     }
 
     @Override
     public Iterator<Resource> listChildren(Resource parent) {
-        MergingServletResourceProvider provider = this.provider.get();
+        MergingServletResourceProvider provider = this.providerSupplier.get();
         if (provider == null) {
             return super.listChildren(parent);
         }
         else {
-            return wrap(provider.listChildren(new ResolveContext() {
+            return wrap(provider.listChildren(new ResolveContext<Object>() {
                 @Override
                 public ResourceResolver getResourceResolver() {
                     return ScriptResourceResolver.this;
@@ -125,14 +126,14 @@ public class ScriptResourceResolver extends ResourceResolverWrapper {
                 }
 
                 public ResourceProvider<?> getParentResourceProvider() {
-                    return new ResourceProvider() {
+                    return new ResourceProvider<Object>() {
                         @Override
-                        public Resource getResource(ResolveContext ctx, String path, ResourceContext resourceContext, Resource parent) {
+                        public Resource getResource(ResolveContext<Object> ctx, String path, ResourceContext resourceContext, Resource parent) {
                             return resolver.getResource(path);
                         }
 
                         @Override
-                        public Iterator<Resource> listChildren(ResolveContext ctx, Resource parent) {
+                        public Iterator<Resource> listChildren(ResolveContext<Object> ctx, Resource parent) {
                             return resolver.listChildren(parent);
                         }
                     };
@@ -167,8 +168,9 @@ public class ScriptResourceResolver extends ResourceResolverWrapper {
         return resource;
     }
 
-    public ScriptResourceResolver clone(Map o) throws LoginException {
-        return ScriptResourceResolver.wrap(resolver.clone(o), provider);
+    @Override
+    public ScriptResourceResolver clone(Map<String, Object> o) throws LoginException {
+        return ScriptResourceResolver.wrap(resolver.clone(o), providerSupplier);
     }
 
     private class ScriptResourceResolverResourceWrapper extends ResourceWrapper {

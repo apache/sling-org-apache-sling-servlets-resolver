@@ -42,25 +42,25 @@ public @interface ResolverConfig {
             + "or a number which specifies the resource resolver's search path entry index. The default value "
             + "is 0 (usually stands for \"/apps\" in the search paths). The number can be -1 which always "
             + "points to the last search path entry.")
-    String servletresolver_servletRoot() default "0";
+    String servletresolver_servletRoot() default "0"; // NOSONAR
 
     /** The default cache size for the script resolution. */
     @AttributeDefinition(name = "Cache Size", description = "This property configures the size of the "
             + "cache used for script resolution. A value lower than 5 disables the cache.")
-    int servletresolver_cacheSize() default 200;
+    int servletresolver_cacheSize() default 200; // NOSONAR
 
     @AttributeDefinition(name = "Execution Paths", description = "The paths to search for executable scripts. If no path is configured "
             + "this is treated like the default (/ = root) which allows to execute all scripts. By configuring some "
             + "paths the execution of scripts can be limited. If a configured value ends with a slash, the whole sub tree "
             + "is allowed. Without a slash an exact matching script is allowed.")
-    String[] servletresolver_paths() default "/";
+    String[] servletresolver_paths() default "/"; // NOSONAR
 
     @AttributeDefinition(name = "Default Extensions", description = "The list of extensions for which the default behavior "
             + "will be used. This means that the last path segment of the resource type can be used as the script name.")
-    String[] servletresolver_defaultExtensions() default "html";
+    String[] servletresolver_defaultExtensions() default "html"; // NOSONAR
 
     @AttributeDefinition(name = "Mount Providers", description = "Should servlets be mounted as resource providers?" +
         " If true (the default), servlets will be represented in the content tree using resource provider -" +
         " otherwise, servlets will be decorated back into the content tree using a decorator.")
-    boolean servletresolver_mountProviders() default true;
+    boolean servletresolver_mountProviders() default true; // NOSONAR
 }

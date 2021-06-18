@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -55,7 +56,6 @@ import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.request.RequestDispatcherOptions;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.resource.type.ResourceType;
-import org.apache.sling.api.servlets.HttpConstants;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.commons.osgi.PropertiesUtil;
 import org.apache.sling.scripting.spi.bundle.BundledRenderUnit;
@@ -110,27 +110,39 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     @Reference
     private ServletMounter mounter;
 
-    private volatile BundleContext m_context;
-    private volatile BundleTracker<List<ServiceRegistration<Servlet>>> m_tracker;
-    private volatile Map<Set<String>, ServiceRegistration<Servlet>> m_dispatchers = new HashMap<>();
+    private AtomicReference<BundleContext> bundleContext = new AtomicReference<>();
+    private AtomicReference<BundleTracker<List<ServiceRegistration<Servlet>>>> tracker = new AtomicReference<>();
+    private AtomicReference<Map<Set<String>, ServiceRegistration<Servlet>>> dispatchers = new AtomicReference<>();
 
     @Activate
     protected void activate(BundleContext context) {
-        m_context = context;
-        m_tracker = new BundleTracker<>(context, Bundle.ACTIVE, this);
-        m_tracker.open();
+        bundleContext.set(context);
+        dispatchers.set(new HashMap<>());
+        BundleTracker<List<ServiceRegistration<Servlet>>> bt = new BundleTracker<>(context, Bundle.ACTIVE, this);
+        tracker.set(bt);
+        bt.open();
     }
 
     @Deactivate
     protected void deactivate() {
-        m_tracker.close();
+        BundleTracker<List<ServiceRegistration<Servlet>>> bt = tracker.getAndSet(null);
+        if (bt != null) {
+            bt.close();
+        }
+        bundleContext.set(null);
+        dispatchers.set(null);
     }
 
     @Override
     public List<ServiceRegistration<Servlet>> addingBundle(Bundle bundle, BundleEvent event) {
         BundleWiring bundleWiring = bundle.adapt(BundleWiring.class);
+        Bundle bcBundle = null;
+        BundleContext bc = bundleContext.get();
+        if (bc != null) {
+            bcBundle = bc.getBundle();
+        }
         if (bundleWiring.getRequiredWires("osgi.extender").stream().map(BundleWire::getProvider).map(BundleRevision::getBundle)
-                .anyMatch(m_context.getBundle()::equals)) {
+                .anyMatch(bcBundle::equals)) {
             LOGGER.debug("Inspecting bundle {} for {} capability.", bundle.getSymbolicName(), NS_SLING_SERVLET);
             List<BundleCapability> capabilities = bundleWiring.getCapabilities(NS_SLING_SERVLET);
             Map<BundleCapability, BundledRenderUnitCapability> cache = new HashMap<>();
@@ -270,7 +282,8 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
 
     private final AtomicLong idCounter = new AtomicLong(0);
 
-    private ServiceRegistration<Servlet> register(BundleContext context, Servlet servlet, Hashtable<String, Object> properties) {
+    private ServiceRegistration<Servlet> register(BundleContext context, Servlet servlet, 
+            Hashtable<String, Object> properties) { // NOSONAR
         if (mounter.mountProviders()) {
             return context.registerService(Servlet.class, servlet, properties);
         }
@@ -278,6 +291,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
             final Long id = idCounter.getAndIncrement();
             properties.put(Constants.SERVICE_ID, id);
             properties.put(BundledHooks.class.getName(), "true");
+            @SuppressWarnings("unchecked")
             final ServiceReference<Servlet> reference = (ServiceReference<Servlet>) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{ServiceReference.class}, new InvocationHandler() {
                 @Override
                 public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -291,7 +305,12 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         return context.getBundle();
                     }
                     else if (method.equals(ServiceReference.class.getMethod("getUsingBundles"))) {
-                        return new Bundle[]{ m_context.getBundle() };
+                        BundleContext bc = bundleContext.get();
+                        if (bc != null) {
+                            return new Bundle[] { bc.getBundle() };
+                        } else {
+                            return new Bundle[0];
+                        }
                     }
                     else if (method.equals(ServiceReference.class.getMethod("isAssignableTo", Bundle.class, String.class))) {
                         return Servlet.class.getName().equals(args[1]);
@@ -313,7 +332,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                 }
 
                 private int compareTo(Object arg) {
-                    ServiceReference other = (ServiceReference) arg;
+                    ServiceReference<?> other = (ServiceReference<?>) arg;
                     Long id;
                     if ("true".equals(other.getProperty(BundledHooks.class.getName()))) {
                         id = (Long) properties.get(Constants.SERVICE_ID);
@@ -356,7 +375,8 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
 
             mounter.bindServlet(servlet, reference);
 
-            return (ServiceRegistration<Servlet>) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{ServiceRegistration.class}, new InvocationHandler(){
+            @SuppressWarnings("unchecked")
+            ServiceRegistration<Servlet> newProxyInstance = (ServiceRegistration<Servlet>) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{ServiceRegistration.class}, new InvocationHandler(){
                 @Override
                 public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                     if (method.equals(ServiceRegistration.class.getMethod("getReference"))) {
@@ -370,7 +390,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         return null;
                     }
                     else if (method.getName().equals("equals") && Arrays.equals(method.getParameterTypes(), new Class[]{Object.class})) {
-                        return args[0] instanceof ServiceRegistration && reference.compareTo(((ServiceRegistration) args[0]).getReference()) == 0;
+                        return args[0] instanceof ServiceRegistration && reference.compareTo(((ServiceRegistration<?>) args[0]).getReference()) == 0;
                     }
                     else if (method.getName().equals("hashCode") && method.getParameterCount() == 0) {
                         return id.intValue();
@@ -382,16 +402,26 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     }
                 }
             });
+            return newProxyInstance;
         }
     }
 
     private void refreshDispatcher(List<ServiceRegistration<Servlet>> regs) {
-        Map<Set<String>, ServiceRegistration<Servlet>> dispatchers = new HashMap<>();
-        Stream.concat(m_tracker.getTracked().values().stream(), Stream.of(regs)).flatMap(List::stream)
+        BundleContext bc = bundleContext.get();
+        Map<Bundle, List<ServiceRegistration<Servlet>>> tracked;
+        BundleTracker<List<ServiceRegistration<Servlet>>> bt = tracker.get();
+        if (bt != null) {
+            tracked = bt.getTracked();
+        } else {
+            tracked = Collections.emptyMap();
+        }
+        Map<Set<String>, ServiceRegistration<Servlet>> oldDispatchers = dispatchers.get();
+        Map<Set<String>, ServiceRegistration<Servlet>> newDispatchers = new HashMap<>();
+        Stream.concat(tracked.values().stream(), Stream.of(regs)).flatMap(List::stream)
             .filter(ref -> getResourceTypeVersion(ref.getReference()) != null)
             .map(this::toProperties)
             .collect(Collectors.groupingBy(BundledScriptTracker::getResourceTypes)).forEach((rt, propList) -> {
-            Hashtable<String, Object> properties = new Hashtable<>();
+            Hashtable<String, Object> properties = new Hashtable<>(); // NOSONAR
             properties.put(ServletResolverConstants.SLING_SERVLET_NAME, String.format("%s (%s)", DispatcherServlet.class.getSimpleName(),
                     rt));
             properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES, rt.toArray());
@@ -405,7 +435,8 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
             if (!methods.equals(new HashSet<>(Arrays.asList("GET", "HEAD")))) {
                 properties.put(ServletResolverConstants.SLING_SERVLET_METHODS, methods.toArray(new String[0]));
             }
-            ServiceRegistration<Servlet> reg = m_dispatchers.remove(rt);
+
+            ServiceRegistration<Servlet> reg = oldDispatchers.remove(rt);
             if (reg == null) {
                 Optional<BundleContext> registeringBundle = propList.stream().map(props -> {
                     Bundle bundle = (Bundle) props.get(REGISTERING_BUNDLE);
@@ -421,7 +452,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         ServletResolverConstants.SLING_SERVLET_METHODS + "=" + methods  + "}");
                 properties.put(BundledHooks.class.getName(), "true");
 
-                reg = register(registeringBundle.orElse(m_context), new DispatcherServlet(rt), properties);
+                reg = register(registeringBundle.orElse(bc), new DispatcherServlet(rt), properties);
             } else {
                 if (!new HashSet<>(Arrays.asList(PropertiesUtil
                         .toStringArray(reg.getReference().getProperty(ServletResolverConstants.SLING_SERVLET_METHODS), new String[0])))
@@ -429,14 +460,14 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     reg.setProperties(properties);
                 }
             }
-            dispatchers.put(rt, reg);
+            newDispatchers.put(rt, reg);
         });
-        m_dispatchers.values().forEach(ServiceRegistration::unregister);
-        m_dispatchers = dispatchers;
+        oldDispatchers.values().forEach(ServiceRegistration::unregister);
+        dispatchers.set(newDispatchers);
     }
 
-    private Hashtable<String, Object> toProperties(ServiceRegistration<?> reg) {
-        Hashtable<String, Object> result = new Hashtable<>();
+    private Map<String, Object> toProperties(ServiceRegistration<?> reg) {
+        Map<String, Object> result = new HashMap<>();
         ServiceReference<?> ref = reg.getReference();
 
         set(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES, ref, result);
@@ -448,7 +479,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         return result;
     }
 
-    private void set(String key, ServiceReference<?> ref, Hashtable<String, Object> props) {
+    private void set(String key, ServiceReference<?> ref, Map<String, Object> props) {
         Object value = ref.getProperty(key);
         if (value != null) {
             props.put(key, value);
@@ -468,10 +499,11 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     }
 
     private class DispatcherServlet extends GenericServlet {
-        private final Set<String> m_rt;
+        private static final long serialVersionUID = -1917128676758775458L;
+        private final Set<String> resourceType;
 
         DispatcherServlet(Set<String> rt) {
-            m_rt = rt;
+            this.resourceType = rt;
         }
 
         @Override
@@ -479,15 +511,25 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
 
             SlingHttpServletRequest slingRequest = (SlingHttpServletRequest) req;
 
-            Optional<ServiceRegistration<Servlet>> target = m_tracker.getTracked().values().stream().flatMap(List::stream)
+            Map<Bundle, List<ServiceRegistration<Servlet>>> tracked;
+            BundleTracker<List<ServiceRegistration<Servlet>>> bt = tracker.get();
+            if (bt != null) {
+                tracked = bt.getTracked();
+            } else {
+                tracked = Collections.emptyMap();
+            }
+            BundleContext bc = bundleContext.get();
+            final Bundle bcBundle = bc == null ? null : bc.getBundle();
+
+            Optional<ServiceRegistration<Servlet>> target = tracked.values().stream().flatMap(List::stream)
                     .filter(
-                            reg -> !reg.getReference().getBundle().equals(m_context.getBundle())
+                            reg -> !reg.getReference().getBundle().equals(bcBundle)
                     )
                     .filter(reg -> getResourceTypeVersion(reg.getReference()) != null)
                     .filter(reg ->
                     {
-                        Hashtable<String, Object> props = toProperties(reg);
-                        return getResourceTypes(props).equals(m_rt) &&
+                        Map<String, Object> props = toProperties(reg);
+                        return getResourceTypes(props).equals(resourceType) &&
                                 Arrays.asList(PropertiesUtil
                                         .toStringArray(props.get(ServletResolverConstants.SLING_SERVLET_METHODS),
                                                 new String[]{"GET", "HEAD"}))
@@ -564,7 +606,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         return null;
     }
 
-    private static Set<String> getResourceTypes(Hashtable<String, Object> props) {
+    private static Set<String> getResourceTypes(Map<String, Object> props) {
         Set<String> resourceTypes = new HashSet<>();
         String[] values = PropertiesUtil.toStringArray(props.get(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES));
         for (String resourceTypeValue : values) {

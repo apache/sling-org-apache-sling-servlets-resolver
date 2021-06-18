@@ -89,36 +89,36 @@ final class WeightedResource extends ResourceWrapper implements
         this.methodPrefixWeight = methodPrefixWeight;
     }
 
-    final public int getOrdinal() {
+    public final int getOrdinal() {
         return ordinal;
     }
 
-    final public int getNumSelectors() {
+    public final int getNumSelectors() {
         return numSelectors;
     }
 
-    final public int getMethodPrefixWeight() {
+    public final int getMethodPrefixWeight() {
         return methodPrefixWeight;
     }
 
     @Override
-    final public int hashCode() {
+    public final int hashCode() {
         return ordinal;
     }
 
     @Override
-    final public boolean equals(Object obj) {
+    public final boolean equals(Object obj) {
         return obj == this;
     }
 
     @Override
-    final public String toString() {
+    public final String toString() {
         return getClass().getSimpleName() + "[" + getOrdinal() + "]: "
             + getResource() + ", #selectors=" + getNumSelectors()
             + ", methodPrefixWeight=" + getMethodPrefixWeight();
     }
 
-    final public int compareTo(WeightedResource o) {
+    public final int compareTo(WeightedResource o) {
         if (equals(o)) {
             return 0;
         }

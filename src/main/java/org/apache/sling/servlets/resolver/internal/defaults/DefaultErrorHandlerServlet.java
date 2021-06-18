@@ -60,7 +60,7 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
     private static final String HTML_CONTENT_TYPE = "text/html";
 
     /** default log */
-    private final Logger log = LoggerFactory.getLogger(DefaultErrorHandlerServlet.class);
+    private final transient Logger log = LoggerFactory.getLogger(DefaultErrorHandlerServlet.class);
 
     @Override
     public void service(ServletRequest req, ServletResponse res)
@@ -298,7 +298,7 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
     }
 
     public static String statusToString(int statusCode) {
-        switch (statusCode) {
+        switch (statusCode) { // NOSONAR
             case 100:
                 return "Continue";
             case 101:
