@@ -28,7 +28,6 @@ import java.util.Map;
 
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceUtil;
-import org.apache.sling.commons.testing.sling.MockResource;
 
 public class ResourceCollectorTest extends HelperTestBase {
 
@@ -49,9 +48,7 @@ public class ResourceCollectorTest extends HelperTestBase {
                 "/print.esp", // 4
                 "/print/a4.esp", // 5
                 "/print.html.esp", // 6
-                "/print/a4.html.esp", // 7
-                "/print", // resource to enable walking the tree
-                "/print", // resource to enable walking the tree
+                "/print/a4.html.esp" // 7
         };
 
         int[] baseIdxs = { 0, 1, 1, 0, 0, 1, 0, 1, 0, 1 };
@@ -68,9 +65,7 @@ public class ResourceCollectorTest extends HelperTestBase {
                 "/print.other.esp", // 4
                 "/print/other.esp", // 5
                 "/print.html.esp", // 6
-                "/print/a4.html.esp", // 7
-                "/print", // resource to enable walking the tree
-                "/print", // resource to enable walking the tree
+                "/print/a4.html.esp" // 7
         };
 
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
@@ -88,9 +83,7 @@ public class ResourceCollectorTest extends HelperTestBase {
                 "/print/other.esp", // 5
                 "/print.other.esp", // 6
                 "/print.html.esp", // 7
-                "/print/a4.html.esp", // 8
-                "/print", // resource to enable walking the tree
-                "/print", // resource to enable walking the tree
+                "/print/a4.html.esp" // 8
         };
 
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
@@ -109,9 +102,7 @@ public class ResourceCollectorTest extends HelperTestBase {
                 "/print/other.esp", // 6
                 "/print.other.esp", // 7
                 "/print.html.esp", // 8
-                "/print/a4.html.esp", // 9
-                "/print", // resource to enable walking the tree
-                "/print", // resource to enable walking the tree
+                "/print/a4.html.esp" // 9
         };
 
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
@@ -131,9 +122,7 @@ public class ResourceCollectorTest extends HelperTestBase {
                 "/print/other.esp", // 7
                 "/print.other.esp", // 8
                 "/print.html.esp", // 9
-                "/print/a4.html.esp", // 10
-                "/print", // resource to enable walking the tree
-                "/print", // resource to enable walking the tree
+                "/print/a4.html.esp" // 10
         };
 
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1 };
@@ -168,9 +157,7 @@ public class ResourceCollectorTest extends HelperTestBase {
                 "/print/a4.html.esp", // 10    /libs/foo/bar/print/a4.html.esp
                 "/print/a4.html.js", // 11     /libs/foo/bar/print/a4.html.js
                 "/print/a4.html.html", // 12   /apps/foo/bar/print/a4.html.html
-                "/print/a4.html.jsp", // 13    /apps/foo/bar/print/a4.html.jsp
-                "/print", // resource to enable walking the tree
-                "/print", // resource to enable walking the tree
+                "/print/a4.html.jsp" // 13    /apps/foo/bar/print/a4.html.jsp
         };
 
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0 , 0 , 1, 0};
@@ -201,9 +188,7 @@ public class ResourceCollectorTest extends HelperTestBase {
                 "/print/a4.html.esp", // 10    /libs/foo/bar/print/a4.html.esp
                 "/print/a4.html.js", // 11     /libs/foo/bar/print/a4.html.js
                 "/print/a4.html.html", // 12   /apps/foo/bar/print/a4.html.html will win (overlays libs, comes before jsp when iterating)
-                "/print/a4.html.jsp", // 13    /apps/foo/bar/print/a4.html.jsp
-                "/print", // resource to enable walking the tree
-                "/print", // resource to enable walking the tree
+                "/print/a4.html.jsp" // 13    /apps/foo/bar/print/a4.html.jsp
         };
 
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0 , 0 , 1, 0};
@@ -232,9 +217,7 @@ public class ResourceCollectorTest extends HelperTestBase {
                 "/print/a4.html.esp", // 10    /libs/foo/bar/print/a4.html.esp
                 "/print/a4.html.js", // 11     /libs/foo/bar/print/a4.html.js
                 "/print/a4.html.jsp", // 12    /apps/foo/bar/print/a4.html.jsp will win (overlays libs, comes before html when iterating)
-                "/print/a4.html.html", // 13   /apps/foo/bar/print/a4.html.html
-                "/print", // resource to enable walking the tree
-                "/print", // resource to enable walking the tree
+                "/print/a4.html.html" // 13   /apps/foo/bar/print/a4.html.html
         };
 
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0 , 0 , 1, 0};
@@ -259,9 +242,7 @@ public class ResourceCollectorTest extends HelperTestBase {
                 "/print.ANY.esp", // 4
                 "/print/a4.ANY.esp", // 5
                 "/print.html.ANY.esp", // 6
-                "/print/a4.html.ANY.esp", // 7
-                "/print", // resource to enable walking the tree
-                "/print", // resource to enable walking the tree
+                "/print/a4.html.ANY.esp" // 7
         };
 
         int[] baseIdxs = { 0, 1, 1, 0, 0, 1, 0, 1, 0, 1 };
@@ -281,9 +262,7 @@ public class ResourceCollectorTest extends HelperTestBase {
                 "/print.other.ANY.esp", // 4
                 "/print/other.ANY.esp", // 5
                 "/print.html.ANY.esp", // 6
-                "/print/a4.html.ANY.esp", // 7
-                "/print", // resource to enable walking the tree
-                "/print", // resource to enable walking the tree
+                "/print/a4.html.ANY.esp" // 7
         };
 
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
@@ -304,9 +283,7 @@ public class ResourceCollectorTest extends HelperTestBase {
                 "/print/other.ANY.esp", // 5
                 "/print.other.ANY.esp", // 6
                 "/print.html.ANY.esp", // 7
-                "/print/a4.html.ANY.esp", // 8
-                "/print", // resource to enable walking the tree
-                "/print", // resource to enable walking the tree
+                "/print/a4.html.ANY.esp" // 8
         };
 
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
@@ -328,9 +305,7 @@ public class ResourceCollectorTest extends HelperTestBase {
                 "/print/other.ANY.esp", // 6
                 "/print.other.ANY.esp", // 7
                 "/print.html.ANY.esp", // 8
-                "/print/a4.html.ANY.esp", // 9
-                "/print", // resource to enable walking the tree
-                "/print", // resource to enable walking the tree
+                "/print/a4.html.ANY.esp" // 9
         };
 
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
@@ -353,9 +328,7 @@ public class ResourceCollectorTest extends HelperTestBase {
                 "/print/other.ANY.esp", // 7
                 "/print.other.ANY.esp", // 8
                 "/print.html.ANY.esp", // 9
-                "/print/a4.html.ANY.esp", // 10
-                "/print", // resource to enable walking the tree
-                "/print", // resource to enable walking the tree
+                "/print/a4.html.ANY.esp" // 10
         };
 
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1 };
@@ -381,9 +354,7 @@ public class ResourceCollectorTest extends HelperTestBase {
                 "/print/a4.html.ANY.esp", // 10    /libs/foo/bar/print/a4.html.ANY.esp
                 "/print/a4.html.ANY.js", // 11     /libs/foo/bar/print/a4.html.ANY.js
                 "/print/a4.html.ANY.html", // 12   /apps/foo/bar/print/a4.html.ANY.html
-                "/print/a4.html.ANY.jsp", // 13    /apps/foo/bar/print/a4.html.ANY.jsp
-                "/print", // resource to enable walking the tree
-                "/print", // resource to enable walking the tree
+                "/print/a4.html.ANY.jsp" // 13    /apps/foo/bar/print/a4.html.ANY.jsp
         };
 
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0 , 0 , 1, 0};
@@ -441,9 +412,7 @@ public class ResourceCollectorTest extends HelperTestBase {
         assertFalse(rIter.hasNext());
     }
 
-    protected MockResource createScriptResource(String path, String type) {
-        MockResource res = new MockResource(resourceResolver, path, type);
-        resourceResolver.addResource(res);
-        return res;
+    protected Resource createScriptResource(String path, String type) {
+        return addOrReplaceResource(resourceResolver, path, type);
     }
 }

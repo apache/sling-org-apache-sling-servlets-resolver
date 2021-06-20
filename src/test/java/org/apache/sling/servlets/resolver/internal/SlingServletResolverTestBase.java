@@ -19,15 +19,18 @@
 package org.apache.sling.servlets.resolver.internal;
 
 import java.lang.reflect.Field;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
-import org.apache.sling.api.resource.LoginException;
+import javax.servlet.Servlet;
+
+import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
-import org.apache.sling.api.resource.ResourceResolverFactory;
-import org.apache.sling.commons.testing.sling.MockResourceResolver;
+import org.apache.sling.api.wrappers.ResourceResolverWrapper;
 import org.apache.sling.servlets.resolver.internal.resolution.ResolutionCache;
+import org.apache.sling.servlets.resolver.internal.resource.MockServletResource;
+import org.apache.sling.testing.resourceresolver.DefaultMockResourceFactory;
+import org.apache.sling.testing.resourceresolver.MockResourceResolverFactory;
+import org.apache.sling.testing.resourceresolver.MockResourceResolverFactoryOptions;
 import org.junit.Before;
 import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
@@ -35,9 +38,26 @@ import org.osgi.framework.BundleContext;
 
 public abstract class SlingServletResolverTestBase {
 
+    /**
+     * Custom factory that will create a MockServletResource for
+     * any resource whose path ends with .servlet and fallback
+     * to the default factory otherwise.
+     */
+    private static final class ServletMockResourceFactory extends DefaultMockResourceFactory {
+        @Override
+        public Resource newMockResource(String path, Map<String, Object> properties,
+                ResourceResolver resolver) {
+            if (path.endsWith(".servlet")) {
+                Servlet servlet = (Servlet)properties.get(MockServletResource.PROP_SERVLET);
+                return new MockServletResource(resolver, servlet, path);
+            }
+            return super.newMockResource(path, properties, resolver);
+        }
+    }
+
     protected SlingServletResolver servletResolver;
 
-    protected MockResourceResolver mockResourceResolver;
+    protected ResourceResolver mockResourceResolver;
 
     @Before public void setUp() throws Exception {
         final ResolverConfig config = Mockito.mock(ResolverConfig.class);
@@ -46,63 +66,12 @@ public abstract class SlingServletResolverTestBase {
         Mockito.when(config.servletresolver_defaultExtensions()).thenReturn(new String[] {"html"});
         Mockito.when(config.servletresolver_cacheSize()).thenReturn(200);
 
-        mockResourceResolver = new MockResourceResolver() {
-            @Override
-            public void close() {
-                // nothing to do;
-            }
+        MockResourceResolverFactoryOptions options = new MockResourceResolverFactoryOptions()
+            .setSearchPaths(new String[] {"/"})
+            .setMockResourceFactory(new ServletMockResourceFactory());
 
-            @Override
-            public <AdapterType> AdapterType adaptTo(Class<AdapterType> type) {
-                return null;
-            }
-
-            @Override
-            public ResourceResolver clone(Map<String, Object> authenticationInfo)
-                    throws LoginException {
-                throw new LoginException("MockResourceResolver can't be cloned - excepted for this test!");
-            }
-
-            @Override
-            public void refresh() {
-                // nothing to do
-            }
-        };
-        mockResourceResolver.setSearchPath("/");
-
-        final ResourceResolverFactory factory = new ResourceResolverFactory() {
-
-            @Override
-            public ResourceResolver getAdministrativeResourceResolver(
-                    Map<String, Object> authenticationInfo)
-                    throws LoginException {
-                return mockResourceResolver;
-            }
-
-            @Override
-            public ResourceResolver getResourceResolver(
-                    Map<String, Object> authenticationInfo)
-                    throws LoginException {
-                return mockResourceResolver;
-            }
-
-            @Override
-            public ResourceResolver getServiceResourceResolver(Map<String, Object> authenticationInfo)
-                    throws LoginException {
-                return mockResourceResolver;
-            }
-
-            @Override
-            public ResourceResolver getThreadResourceResolver() {
-                // TODO Auto-generated method stub
-                return null;
-            }
-
-            @Override
-            public List<String> getSearchPath() {
-                return Collections.singletonList("/");
-            }
-        };
+        MockResourceResolverFactory factory = new MockResourceResolverFactory(options);
+        mockResourceResolver = new ResourceResolverWrapper(factory.getResourceResolver(null));
 
         servletResolver = new SlingServletResolver();
 
