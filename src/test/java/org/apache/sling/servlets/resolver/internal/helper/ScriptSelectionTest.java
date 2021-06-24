@@ -22,7 +22,6 @@ import java.util.Collection;
 import java.util.Collections;
 
 import org.apache.sling.api.resource.Resource;
-import org.apache.sling.commons.testing.sling.MockResource;
 import org.apache.sling.commons.testing.sling.MockSlingHttpServletRequest;
 
 /** Various tests that explain and demonstrate how scripts are
@@ -63,8 +62,7 @@ public class ScriptSelectionTest extends HelperTestBase {
     {
         // Add given scripts to our mock resource resolver
         for(String script : scripts) {
-            final MockResource r = new MockResource(resourceResolver, script, "nt:file");
-            resourceResolver.addResource(r);
+            addOrReplaceResource(resourceResolver, script, "nt:file");
         }
 
         // Create mock request and get scripts from ResourceCollector

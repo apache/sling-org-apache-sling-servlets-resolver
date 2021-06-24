@@ -20,25 +20,25 @@ package org.apache.sling.servlets.resolver.internal;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.fail;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServlet;
 
 import org.apache.sling.api.SlingHttpServletRequest;
-import org.apache.sling.api.resource.Resource;
+import org.apache.sling.api.resource.PersistenceException;
+import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.servlets.OptingServlet;
-import org.apache.sling.api.servlets.ServletResolverConstants;
-import org.apache.sling.commons.testing.osgi.MockServiceReference;
-import org.apache.sling.commons.testing.sling.MockResource;
 import org.apache.sling.commons.testing.sling.MockSlingHttpServletRequest;
+import org.apache.sling.servlets.resolver.internal.helper.HelperTestBase;
 import org.apache.sling.servlets.resolver.internal.resource.MockServletResource;
+import org.apache.sling.servlets.resolver.internal.resource.ServletResource;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
-import org.osgi.framework.Constants;
 
 public class SecureRequestsOptingServletTest extends SlingServletResolverTestBase {
 
@@ -50,28 +50,24 @@ public class SecureRequestsOptingServletTest extends SlingServletResolverTestBas
     protected void defineTestServlets(Bundle bundle) {
         testServlet = new SecureRequestsOptingServlet();
 
-        MockServiceReference ref = new MockServiceReference(bundle);
-        ref.setProperty(Constants.SERVICE_ID, 1L);
-        ref.setProperty(ServletResolverConstants.SLING_SERVLET_NAME, SERVLET_NAME);
-        ref.setProperty(ServletResolverConstants.SLING_SERVLET_PATHS, SERVLET_PATH);
-        ref.setProperty(ServletResolverConstants.SLING_SERVLET_EXTENSIONS, SERVLET_EXTENSION);
-
         String path = "/"
             + MockSlingHttpServletRequest.RESOURCE_TYPE
             + "/"
             + ResourceUtil.getName(MockSlingHttpServletRequest.RESOURCE_TYPE)
             + ".servlet";
-        MockServletResource res = new MockServletResource(mockResourceResolver,
-            testServlet, path);
-            mockResourceResolver.addResource(res);
-
-        MockResource parent = new MockResource(mockResourceResolver,
-            ResourceUtil.getParent(res.getPath()), "nt:folder");
-            mockResourceResolver.addResource(parent);
-
-        List<Resource> childRes = new ArrayList<>();
-        childRes.add(res);
-        mockResourceResolver.addChildren(parent, childRes);
+        Map<String, Object> props = new HashMap<>();
+        props.put(ResourceResolver.PROPERTY_RESOURCE_TYPE, path);
+        props.put("sling:resourceSuperType", ServletResource.DEFAULT_RESOURCE_SUPER_TYPE);
+        props.put(MockServletResource.PROP_SERVLET, testServlet);
+        HelperTestBase.addOrReplaceResource(mockResourceResolver, path, props);
+        try {
+            // commit so the resource is visible to the script resource resolver
+            //  that is created later and can't see the temporary resources in
+            //  this resource resolver
+            mockResourceResolver.commit();
+        } catch (PersistenceException e) {
+            fail("Did not expect a persistence exception: " + e.getMessage());
+        }
     }
 
     @Test public void testAcceptsSecureRequest() {
