@@ -44,10 +44,7 @@ import org.junit.Test;
  */
 public class DefaultErrorHandlerServletTest {
 
-    @Test
-    public void testJsonErrorResponse() throws IOException, ServletException {
-        // mock a request that accepts a json response
-        MockSlingHttpServletRequest req = new MockErrorSlingHttpServletRequest("application/json,*/*;q=0.9");
+    protected void assertJsonErrorResponse(MockSlingHttpServletRequest req) throws ServletException, IOException {
         MockSlingHttpServletResponse res = new MockErrorSlingHttpServletResponse(false);
 
         DefaultErrorHandlerServlet errorServlet = new DefaultErrorHandlerServlet();
@@ -69,7 +66,34 @@ public class DefaultErrorHandlerServletTest {
             assertTrue(jsonObj.getString("exception").contains("Test Exception"));
             assertEquals(Exception.class.getName(), jsonObj.getString("exceptionType"));
         }
+    }
 
+    @Test
+    public void testJsonErrorResponse() throws IOException, ServletException {
+        // mock a request that accepts a json response
+        MockSlingHttpServletRequest req = new MockErrorSlingHttpServletRequest("application/json,*/*;q=0.9");
+        assertJsonErrorResponse(req);
+    }
+
+    /**
+     * SLING-10615 - Verify that if the SlingConstants.ERROR_EXCEPTION_TYPE happens to be a
+     * Class object instead of a String, it still produces a valid error response
+     */
+    @Test
+    public void testJsonErrorResponseWithClassExceptionTypeAttributeValue() throws IOException, ServletException {
+        // mock a request that accepts a json response
+        MockSlingHttpServletRequest req = new MockErrorSlingHttpServletRequest("application/json,*/*;q=0.9") {
+
+            @Override
+            public Object getAttribute(String name) {
+                if (SlingConstants.ERROR_EXCEPTION_TYPE.equals(name)) {
+                    return Exception.class;
+                }
+                return super.getAttribute(name);
+            }
+
+        };
+        assertJsonErrorResponse(req);
     }
 
     @Test
@@ -172,7 +196,7 @@ public class DefaultErrorHandlerServletTest {
     /**
      * Mock impl to simulate an error request
      */
-    private static final class MockErrorSlingHttpServletRequest extends MockSlingHttpServletRequest {
+    private static class MockErrorSlingHttpServletRequest extends MockSlingHttpServletRequest {
         private String accept;
 
         private MockErrorSlingHttpServletRequest(String accept) {
