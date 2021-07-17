@@ -164,7 +164,15 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
                 jsonGenerator.write("servletName", servletName);
             }
 
-            String exceptionType = (String)req.getAttribute(SlingConstants.ERROR_EXCEPTION_TYPE);
+            // SLING-10615 - for backward compatibility check for either a
+            // String or Class value
+            Object exceptionTypeObj = req.getAttribute(SlingConstants.ERROR_EXCEPTION_TYPE);
+            String exceptionType = null;
+            if (exceptionTypeObj instanceof String) {
+                exceptionType = (String)exceptionTypeObj;
+            } else if (exceptionTypeObj instanceof Class) {
+                exceptionType = ((Class<?>)exceptionTypeObj).getName();
+            }
             if (exceptionType != null && !exceptionType.isEmpty()) {
                 jsonGenerator.write("exceptionType", exceptionType);
             }
