@@ -132,6 +132,7 @@ public class WebConsolePlugin extends HttpServlet {
             if (requestURI.endsWith("json")) {
                 ServletResolverResponse outputResponse = new ServletResolverResponse();
                 outputResponse.setWarningMsg(CONSOLE_PATH_WARNING.replace("<br/>", ""));
+                outputResponse.setMethod(method);
                 if (StringUtils.isNotBlank(url)) {
                     outputResponse.setDecomposedURL(new ServletResolverResponse.DecomposedURLServletResolverResponse(requestPathInfo));
                 }
