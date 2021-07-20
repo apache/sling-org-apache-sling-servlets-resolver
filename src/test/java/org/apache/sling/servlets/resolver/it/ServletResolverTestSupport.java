@@ -106,6 +106,7 @@ public class ServletResolverTestSupport extends TestSupport {
                 baseConfiguration(),
                 slingServlets(),
                 mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.converter").version("1.0.12"), // new Sling API dependency
+                mavenBundle().groupId("org.apache.johnzon").artifactId("johnzon-mapper").version("1.2.8"),
                 testBundle("bundle.filename"),
                 mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.scripting.spi").versionAsInProject(),
                 mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.servlet-helpers").versionAsInProject(),

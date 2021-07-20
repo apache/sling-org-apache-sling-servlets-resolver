@@ -235,6 +235,12 @@
             <version>2.23.4</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.johnzon</groupId>
+            <artifactId>johnzon-mapper</artifactId>
+            <version>1.2.8</version>
+            <scope>provided</scope>
+        </dependency>
         <!-- for ServiceUserMapped (SLING-4312) -->
         <dependency>
             <groupId>org.apache.sling</groupId>

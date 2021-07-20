@@ -34,6 +34,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.johnzon.mapper.Mapper;
+import org.apache.johnzon.mapper.MapperBuilder;
 import org.apache.sling.api.request.RequestPathInfo;
 import org.apache.sling.api.request.ResponseUtil;
 import org.apache.sling.api.resource.LoginException;
@@ -57,6 +59,10 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 
+/**
+ * If the servlet request path ends with .json, the information is returned in JSON format.
+ * Otherwise, an HTML code is returned.
+ */
 @SuppressWarnings("serial")
 @Component(service = {Servlet.class},
   configurationPid = ResolverConfig.PID,
@@ -74,6 +80,13 @@ public class WebConsolePlugin extends HttpServlet {
     private static final String PARAMETER_METHOD = "method";
 
     private static final String SERVICE_USER_CONSOLE = "console";
+    private static final String CONSOLE_PATH_WARNING =
+                    "Note that in a real Sling request, the path might vary depending on the existence of"
+                    + " resources that partially match it. "
+                    + "<br/>This utility does not take this into account and uses the first dot to split"
+                    + " between path and selectors/extension. "
+                    + "<br/>As a workaround, you can replace dots with underline characters, for example, when " +
+                            "testing such an URL.";
 
     @Reference(target="("+ServiceUserMapped.SUBSERVICENAME+"=" + SERVICE_USER_CONSOLE + ")")
     private ServiceUserMapped consoleServiceUserMapped; // NOSONAR
@@ -113,137 +126,165 @@ public class WebConsolePlugin extends HttpServlet {
             method = "GET";
         }
 
-        final String CONSOLE_PATH_WARNING =
-                "<em>"
-                + "Note that in a real Sling request, the path might vary depending on the existence of"
-                + " resources that partially match it."
-                + "<br/>This utility does not take this into account and uses the first dot to split"
-                + " between path and selectors/extension."
-                + "<br/>As a workaround, you can replace dots with underline characters, for example, when testing such an URL."
-                + "</em>";
-
+        String requestURI = request.getRequestURI();
         try (final ResourceResolver resourceResolver = resourceResolverFactory.getServiceResourceResolver(Collections.singletonMap(ResourceResolverFactory.SUBSERVICE, (Object)SERVICE_USER_CONSOLE))) {
 
-            final PrintWriter pw = response.getWriter();
-
-            pw.print("<form method='get'>");
-            pw.println("<table class='content' cellpadding='0' cellspacing='0' width='100%'>");
-
-            titleHtml(
-                    pw,
-                    "Servlet Resolver Test",
-                    "To check which servlet is responsible for rendering a response, enter a request path into " +
-                             "the field and click 'Resolve' to resolve it.");
-
-            tr(pw);
-            tdLabel(pw, "URL");
-            tdContent(pw);
-
-            pw.print("<input type='text' name='");
-            pw.print(PARAMETER_URL);
-            pw.print("' value='");
-            if ( url != null ) {
-                pw.print(ResponseUtil.escapeXml(url));
-            }
-            pw.println("' class='input' size='50'>");
-            closeTd(pw);
-            closeTr(pw);
-            closeTr(pw);
-
-            tr(pw);
-            tdLabel(pw, "Method");
-            tdContent(pw);
-            pw.print("<select name='");
-            pw.print(PARAMETER_METHOD);
-            pw.println("'>");
-            pw.println("<option value='GET'>GET</option>");
-            pw.println("<option value='POST'>POST</option>");
-            pw.println("</select>");
-            pw.println("&nbsp;&nbsp;<input type='submit' value='Resolve' class='submit'>");
-
-            closeTd(pw);
-            closeTr(pw);
-
-            if (StringUtils.isNotBlank(url)) {
-                tr(pw);
-                tdLabel(pw, "Decomposed URL");
-                tdContent(pw);
-                pw.println("<dl>");
-                pw.println("<dt>Path</dt>");
-                dd(pw);
-                pw.print(ResponseUtil.escapeXml(requestPathInfo.getResourcePath()));
-                pw.print("<br/>");
-                pw.print(CONSOLE_PATH_WARNING);
-                closeDd(pw);
-                pw.println("<dt>Selectors</dt>");
-                dd(pw);
-                if (requestPathInfo.getSelectors().length == 0) {
-                    pw.print("&lt;none&gt;");
-                } else {
-                    pw.print("[");
-                    pw.print(ResponseUtil.escapeXml(StringUtils.join(requestPathInfo.getSelectors(), ", ")));
-                    pw.print("]");
+            if (requestURI.endsWith("json")) {
+                ServletResolverResponse outputResponse = new ServletResolverResponse();
+                outputResponse.setWarningMsg(CONSOLE_PATH_WARNING.replace("<br/>", ""));
+                if (StringUtils.isNotBlank(url)) {
+                    outputResponse.setDecomposedURL(new ServletResolverResponse.DecomposedURLServletResolverResponse(requestPathInfo));
                 }
-                closeDd(pw);
-                pw.println("<dt>Extension</dt>");
-                dd(pw);
-                pw.print(ResponseUtil.escapeXml(requestPathInfo.getExtension()));
-                closeDd(pw);
-                pw.println("</dl>");
-                closeDd(pw);
-                pw.println("<dt>Suffix</dt>");
-                dd(pw);
-                pw.print(ResponseUtil.escapeXml(requestPathInfo.getSuffix()));
-                closeDd(pw);
-                pw.println("</dl>");
-                closeTd(pw);
-                closeTr(pw);
-            }
-
-            if (StringUtils.isNotBlank(requestPathInfo.getResourcePath())) {
-                final Collection<Resource> servlets;
-                Resource resource = resourceResolver.resolve(requestPathInfo.getResourcePath());
-                if (resource.adaptTo(Servlet.class) != null) {
-                    servlets = Collections.singleton(resource);
-                } else {
-                    final ResourceCollector locationUtil = ResourceCollector.create(
-                            resource,
-                            requestPathInfo.getExtension(),
-                            executionPaths.get(),
-                            defaultExtensions.get(),
-                            method,
-                            requestPathInfo.getSelectors());
-                    servlets = locationUtil.getServlets(resourceResolver, resolutionCache.getScriptEngineExtensions());
-                }
-                tr(pw);
-                tdLabel(pw, "Candidates");
-                tdContent(pw);
-
-                if (servlets == null || servlets.isEmpty()) {
-                    pw.println("Could not find a suitable servlet for this request!");
-                } else {
-                    // check for non-existing resources
-                    if (ResourceUtil.isNonExistingResource(resource)) {
-                        pw.println("The resource given by path '");
-                        pw.println(ResponseUtil.escapeXml(resource.getPath()));
-                        pw.println("' does not exist. Therefore no resource type could be determined!<br/>");
+                if (StringUtils.isNotBlank(requestPathInfo.getResourcePath())) {
+                    Resource resource = resourceResolver.resolve(requestPathInfo.getResourcePath());
+                    final Collection<Resource> servlets = resolveServlets(resourceResolver, requestPathInfo, resource,
+                            method);
+                    if (servlets != null) {
+                        outputResponse.setCandidates(new ServletResolverResponse.CandidateResourceResolverResponse(resource,
+                                servlets,
+                                this.executionPaths.get()));
                     }
-                    pw.print("Candidate servlets and scripts in order of preference for method ");
-                    pw.print(ResponseUtil.escapeXml(method));
-                    pw.println(":<br/>");
-                    pw.println("<ol class='servlets'>");
-                    outputServlets(pw, servlets.iterator());
-                    pw.println("</ol>");
                 }
-                closeTd(pw);
-                closeTr(pw);
-            }
+                response.setContentType("application/json");
+                final Mapper mapper = new MapperBuilder().build();
+                mapper.writeObject(outputResponse, response.getWriter());
+            } else {
+                final PrintWriter pw = response.getWriter();
 
-            pw.println("</table>");
-            pw.print("</form>");
+                printHTMLInputElements(pw, url);
+                if (StringUtils.isNotBlank(url)) {
+                    printHTMLDecomposedURLElement(pw, requestPathInfo);
+                }
+
+                if (StringUtils.isNotBlank(requestPathInfo.getResourcePath())) {
+                    Resource resource = resourceResolver.resolve(requestPathInfo.getResourcePath());
+                    final Collection<Resource> servlets = resolveServlets(resourceResolver, requestPathInfo, resource,
+                            method);
+
+                    tr(pw);
+                    tdLabel(pw, "Candidates");
+                    tdContent(pw);
+                    if (servlets == null || servlets.isEmpty()) {
+                        pw.println("Could not find a suitable servlet for this request!");
+                    } else {
+                        // check for non-existing resources
+                        if (ResourceUtil.isNonExistingResource(resource)) {
+                            pw.println("The resource given by path '");
+                            pw.println(ResponseUtil.escapeXml(resource.getPath()));
+                            pw.println("' does not exist. Therefore no resource type could be determined!<br/>");
+                        }
+                        pw.print("Candidate servlets and scripts in order of preference for method ");
+                        pw.print(ResponseUtil.escapeXml(method));
+                        pw.println(":<br/>");
+                        pw.println("<ol class='servlets'>");
+                        outputHTMLServlets(pw, servlets.iterator());
+                        pw.println("</ol>");
+                    }
+                    closeTd(pw);
+                    closeTr(pw);
+                }
+
+                pw.println("</table>");
+                pw.print("</form>");
+            }
         } catch (final LoginException e) {
             throw new ServletException(e);
         }
+    }
+
+    private void printHTMLInputElements(PrintWriter pw, String url) {
+        pw.print("<form method='get'>");
+        pw.println("<table class='content' cellpadding='0' cellspacing='0' width='100%'>");
+
+        titleHtml(
+                pw,
+                "Servlet Resolver Test",
+                "To check which servlet is responsible for rendering a response, enter a request path into " +
+                        "the field and click 'Resolve' to resolve it.");
+
+        tr(pw);
+        tdLabel(pw, "URL");
+        tdContent(pw);
+
+        pw.print("<input type='text' name='");
+        pw.print(PARAMETER_URL);
+        pw.print("' value='");
+        if ( url != null ) {
+            pw.print(ResponseUtil.escapeXml(url));
+        }
+        pw.println("' class='input' size='50'>");
+        closeTd(pw);
+        closeTr(pw);
+        closeTr(pw);
+
+        tr(pw);
+        tdLabel(pw, "Method");
+        tdContent(pw);
+        pw.print("<select name='");
+        pw.print(PARAMETER_METHOD);
+        pw.println("'>");
+        pw.println("<option value='GET'>GET</option>");
+        pw.println("<option value='POST'>POST</option>");
+        pw.println("</select>");
+        pw.println("&nbsp;&nbsp;<input type='submit' value='Resolve' class='submit'>");
+
+        closeTd(pw);
+        closeTr(pw);
+    }
+
+    private void printHTMLDecomposedURLElement(PrintWriter pw, RequestPathInfo requestPathInfo) {
+            tr(pw);
+            tdLabel(pw, "Decomposed URL");
+            tdContent(pw);
+            pw.println("<dl>");
+            pw.println("<dt>Path</dt>");
+            dd(pw);
+            pw.print(ResponseUtil.escapeXml(requestPathInfo.getResourcePath()));
+            pw.print("<br/>");
+            pw.print(String.format("<em>%s</em>", CONSOLE_PATH_WARNING));
+            closeDd(pw);
+            pw.println("<dt>Selectors</dt>");
+            dd(pw);
+            if (requestPathInfo.getSelectors().length == 0) {
+                pw.print("&lt;none&gt;");
+            } else {
+                pw.print("[");
+                pw.print(ResponseUtil.escapeXml(StringUtils.join(requestPathInfo.getSelectors(), ", ")));
+                pw.print("]");
+            }
+            closeDd(pw);
+            pw.println("<dt>Extension</dt>");
+            dd(pw);
+            pw.print(ResponseUtil.escapeXml(requestPathInfo.getExtension()));
+            closeDd(pw);
+            pw.println("</dl>");
+            closeDd(pw);
+            pw.println("<dt>Suffix</dt>");
+            dd(pw);
+            pw.print(ResponseUtil.escapeXml(requestPathInfo.getSuffix()));
+            closeDd(pw);
+            pw.println("</dl>");
+            closeTd(pw);
+            closeTr(pw);
+    }
+
+    private Collection<Resource> resolveServlets(ResourceResolver resourceResolver, RequestPathInfo requestPathInfo,
+                                                 Resource resource, String method) {
+        final Collection<Resource> servlets;
+        if (resource.adaptTo(Servlet.class) != null) {
+            servlets = Collections.singleton(resource);
+        } else {
+            final ResourceCollector locationUtil = ResourceCollector.create(
+                    resource,
+                    requestPathInfo.getExtension(),
+                    executionPaths.get(),
+                    defaultExtensions.get(),
+                    method,
+                    requestPathInfo.getSelectors());
+            servlets = locationUtil.getServlets(resourceResolver, resolutionCache.getScriptEngineExtensions());
+        }
+
+        return servlets;
     }
 
     private void tdContent(final PrintWriter pw) {
@@ -284,7 +325,7 @@ public class WebConsolePlugin extends HttpServlet {
         pw.println("<tr class='content'>");
     }
 
-    private void outputServlets(final PrintWriter pw, final Iterator<Resource> iterator) {
+    private void outputHTMLServlets(final PrintWriter pw, final Iterator<Resource> iterator) {
         while (iterator.hasNext()) {
             Resource candidateResource = iterator.next();
             Servlet candidate = candidateResource.adaptTo(Servlet.class);
