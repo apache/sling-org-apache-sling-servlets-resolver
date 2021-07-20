@@ -86,7 +86,7 @@ public class WebConsolePlugin extends HttpServlet {
                     + "<br/>This utility does not take this into account and uses the first dot to split"
                     + " between path and selectors/extension. "
                     + "<br/>As a workaround, you can replace dots with underline characters, for example, when " +
-                            "testing such an URL.";
+                            "testing such a URL.";
 
     @Reference(target="("+ServiceUserMapped.SUBSERVICENAME+"=" + SERVICE_USER_CONSOLE + ")")
     private ServiceUserMapped consoleServiceUserMapped; // NOSONAR
