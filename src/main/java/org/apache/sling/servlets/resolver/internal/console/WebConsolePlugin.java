@@ -18,24 +18,7 @@
  */
 package org.apache.sling.servlets.resolver.internal.console;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicReference;
-
-import javax.servlet.Servlet;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.lang3.StringUtils;
-import org.apache.johnzon.mapper.Mapper;
-import org.apache.johnzon.mapper.MapperBuilder;
 import org.apache.sling.api.request.RequestPathInfo;
 import org.apache.sling.api.request.ResponseUtil;
 import org.apache.sling.api.resource.LoginException;
@@ -58,6 +41,24 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
+
+import javax.servlet.Servlet;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * If the servlet request path ends with .json, the information is returned in JSON format.
@@ -128,30 +129,22 @@ public class WebConsolePlugin extends HttpServlet {
 
         String requestURI = request.getRequestURI();
         try (final ResourceResolver resourceResolver = resourceResolverFactory.getServiceResourceResolver(Collections.singletonMap(ResourceResolverFactory.SUBSERVICE, (Object)SERVICE_USER_CONSOLE))) {
+            final PrintWriter pw = response.getWriter();
 
             if (requestURI.endsWith("json")) {
-                ServletResolverResponse outputResponse = new ServletResolverResponse();
-                outputResponse.setWarningMsg(CONSOLE_PATH_WARNING.replace("<br/>", ""));
-                outputResponse.setMethod(method);
+                pw.println("{");
                 if (StringUtils.isNotBlank(url)) {
-                    outputResponse.setDecomposedURL(new ServletResolverResponse.DecomposedURLServletResolverResponse(requestPathInfo));
+                    printJSONDecomposedURLElement(pw, requestPathInfo);
                 }
                 if (StringUtils.isNotBlank(requestPathInfo.getResourcePath())) {
-                    Resource resource = resourceResolver.resolve(requestPathInfo.getResourcePath());
-                    final Collection<Resource> servlets = resolveServlets(resourceResolver, requestPathInfo, resource,
-                            method);
-                    if (servlets != null) {
-                        outputResponse.setCandidates(new ServletResolverResponse.CandidateResourceResolverResponse(resource,
-                                servlets,
-                                this.executionPaths.get()));
-                    }
+                    printJSONCandidatesElement(pw, resourceResolver, requestPathInfo, method);
                 }
-                response.setContentType("application/json");
-                final Mapper mapper = new MapperBuilder().build();
-                mapper.writeObject(outputResponse, response.getWriter());
-            } else {
-                final PrintWriter pw = response.getWriter();
+                pw.printf("  \"warningMsg\" : \"%s\",%n", CONSOLE_PATH_WARNING.replace("<br/>", ""));
+                pw.printf("  \"method\" : \"%s\"%n", method);
+                pw.print("}");
 
+                response.setContentType("application/json");
+            } else {
                 printHTMLInputElements(pw, url);
                 if (StringUtils.isNotBlank(url)) {
                     printHTMLDecomposedURLElement(pw, requestPathInfo);
@@ -191,6 +184,99 @@ public class WebConsolePlugin extends HttpServlet {
         } catch (final LoginException e) {
             throw new ServletException(e);
         }
+    }
+
+    /**
+     * Format an array.
+     */
+    private String formatArrayAsJSON(final String[] array) {
+        if ( array == null || array.length == 0 ) {
+            return "[]";
+        }
+        final StringBuilder sb = new StringBuilder("[");
+        boolean first = true;
+        for(final String s : array) {
+            if ( !first ) {
+                sb.append(", ");
+            }
+            first = false;
+            sb.append("\"");
+            sb.append(s);
+            sb.append("\"");
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    private Map<String, List<String>> getAllowedAndDeniedServlets(Collection<Resource> servlets) {
+        List<String> allowedServlets = new ArrayList<>();
+        List<String> deniedServlets = new ArrayList<>();
+        for (Resource candidateResource : servlets) {
+            Servlet candidate = candidateResource.adaptTo(Servlet.class);
+            if (candidate != null) {
+                final boolean allowed = SlingServletResolver.isPathAllowed(candidateResource.getPath(),
+                        this.executionPaths.get());
+
+                String finalCandidate;
+                if (candidate instanceof SlingScript) {
+                    finalCandidate = candidateResource.getPath();
+                } else {
+                    final boolean isOptingServlet = candidate instanceof OptingServlet;
+                    finalCandidate = candidate.getClass().getName();
+                    if (isOptingServlet) {
+                        finalCandidate += " (OptingServlet)";
+                    }
+                }
+
+                if (allowed) {
+                    allowedServlets.add(finalCandidate);
+                } else {
+                    deniedServlets.add(finalCandidate);
+                }
+            }
+        }
+
+        return new HashMap<String, List<String>>(){
+            {
+                put("allowed", allowedServlets);
+                put("denied", deniedServlets);
+            }
+        };
+    }
+
+    private void printJSONDecomposedURLElement(PrintWriter pw, RequestPathInfo requestPathInfo) {
+        pw.println("  \"decomposedURL\" : {");
+        pw.printf("    \"path\" : \"%s\",%n", StringUtils.defaultIfEmpty(requestPathInfo.getResourcePath(), ""));
+        pw.printf("    \"extension\" : \"%s\",%n", StringUtils.defaultIfEmpty(requestPathInfo.getExtension(), ""));
+        pw.printf("    \"selectors\" : %s,%n",
+                StringUtils.defaultIfEmpty(formatArrayAsJSON(requestPathInfo.getSelectors()), ""));
+        pw.printf("    \"suffix\" : \"%s\"%n", StringUtils.defaultIfEmpty(requestPathInfo.getSuffix(), ""));
+        pw.println("  },");
+    }
+
+    private void printJSONCandidatesElement(PrintWriter pw, ResourceResolver resourceResolver,
+                                            RequestPathInfo requestPathInfo, String method) {
+        Resource resource = resourceResolver.resolve(requestPathInfo.getResourcePath());
+        final Collection<Resource> servlets = resolveServlets(resourceResolver, requestPathInfo, resource,
+                method);
+        pw.println("  \"candidates\" : {");
+        if (servlets != null) {
+            // check for non-existing resources
+            if (ResourceUtil.isNonExistingResource(resource)) {
+                pw.printf("    \"errorMsg\" : \"%s\",%n", new String().format("The resource given by path " +
+                        "'%s' does not exist. Therefore no " +
+                        "resource type could be determined!", resource.getPath()));
+            }
+
+            Map<String, List<String>> allowedAndDeniedServlets = getAllowedAndDeniedServlets(servlets);
+            List<String> allowedServlets = allowedAndDeniedServlets.getOrDefault("allowed", new ArrayList<>());
+            List<String> deniedServlets = allowedAndDeniedServlets.getOrDefault("denied", new ArrayList<>());
+            pw.printf("    \"allowedServlets\" : %s,%n",
+                    formatArrayAsJSON(allowedServlets.toArray(new String[0])));
+            pw.printf("    \"deniedServlets\" : %s%n",
+                    formatArrayAsJSON(deniedServlets.toArray(new String[0])));
+        }
+        pw.print("  },");
     }
 
     private void printHTMLInputElements(PrintWriter pw, String url) {
