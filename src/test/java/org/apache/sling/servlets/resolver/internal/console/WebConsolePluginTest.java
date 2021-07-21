@@ -22,7 +22,9 @@ import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.servlets.resolver.internal.resolution.ResolutionCache;
+import org.hamcrest.CoreMatchers;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -44,6 +46,7 @@ import java.util.Map;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 public class WebConsolePluginTest {
     @Mock
@@ -118,5 +121,69 @@ public class WebConsolePluginTest {
                 assertThat(json, hasJsonPath(k));
             }
         });
+    }
+
+    @Test
+    public void printHTMLFormat() throws Exception {
+        // Mock resource resolver
+        ResourceResolver resourceResolver = Mockito.mock(ResourceResolver.class);
+        Resource resource = Mockito.mock(Resource.class);
+        Servlet servlet = Mockito.mock(Servlet.class);
+        Mockito.when(resource.adaptTo(Servlet.class)).thenReturn(servlet);
+        Mockito.when(resourceResolver.resolve(Mockito.anyString())).thenReturn(resource);
+        Mockito.when(resourceResolverFactory.getServiceResourceResolver(Mockito.anyMap())).thenReturn(resourceResolver);
+
+        // Mock request calls
+        Mockito.when(request.getParameter("url")).thenReturn("/test.1.json");
+        Mockito.when(request.getParameter("method")).thenReturn("GET");
+
+        // HTML output
+        Mockito.when(request.getRequestURI()).thenReturn("/path/servletresolver");
+
+        webConsolePlugin.service(request, response);
+
+        String htmlString = stringWriter.toString();
+
+        final String expectedInputHTML = "<tr class='content'>\n" +
+                "<td class='content'>URL</td>\n" +
+                "<td class='content' colspan='2'><input type='text' name='url' value='/test.1.json' class='input' " +
+                "size='50'>\n" +
+                "</td></tr>\n" +
+                "</tr>\n" +
+                "<tr class='content'>\n" +
+                "<td class='content'>Method</td>\n" +
+                "<td class='content' colspan='2'><select name='method'>\n" +
+                "<option value='GET'>GET</option>\n" +
+                "<option value='POST'>POST</option>\n" +
+                "</select>\n" +
+                "&nbsp;&nbsp;<input type='submit' value='Resolve' class='submit'>\n" +
+                "</td></tr>";
+        assertThat(htmlString, CoreMatchers.containsString(expectedInputHTML));
+
+        final String expectedDecomposedURLHTML = "<tr class='content'>\n" +
+                "<td class='content'>Decomposed URL</td>\n" +
+                "<td class='content' colspan='2'><dl>\n" +
+                "<dt>Path</dt>\n" +
+                "<dd>\n" +
+                "/test<br/><em>Note that in a real Sling request, the path might vary depending on the existence of " +
+                "resources that partially match it. <br/>This utility does not take this into account and uses the " +
+                "first dot to split between path and selectors/extension. <br/>As a workaround, you can replace dots " +
+                "with underline characters, for example, when testing such a URL.</em></dd><dt>Selectors</dt>\n" +
+                "<dd>\n" +
+                "[1]</dd><dt>Extension</dt>\n" +
+                "<dd>\n" +
+                "json</dd></dl>\n" +
+                "</dd><dt>Suffix</dt>\n" +
+                "<dd>\n" +
+                "null</dd></dl>\n" +
+                "</td></tr>";
+        assertThat(htmlString, CoreMatchers.containsString(expectedDecomposedURLHTML));
+
+        final String expectedCandidatesHTML = "<tr class='content'>\n" +
+                "<td class='content'>Candidates</td>\n" +
+                "<td class='content' colspan='2'>Candidate servlets and scripts in order of preference for method " +
+                "GET:<br/>\n" +
+                "<ol class='servlets'>\n";
+        assertThat(htmlString, CoreMatchers.containsString(expectedCandidatesHTML));
     }
 }
