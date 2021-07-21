@@ -21,6 +21,7 @@ package org.apache.sling.servlets.resolver.internal.console;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
+import org.apache.sling.servlets.resolver.internal.ResolverConfig;
 import org.apache.sling.servlets.resolver.internal.resolution.ResolutionCache;
 import org.hamcrest.CoreMatchers;
 import org.junit.After;
@@ -45,6 +46,7 @@ import java.util.Map;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 public class WebConsolePluginTest {
     @Mock
@@ -64,7 +66,10 @@ public class WebConsolePluginTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
-
+        ResolverConfig resolverConfig = Mockito.mock(ResolverConfig.class);
+        Mockito.when(resolverConfig.servletresolver_defaultExtensions()).thenReturn(new String[]{"html"});
+        Mockito.when(resolverConfig.servletresolver_paths()).thenReturn(new String[]{"/path"});
+        webConsolePlugin.activate(resolverConfig);
         // mock http responses
         stringWriter = new StringWriter();
         writer = new PrintWriter(stringWriter);
@@ -77,12 +82,13 @@ public class WebConsolePluginTest {
     }
 
     @Test
-    public void printJsonFormat() throws Exception {
+    public void printJsonFormatFull() throws Exception {
         // Mock resource resolver
         ResourceResolver resourceResolver = Mockito.mock(ResourceResolver.class);
         Resource resource = Mockito.mock(Resource.class);
         Servlet servlet = Mockito.mock(Servlet.class);
         Mockito.when(resource.adaptTo(Servlet.class)).thenReturn(servlet);
+        Mockito.when(resource.getPath()).thenReturn("/path");
         Mockito.when(resourceResolver.resolve(Mockito.anyString())).thenReturn(resource);
         Mockito.when(resourceResolverFactory.getServiceResourceResolver(Mockito.anyMap())).thenReturn(resourceResolver);
 
@@ -122,7 +128,83 @@ public class WebConsolePluginTest {
     }
 
     @Test
-    public void printHTMLFormat() throws Exception {
+    public void printJsonFormatEmptyURL() throws Exception {
+        // Mock resource resolver
+        ResourceResolver resourceResolver = Mockito.mock(ResourceResolver.class);
+        Resource resource = Mockito.mock(Resource.class);
+        Mockito.when(resource.adaptTo(Servlet.class)).thenReturn(null);
+        Mockito.when(resourceResolver.resolve(Mockito.anyString())).thenReturn(resource);
+        Mockito.when(resourceResolverFactory.getServiceResourceResolver(Mockito.anyMap())).thenReturn(resourceResolver);
+
+        // Mock request calls
+        Mockito.when(request.getParameter("url")).thenReturn("");
+        Mockito.when(request.getParameter("method")).thenReturn("GET");
+
+        // JSON output
+        Mockito.when(request.getRequestURI()).thenReturn("/path/servletresolver.json");
+
+        webConsolePlugin.service(request, response);
+
+        Mockito.verify(response).setContentType("application/json");
+
+        String jsonString = stringWriter.toString();
+        String json = Json.createReader(new StringReader(jsonString)).readObject().toString();
+
+        Map<String, Object> expectedJsonPaths = new HashMap(){{
+            put("$.method", "GET");
+        }};
+
+        expectedJsonPaths.forEach((k, v) -> {
+            if (v != null) {
+                assertThat(json, hasJsonPath(k, equalTo(v)));
+            } else {
+                assertThat(json, hasJsonPath(k));
+            }
+        });
+    }
+
+    @Test
+    public void printJsonFormatDenyPaths() throws Exception {
+        // Mock resource resolver
+        ResourceResolver resourceResolver = Mockito.mock(ResourceResolver.class);
+        Resource resource = Mockito.mock(Resource.class);
+        Servlet servlet = Mockito.mock(Servlet.class);
+        Mockito.when(resource.adaptTo(Servlet.class)).thenReturn(servlet);
+        Mockito.when(resource.getPath()).thenReturn("/denied");
+        Mockito.when(resourceResolver.resolve(Mockito.anyString())).thenReturn(resource);
+        Mockito.when(resourceResolverFactory.getServiceResourceResolver(Mockito.anyMap())).thenReturn(resourceResolver);
+
+        // Mock request calls
+        Mockito.when(request.getParameter("url")).thenReturn("/denied");
+        Mockito.when(request.getParameter("method")).thenReturn("GET");
+
+        // JSON output
+        Mockito.when(request.getRequestURI()).thenReturn("/path/servletresolver.json");
+
+        webConsolePlugin.service(request, response);
+
+        Mockito.verify(response).setContentType("application/json");
+
+        String jsonString = stringWriter.toString();
+        String json = Json.createReader(new StringReader(jsonString)).readObject().toString();
+
+        Map<String, Object> expectedJsonPaths = new HashMap(){{
+            put("$.candidates", null);
+            put("$.candidates.allowedServlets.length()", 0);
+            put("$.candidates.deniedServlets.length()", 1);
+        }};
+
+        expectedJsonPaths.forEach((k, v) -> {
+            if (v != null) {
+                assertThat(json, hasJsonPath(k, equalTo(v)));
+            } else {
+                assertThat(json, hasJsonPath(k));
+            }
+        });
+    }
+
+    @Test
+    public void printHTMLFormatFull() throws Exception {
         // Mock resource resolver
         ResourceResolver resourceResolver = Mockito.mock(ResourceResolver.class);
         Resource resource = Mockito.mock(Resource.class);
@@ -183,5 +265,74 @@ public class WebConsolePluginTest {
                 "GET:<br/>\n" +
                 "<ol class='servlets'>\n";
         assertThat(htmlString, CoreMatchers.containsString(expectedCandidatesHTML));
+    }
+
+    @Test
+    public void printHTMLFormatEmptyURL() throws Exception {
+        // Mock resource resolver
+        ResourceResolver resourceResolver = Mockito.mock(ResourceResolver.class);
+        Resource resource = Mockito.mock(Resource.class);
+        Mockito.when(resource.adaptTo(Servlet.class)).thenReturn(null);
+        Mockito.when(resourceResolver.resolve(Mockito.anyString())).thenReturn(resource);
+        Mockito.when(resourceResolverFactory.getServiceResourceResolver(Mockito.anyMap())).thenReturn(resourceResolver);
+
+        // Mock request calls
+        Mockito.when(request.getParameter("url")).thenReturn("");
+        Mockito.when(request.getParameter("method")).thenReturn("GET");
+
+        // HTML output
+        Mockito.when(request.getRequestURI()).thenReturn("/path/servletresolver");
+
+        webConsolePlugin.service(request, response);
+
+        String htmlString = stringWriter.toString();
+        assertEquals("<form method='get'><table class='content' cellpadding='0' cellspacing='0' width='100%'>\n" +
+                "<tr class='content'>\n" +
+                "<th colspan='3' class='content container'>Servlet Resolver Test</th>\n" +
+                "</tr>\n" +
+                "<tr class='content'>\n" +
+                "<td colspan='3' class='content'>To check which servlet is responsible for rendering a response, " +
+                "enter a request path into the field and click &apos;Resolve&apos; to resolve it.</th>\n" +
+                "</tr>\n" +
+                "<tr class='content'>\n" +
+                "<td class='content'>URL</td>\n" +
+                "<td class='content' colspan='2'><input type='text' name='url' value='' class='input' size='50'>\n" +
+                "</td></tr>\n" +
+                "</tr>\n" +
+                "<tr class='content'>\n" +
+                "<td class='content'>Method</td>\n" +
+                "<td class='content' colspan='2'><select name='method'>\n" +
+                "<option value='GET'>GET</option>\n" +
+                "<option value='POST'>POST</option>\n" +
+                "</select>\n" +
+                "&nbsp;&nbsp;<input type='submit' value='Resolve' class='submit'>\n" +
+                "</td></tr>\n" +
+                "</table>\n" +
+                "</form>", htmlString);
+    }
+
+    @Test
+    public void printHTMLFormatDenyPaths() throws Exception {
+        // Mock resource resolver
+        ResourceResolver resourceResolver = Mockito.mock(ResourceResolver.class);
+        Resource resource = Mockito.mock(Resource.class);
+        Servlet servlet = Mockito.mock(Servlet.class);
+        Mockito.when(resource.adaptTo(Servlet.class)).thenReturn(servlet);
+        Mockito.when(resource.getPath()).thenReturn("/denied");
+        Mockito.when(resourceResolver.resolve(Mockito.anyString())).thenReturn(resource);
+        Mockito.when(resourceResolverFactory.getServiceResourceResolver(Mockito.anyMap())).thenReturn(resourceResolver);
+
+        // Mock request calls
+        Mockito.when(request.getParameter("url")).thenReturn("/denied");
+        Mockito.when(request.getParameter("method")).thenReturn("GET");
+
+        // HTML output
+        Mockito.when(request.getRequestURI()).thenReturn("/path/servletresolver");
+        webConsolePlugin.service(request, response);
+
+        String htmlString = stringWriter.toString();
+        final String expectedDeniedElement = "<ol class='servlets'>\n" +
+                "<li><del>";
+        assertThat(htmlString, CoreMatchers.containsString(expectedDeniedElement));
     }
 }
