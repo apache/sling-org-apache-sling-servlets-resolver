@@ -141,7 +141,7 @@ public class WebConsolePlugin extends HttpServlet {
                     printJSONCandidatesElement(pw, resourceResolver, requestPathInfo, method);
                 }
                 pw.printf("  \"warningMsg\" : \"%s\",%n", CONSOLE_PATH_WARNING.replace("<br/>", ""));
-                pw.printf("  \"method\" : \"%s\"%n", method);
+                pw.printf("  \"method\" : \"%s\"%n", StringEscapeUtils.escapeJson(method));
                 pw.print("}");
 
                 response.setContentType("application/json");
@@ -237,12 +237,11 @@ public class WebConsolePlugin extends HttpServlet {
             }
         }
 
-        return new HashMap<String, List<String>>(){
-            {
-                put("allowed", allowedServlets);
-                put("denied", deniedServlets);
-            }
-        };
+        Map<String, List<String>> result = new HashMap<>();
+        result.put("allowed", allowedServlets);
+        result.put("denied", deniedServlets);
+
+        return result;
     }
 
     private void printJSONDecomposedURLElement(PrintWriter pw, RequestPathInfo requestPathInfo) {
@@ -267,7 +266,7 @@ public class WebConsolePlugin extends HttpServlet {
         if (servlets != null) {
             // check for non-existing resources
             if (ResourceUtil.isNonExistingResource(resource)) {
-                pw.printf("    \"errorMsg\" : \"%s\",%n", new String().format("The resource given by path " +
+                pw.printf("    \"errorMsg\" : \"%s\",%n", String.format("The resource given by path " +
                         "'%s' does not exist. Therefore no " +
                         "resource type could be determined!", StringEscapeUtils.escapeJson(resource.getPath())));
             }
@@ -423,22 +422,22 @@ public class WebConsolePlugin extends HttpServlet {
             if (candidate != null) {
                 final boolean allowed = SlingServletResolver.isPathAllowed(candidateResource.getPath(), this.executionPaths.get());
                 pw.print("<li>");
-                if ( !allowed ) {
-                    pw.print("<del>");
-                }
 
+                String candidateStr;
                 if (candidate instanceof SlingScript) {
-                    pw.print(ResponseUtil.escapeXml(candidateResource.getPath()));
+                    candidateStr = ResponseUtil.escapeXml(candidateResource.getPath());
                 } else {
                     final boolean isOptingServlet = candidate instanceof OptingServlet;
-                    pw.print(ResponseUtil.escapeXml((candidate.getClass().getName())));
+                    candidateStr = ResponseUtil.escapeXml((candidate.getClass().getName()));
                     if ( isOptingServlet ) {
-                        pw.print(" (OptingServlet)");
+                        candidateStr +=" (OptingServlet)";
                     }
                 }
 
                 if ( !allowed ) {
-                    pw.print("</del>");
+                    pw.print("<del>" + candidateStr + "</del>");
+                } else {
+                    pw.print(candidateStr);
                 }
                 pw.println("</li>");
             }

@@ -24,7 +24,6 @@ import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.servlets.resolver.internal.resolution.ResolutionCache;
 import org.hamcrest.CoreMatchers;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -46,7 +45,6 @@ import java.util.Map;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
 
 public class WebConsolePluginTest {
     @Mock
