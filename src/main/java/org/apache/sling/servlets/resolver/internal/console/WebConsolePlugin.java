@@ -18,6 +18,7 @@
  */
 package org.apache.sling.servlets.resolver.internal.console;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.request.RequestPathInfo;
 import org.apache.sling.api.request.ResponseUtil;
@@ -201,7 +202,7 @@ public class WebConsolePlugin extends HttpServlet {
             }
             first = false;
             sb.append("\"");
-            sb.append(s);
+            sb.append(StringEscapeUtils.escapeJson(s));
             sb.append("\"");
         }
         sb.append("]");
@@ -246,11 +247,14 @@ public class WebConsolePlugin extends HttpServlet {
 
     private void printJSONDecomposedURLElement(PrintWriter pw, RequestPathInfo requestPathInfo) {
         pw.println("  \"decomposedURL\" : {");
-        pw.printf("    \"path\" : \"%s\",%n", StringUtils.defaultIfEmpty(requestPathInfo.getResourcePath(), ""));
-        pw.printf("    \"extension\" : \"%s\",%n", StringUtils.defaultIfEmpty(requestPathInfo.getExtension(), ""));
+        pw.printf("    \"path\" : \"%s\",%n",
+                StringEscapeUtils.escapeJson(StringUtils.defaultIfEmpty(requestPathInfo.getResourcePath(), "")));
+        pw.printf("    \"extension\" : \"%s\",%n",
+                StringEscapeUtils.escapeJson(StringUtils.defaultIfEmpty(requestPathInfo.getExtension(), "")));
         pw.printf("    \"selectors\" : %s,%n",
                 StringUtils.defaultIfEmpty(formatArrayAsJSON(requestPathInfo.getSelectors()), ""));
-        pw.printf("    \"suffix\" : \"%s\"%n", StringUtils.defaultIfEmpty(requestPathInfo.getSuffix(), ""));
+        pw.printf("    \"suffix\" : \"%s\"%n",
+                StringEscapeUtils.escapeJson(StringUtils.defaultIfEmpty(requestPathInfo.getSuffix(), "")));
         pw.println("  },");
     }
 
@@ -265,7 +269,7 @@ public class WebConsolePlugin extends HttpServlet {
             if (ResourceUtil.isNonExistingResource(resource)) {
                 pw.printf("    \"errorMsg\" : \"%s\",%n", new String().format("The resource given by path " +
                         "'%s' does not exist. Therefore no " +
-                        "resource type could be determined!", resource.getPath()));
+                        "resource type could be determined!", StringEscapeUtils.escapeJson(resource.getPath())));
             }
 
             Map<String, List<String>> allowedAndDeniedServlets = getAllowedAndDeniedServlets(servlets);
