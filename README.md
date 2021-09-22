@@ -6,5 +6,5 @@
 
 This module is part of the [Apache Sling](https://sling.apache.org) project.
 
-Bundle implementing the Sling API ServletResolver. See the [servlets] (https://sling.apache.org/documentation/the-sling-engine/servlets.html) and [scripts] (https://sling.apache.org/documentation/bundles/scripting.html) documentation for how this works.
+Bundle implementing the Sling API ServletResolver. See the [servlets](https://sling.apache.org/documentation/the-sling-engine/servlets.html) and [scripts](https://sling.apache.org/documentation/bundles/scripting.html) documentation for how this works.
 
