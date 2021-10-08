@@ -187,4 +187,12 @@ public class ScriptResource extends AbstractResource {
     public boolean isResourceType(String resourceType) {
         return this.getActiveResource().isResourceType(resourceType);
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName()
+            + ", type=" + getResourceType()
+            + ", superType=" + getResourceSuperType()
+            + ", path=" + getPath();
+    }
 }
