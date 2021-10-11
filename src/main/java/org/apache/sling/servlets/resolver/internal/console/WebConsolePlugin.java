@@ -18,6 +18,25 @@
  */
 package org.apache.sling.servlets.resolver.internal.console;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+
+import javax.servlet.Servlet;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.request.RequestPathInfo;
@@ -35,31 +54,16 @@ import org.apache.sling.engine.impl.request.SlingRequestPathInfo;
 import org.apache.sling.serviceusermapping.ServiceUserMapped;
 import org.apache.sling.servlets.resolver.internal.ResolverConfig;
 import org.apache.sling.servlets.resolver.internal.SlingServletResolver;
+import org.apache.sling.servlets.resolver.internal.bundle.BundledScriptServlet;
 import org.apache.sling.servlets.resolver.internal.helper.ResourceCollector;
 import org.apache.sling.servlets.resolver.internal.resolution.ResolutionCache;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.Constants;
+import org.osgi.framework.FrameworkUtil;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
-
-import javax.servlet.Servlet;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * If the servlet request path ends with .json, the information is returned in JSON format.
@@ -218,16 +222,7 @@ public class WebConsolePlugin extends HttpServlet {
                 final boolean allowed = SlingServletResolver.isPathAllowed(candidateResource.getPath(),
                         this.executionPaths.get());
 
-                String finalCandidate;
-                if (candidate instanceof SlingScript) {
-                    finalCandidate = candidateResource.getPath();
-                } else {
-                    final boolean isOptingServlet = candidate instanceof OptingServlet;
-                    finalCandidate = candidate.getClass().getName();
-                    if (isOptingServlet) {
-                        finalCandidate += " (OptingServlet)";
-                    }
-                }
+                String finalCandidate = getServletDetails(candidate);
 
                 if (allowed) {
                     allowedServlets.add(finalCandidate);
@@ -423,17 +418,7 @@ public class WebConsolePlugin extends HttpServlet {
                 final boolean allowed = SlingServletResolver.isPathAllowed(candidateResource.getPath(), this.executionPaths.get());
                 pw.print("<li>");
 
-                String candidateStr;
-                if (candidate instanceof SlingScript) {
-                    candidateStr = ResponseUtil.escapeXml(candidateResource.getPath());
-                } else {
-                    final boolean isOptingServlet = candidate instanceof OptingServlet;
-                    candidateStr = ResponseUtil.escapeXml((candidate.getClass().getName()));
-                    if ( isOptingServlet ) {
-                        candidateStr +=" (OptingServlet)";
-                    }
-                }
-
+                String candidateStr = getServletDetails(candidate);
                 if ( !allowed ) {
                     pw.print("<del>" + candidateStr + "</del>");
                 } else {
@@ -442,6 +427,37 @@ public class WebConsolePlugin extends HttpServlet {
                 pw.println("</li>");
             }
         }
+    }
+
+    private String getServletDetails(Servlet servlet) {
+        StringBuilder details = new StringBuilder();
+        if (servlet instanceof SlingScript) {
+            SlingScript script = SlingScript.class.cast(servlet);
+            details.append(ResponseUtil.escapeXml(script.getScriptResource().getPath()));
+            details.append(" (Resource Script)");
+        } else {
+            final Bundle bundle;
+            if (servlet instanceof BundledScriptServlet) {
+                BundledScriptServlet script = BundledScriptServlet.class.cast(servlet);
+                bundle = script.getBundledRenderUnit().getBundle();
+                details.append(ResponseUtil.escapeXml(script.getBundledRenderUnit().getName()));
+                details.append(" (Bundled Script)");
+            } else {
+                final boolean isOptingServlet = servlet instanceof OptingServlet;
+                details.append(ResponseUtil.escapeXml(servlet.getClass().getName()));
+                if (isOptingServlet) {
+                    details.append(" (OptingServlet)");
+                } else {
+                    details.append(" (Servlet)");
+                }
+                bundle = FrameworkUtil.getBundle(servlet.getClass());
+            }
+            if (bundle != null) {
+                details.append(" in bundle '").append(bundle.getSymbolicName()).append("' (").append(bundle.getBundleId()).append(")");
+            }
+        }
+        
+        return details.toString();
     }
 
     private void titleHtml(final PrintWriter pw, final String title, final String description) {
