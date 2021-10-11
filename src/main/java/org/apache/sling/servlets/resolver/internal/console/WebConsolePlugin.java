@@ -436,13 +436,15 @@ public class WebConsolePlugin extends HttpServlet {
             details.append(ResponseUtil.escapeXml(script.getScriptResource().getPath()));
             details.append(" (Resource Script)");
         } else {
-            final boolean isOptingServlet = servlet instanceof OptingServlet;
-            details.append(ResponseUtil.escapeXml(servlet.getClass().getName()));
-            if (isOptingServlet) {
-                details.append(" (OptingServlet)");
+            if (servlet instanceof BundledScriptServlet) {
+                BundledScriptServlet script = BundledScriptServlet.class.cast(servlet);
+                details.append(ResponseUtil.escapeXml(script.getBundledRenderUnit().getName()));
+                details.append(" (Bundled Script)");
             } else {
-                if (servlet instanceof BundledScriptServlet) {
-                    details.append(" (Bundled Script)");
+                final boolean isOptingServlet = servlet instanceof OptingServlet;
+                details.append(ResponseUtil.escapeXml(servlet.getClass().getName()));
+                if (isOptingServlet) {
+                    details.append(" (OptingServlet)");
                 } else {
                     details.append(" (Servlet)");
                 }
