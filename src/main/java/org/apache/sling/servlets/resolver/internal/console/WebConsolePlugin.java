@@ -436,8 +436,10 @@ public class WebConsolePlugin extends HttpServlet {
             details.append(ResponseUtil.escapeXml(script.getScriptResource().getPath()));
             details.append(" (Resource Script)");
         } else {
+            final Bundle bundle;
             if (servlet instanceof BundledScriptServlet) {
                 BundledScriptServlet script = BundledScriptServlet.class.cast(servlet);
+                bundle = script.getBundledRenderUnit().getBundle();
                 details.append(ResponseUtil.escapeXml(script.getBundledRenderUnit().getName()));
                 details.append(" (Bundled Script)");
             } else {
@@ -448,12 +450,13 @@ public class WebConsolePlugin extends HttpServlet {
                 } else {
                     details.append(" (Servlet)");
                 }
+                bundle = FrameworkUtil.getBundle(servlet.getClass());
+            }
+            if (bundle != null) {
+                details.append(" in bundle '").append(bundle.getSymbolicName()).append("' (").append(bundle.getBundleId()).append(")");
             }
         }
-        Bundle bundle = FrameworkUtil.getBundle(servlet.getClass());
-        if (bundle != null) {
-            details.append(" in bundle ").append(bundle.getSymbolicName()).append(" (").append(bundle.getBundleId()).append(")");
-        }
+        
         return details.toString();
     }
 
