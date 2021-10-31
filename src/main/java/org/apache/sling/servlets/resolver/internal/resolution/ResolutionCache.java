@@ -40,8 +40,12 @@ import org.apache.sling.api.resource.path.Path;
 import org.apache.sling.servlets.resolver.internal.ResolverConfig;
 import org.apache.sling.servlets.resolver.internal.helper.AbstractResourceCollector;
 import org.apache.sling.servlets.resolver.jmx.SlingServletResolverCacheMBean;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
+import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.ServiceEvent;
+import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -61,7 +65,7 @@ import org.slf4j.LoggerFactory;
 @Component(configurationPid = ResolverConfig.PID,
            service = {ResolutionCache.class})
 public class ResolutionCache
-    implements EventHandler, ResourceChangeListener, ExternalResourceChangeListener {
+    implements EventHandler, ResourceChangeListener, ExternalResourceChangeListener, ServiceListener {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -88,10 +92,11 @@ public class ResolutionCache
 
     /**
      * Activate this component.
+     * @throws InvalidSyntaxException
      */
     @Activate
     protected void activate(final BundleContext context,
-            final ResolverConfig config) {
+            final ResolverConfig config) throws InvalidSyntaxException {
         // create cache - if a cache size is configured
         this.cacheSize = config.servletresolver_cacheSize();
         if (this.cacheSize > 5) {
@@ -119,7 +124,6 @@ public class ResolutionCache
         // the event listener is for updating the script engine extensions
         props.put(EventConstants.EVENT_TOPIC, new String[] {
                 "javax/script/ScriptEngineFactory/*",
-                "org/apache/sling/api/adapter/AdapterFactory/*",
                 "org/apache/sling/scripting/core/BindingsValuesProvider/*" });
 
         this.eventHandlerRegistration.set(context.registerService(EventHandler.class, this, props));
@@ -139,13 +143,15 @@ public class ResolutionCache
             this.resourceListenerRegistration.set(context.registerService(ResourceChangeListener.class, this, listenerProps));
         }
 
+        context.addServiceListener(this, "(".concat(Constants.OBJECTCLASS).concat("=org.apache.sling.adapter.Adaption)"));
+
         updateScriptEngineExtensions();
     }
 
     @Modified
     protected void modified(final BundleContext context,
-            final ResolverConfig config) {
-        this.deactivate();
+            final ResolverConfig config) throws InvalidSyntaxException {
+        this.deactivate(context);
         this.activate(context, config);
     }
 
@@ -153,7 +159,8 @@ public class ResolutionCache
      * Deactivate this component.
      */
     @Deactivate
-    protected void deactivate() {
+    protected void deactivate(final BundleContext context) {
+        context.removeServiceListener(this);
         this.cache = null;
 
         // unregister mbean
@@ -209,6 +216,11 @@ public class ResolutionCache
         }
         flushCache();
         updateScriptEngineExtensions();
+    }
+
+    @Override
+    public void serviceChanged(final ServiceEvent event) {
+        this.handleEvent(null);
     }
 
     public void flushCache() {
