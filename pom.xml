@@ -406,11 +406,11 @@
             <version>1.3.0</version>
             <scope>test</scope>
         </dependency>
-        <!-- compatible with API 2.22.0 -->
+        <!-- compatible with API 2.24.0 -->
         <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.resourceresolver</artifactId>
-            <version>1.6.16</version>
+            <version>1.7.11-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
