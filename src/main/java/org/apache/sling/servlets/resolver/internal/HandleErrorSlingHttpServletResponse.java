@@ -48,7 +48,7 @@ final class HandleErrorSlingHttpServletResponse extends SlingHttpServletResponse
      * @return true of open, false otherwise
      */
     public boolean isOpen() {
-        return this.writer.isOpen();
+        return getWriter().isOpen();
     }
 
 }
