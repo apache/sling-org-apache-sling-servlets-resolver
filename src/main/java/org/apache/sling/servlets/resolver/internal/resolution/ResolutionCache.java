@@ -161,7 +161,7 @@ public class ResolutionCache
     @Deactivate
     protected void deactivate(final BundleContext context) {
         context.removeServiceListener(this);
-        this.cache = null;
+        this.cache.set(null);
 
         // unregister mbean
         ServiceRegistration<SlingServletResolverCacheMBean> mbRegistration = this.mbeanRegistration.get();
