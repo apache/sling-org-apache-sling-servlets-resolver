@@ -40,7 +40,6 @@ import org.apache.sling.api.resource.path.Path;
 import org.apache.sling.servlets.resolver.internal.ResolverConfig;
 import org.apache.sling.servlets.resolver.internal.helper.AbstractResourceCollector;
 import org.apache.sling.servlets.resolver.jmx.SlingServletResolverCacheMBean;
-import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.InvalidSyntaxException;
@@ -72,10 +71,10 @@ public class ResolutionCache
     @Reference
     private ScriptEngineManager scriptEngineManager;
 
-    private AtomicReference<List<String>> scriptEnginesExtensions = new AtomicReference<>(Collections.emptyList());
+    private final AtomicReference<List<String>> scriptEnginesExtensions = new AtomicReference<>(Collections.emptyList());
 
     /** The script resolution cache. */
-    private AtomicReference<Map<AbstractResourceCollector, Servlet>> cache = new AtomicReference<>();
+    private final AtomicReference<Map<AbstractResourceCollector, Servlet>> cache = new AtomicReference<>();
 
     /** The cache size. */
     private volatile int cacheSize;
@@ -84,11 +83,11 @@ public class ResolutionCache
     private volatile boolean logCacheSizeWarning;
 
     /** Registration as event handler. */
-    private AtomicReference<ServiceRegistration<EventHandler>> eventHandlerRegistration = new AtomicReference<>();
+    private final AtomicReference<ServiceRegistration<EventHandler>> eventHandlerRegistration = new AtomicReference<>();
 
-    private AtomicReference<ServiceRegistration<ResourceChangeListener>> resourceListenerRegistration = new AtomicReference<>();
+    private final AtomicReference<ServiceRegistration<ResourceChangeListener>> resourceListenerRegistration = new AtomicReference<>();
 
-    private AtomicReference<ServiceRegistration<SlingServletResolverCacheMBean>> mbeanRegistration = new AtomicReference<>();
+    private final AtomicReference<ServiceRegistration<SlingServletResolverCacheMBean>> mbeanRegistration = new AtomicReference<>();
 
     /**
      * Activate this component.
