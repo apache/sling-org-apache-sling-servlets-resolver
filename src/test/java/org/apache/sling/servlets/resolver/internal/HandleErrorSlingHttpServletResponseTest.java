@@ -18,37 +18,18 @@
  */
 package org.apache.sling.servlets.resolver.internal;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import static org.junit.Assert.assertFalse;
 
 import org.apache.sling.api.SlingHttpServletResponse;
-import org.apache.sling.api.wrappers.SlingHttpServletResponseWrapper;
+import org.junit.Test;
+import org.mockito.Mockito;
 
-/**
- * wrap the original response so we can monitor if the writer
- * has been closed
- */
-final class HandleErrorSlingHttpServletResponse extends SlingHttpServletResponseWrapper {
-    private HandleErrorResponseWriter writer = null;
+public class HandleErrorSlingHttpServletResponseTest {
 
-    HandleErrorSlingHttpServletResponse(SlingHttpServletResponse response) {
-        super(response);
+    @Test public void testIsClosed() {
+        final SlingHttpServletResponse orig = Mockito.mock(SlingHttpServletResponse.class);
+
+        final HandleErrorSlingHttpServletResponse resp = new HandleErrorSlingHttpServletResponse(orig);
+        assertFalse(resp.isOpen());
     }
-
-    @Override
-    public PrintWriter getWriter() throws IOException {
-        if (this.writer == null) {
-            this.writer = new HandleErrorResponseWriter(getResponse().getWriter());
-        }
-        return this.writer;
-    }
-
-    /**
-     * Returns whether the response writer is open
-     * @return true of open, false otherwise
-     */
-    public boolean isOpen() {
-        return this.writer != null && this.writer.isOpen();
-    }
-
 }
