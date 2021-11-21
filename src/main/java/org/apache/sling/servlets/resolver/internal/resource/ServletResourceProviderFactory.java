@@ -324,7 +324,7 @@ public class ServletResourceProviderFactory {
                             pathAdded = true;
                         }
                     }
-                } else if (methods != null) {
+                } else if (methods != null && !hasPathRegistration) {
                     // only methods declared
                     for (String method : methods) {
                         pathSet.add(selPath + method + SERVLET_PATH_EXTENSION);
