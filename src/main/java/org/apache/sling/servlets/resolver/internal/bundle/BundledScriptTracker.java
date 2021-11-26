@@ -200,7 +200,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                                 Stream.concat(inheritanceChain.stream(), requiresChain.stream()).collect(Collectors.toCollection(LinkedHashSet::new));
                         if (properties.containsKey(ServletResolverConstants.SLING_SERVLET_RESOURCE_SUPER_TYPE) &&
                                 baseTypeProvider.getBundledRenderUnitCapability().getScriptEngineName() != null) {
-                            executable = bundledRenderUnitFinder.findUnit(bundle.getBundleContext(), baseTypeProvider, aggregate);
+                            executable = bundledRenderUnitFinder.findUnit(bundle.getBundleContext(), new HashSet<>(Arrays.asList(baseTypeProvider)), aggregate);
                         } else {
                             executable = bundledRenderUnitFinder.findUnit(bundle.getBundleContext(), inheritanceChain, aggregate);
                         }
