@@ -54,6 +54,7 @@ import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.request.RequestDispatcherOptions;
+import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.resource.type.ResourceType;
 import org.apache.sling.api.servlets.ServletResolverConstants;
@@ -110,6 +111,9 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     @Reference
     private ServletMounter mounter;
 
+    @Reference
+    private ResourceResolverFactory resourceResolverFactory;
+
     private AtomicReference<BundleContext> bundleContext = new AtomicReference<>();
     private AtomicReference<BundleTracker<List<ServiceRegistration<Servlet>>>> tracker = new AtomicReference<>();
     private AtomicReference<Map<Set<String>, ServiceRegistration<Servlet>>> dispatchers = new AtomicReference<>();
@@ -163,11 +167,21 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     LinkedHashSet<TypeProvider> inheritanceChain = new LinkedHashSet<>();
                     inheritanceChain.add(baseTypeProvider);
                     if (!bundledRenderUnitCapability.getResourceTypes().isEmpty()) {
-                        String[] resourceTypesRegistrationValue = new String[bundledRenderUnitCapability.getResourceTypes().size()];
+                        LinkedHashSet<String> resourceTypesRegistrationValueSet = new LinkedHashSet<>();
                         int rtIndex = 0;
                         for (ResourceType resourceType : bundledRenderUnitCapability.getResourceTypes()) {
-                            resourceTypesRegistrationValue[rtIndex++] = resourceType.toString();
+                            resourceTypesRegistrationValueSet.add(resourceType.toString());
                         }
+                        String[] resourceTypesRegistrationValue = resourceTypesRegistrationValueSet.stream().filter(rt -> {
+                            if (!rt.startsWith("/")) {
+                                for (String prefix : resourceResolverFactory.getSearchPath()) {
+                                    if (resourceTypesRegistrationValueSet.contains(prefix.concat(rt))) {
+                                        return false;
+                                    }
+                                }
+                            }
+                            return true;
+                        }).toArray(String[]::new);
                         properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES, resourceTypesRegistrationValue);
 
                         String extension = bundledRenderUnitCapability.getExtension();
