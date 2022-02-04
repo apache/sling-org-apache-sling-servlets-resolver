@@ -284,7 +284,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                             register(bundle.getBundleContext(), new BundledScriptServlet(inheritanceChain, executable), properties)
                         );
                     } else {
-                        LOGGER.warn(String.format("Unable to locate an executable for capability %s.", bundledRenderUnitCapability.toString()));
+                        LOGGER.debug(String.format("Unable to locate an executable for capability %s.", bundledRenderUnitCapability.toString()));
                     }
 
                     return regs.stream();
