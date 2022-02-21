@@ -268,15 +268,18 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                                     properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, paths.toArray(new String[0]));
                                 }
                                 if (!properties.containsKey(ServletResolverConstants.SLING_SERVLET_PATHS)) {
-                                    bundledRenderUnitCapability.getResourceTypes().forEach(resourceType -> {
-                                        String path;
-                                        if (resourceType.toString().startsWith("/")) {
-                                            path = resourceType.toString() + "/" + resourceType.getResourceLabel() + "." + FilenameUtils.getExtension(scriptName);
-                                        } else {
-                                            path = resourceResolverFactory.getSearchPath().get(0) + resourceType.toString() + "/" + resourceType.getResourceLabel() + "." + FilenameUtils.getExtension(scriptName);
+                                    String[] rts = PropertiesUtil.toStringArray(properties.get(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES));
+                                    if (rts != null) {
+                                        for (String resourceType : rts) {
+                                            String path;
+                                            if (resourceType.startsWith("/")) {
+                                                path = resourceType + "/" + resourceType.substring(resourceType.lastIndexOf('/') + 1) + "." + FilenameUtils.getExtension(scriptName);
+                                            } else {
+                                                path = resourceResolverFactory.getSearchPath().get(0) + resourceType + "/" + resourceType.substring(resourceType.lastIndexOf('/') + 1) + "." + FilenameUtils.getExtension(scriptName);
+                                            }
+                                            properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, path);
                                         }
-                                        properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, path);
-                                    });
+                                    }
                                 }
                             }
                             if (!properties.containsKey(ServletResolverConstants.SLING_SERVLET_PATHS)) {
