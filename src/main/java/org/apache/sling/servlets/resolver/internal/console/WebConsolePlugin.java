@@ -43,14 +43,12 @@ import org.apache.sling.api.request.RequestPathInfo;
 import org.apache.sling.api.request.ResponseUtil;
 import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.Resource;
-import org.apache.sling.api.resource.ResourceMetadata;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.resource.ResourceUtil;
-import org.apache.sling.api.resource.SyntheticResource;
 import org.apache.sling.api.scripting.SlingScript;
 import org.apache.sling.api.servlets.OptingServlet;
-import org.apache.sling.engine.impl.request.SlingRequestPathInfo;
+import org.apache.sling.api.uri.SlingUriBuilder;
 import org.apache.sling.serviceusermapping.ServiceUserMapped;
 import org.apache.sling.servlets.resolver.internal.ResolverConfig;
 import org.apache.sling.servlets.resolver.internal.SlingServletResolver;
@@ -476,7 +474,7 @@ public class WebConsolePlugin extends HttpServlet {
         }
     }
 
-    public static RequestPathInfo getRequestPathInfo(String urlString) {
+    static RequestPathInfo getRequestPathInfo(String urlString) {
 
         if(urlString == null) {
             urlString = "";
@@ -491,13 +489,9 @@ public class WebConsolePlugin extends HttpServlet {
                 // ignored
             }
         }
-        final int firstDot = fullPath.indexOf(".");
-
-        final ResourceMetadata metadata = new ResourceMetadata();
-        final Resource r = new SyntheticResource(null, metadata, null); // NOSONAR
-        metadata.setResolutionPath(firstDot < 0 ? fullPath : fullPath.substring(0, firstDot));
-        metadata.setResolutionPathInfo(firstDot < 0 ? null : fullPath.substring(firstDot));
-        return new SlingRequestPathInfo(r);
+        return SlingUriBuilder.create()
+            .setPath(fullPath)
+            .build();
     }
 
 }
