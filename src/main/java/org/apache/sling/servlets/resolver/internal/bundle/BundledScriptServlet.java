@@ -80,17 +80,13 @@ public class BundledScriptServlet extends GenericServlet {
             RequestWrapper requestWrapper = new RequestWrapper(request, types);
             try {
                 executable.eval(requestWrapper, response);
-            } catch (ScriptEvaluationException see) {
+            } catch (RuntimeException see) {
 
                 // log in the request progress tracker
                 logScriptError(request, see);
     
                 throw see;
-            } catch (SlingException e) {
-                // log in the request progress tracker
-                logScriptError(request, e);
-    
-                throw e;
+                
             } catch (Exception e) {
     
                 // log in the request progress tracker
