@@ -24,15 +24,19 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.script.ScriptException;
 import javax.servlet.GenericServlet;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
 import org.apache.sling.api.SlingConstants;
+import org.apache.sling.api.SlingException;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
+import org.apache.sling.api.SlingServletException;
 import org.apache.sling.api.resource.type.ResourceType;
+import org.apache.sling.api.scripting.ScriptEvaluationException;
 import org.apache.sling.scripting.spi.bundle.BundledRenderUnit;
 import org.apache.sling.scripting.spi.bundle.TypeProvider;
 import org.jetbrains.annotations.NotNull;
@@ -76,14 +80,43 @@ public class BundledScriptServlet extends GenericServlet {
             RequestWrapper requestWrapper = new RequestWrapper(request, types);
             try {
                 executable.eval(requestWrapper, response);
-            } catch (Exception se) {
-                Throwable cause = (se.getCause() == null) ? se : se.getCause();
-                throw cause instanceof ServletException ? (ServletException) cause :
-                        new ServletException(String.format("Failed executing script %s: %s", executable.getPath(), se.getMessage()), cause);
+            } catch (ScriptEvaluationException see) {
+
+                // log in the request progress tracker
+                logScriptError(request, see);
+    
+                throw see;
+            } catch (SlingException e) {
+                // log in the request progress tracker
+                logScriptError(request, e);
+    
+                throw e;
+            } catch (Exception e) {
+    
+                // log in the request progress tracker
+                logScriptError(request, e);
+    
+                throw new SlingException("Cannot get DefaultSlingScript: "
+                    + e.getMessage(), e);
             }
         } else {
             throw new ServletException("Not a Sling HTTP request/response");
         }
+    }
+
+    /**
+     * Logs the error caused by executing the script in the request progress
+     * tracker.
+     */
+    private void logScriptError(SlingHttpServletRequest request,
+            Throwable throwable) {
+        String message = throwable.getMessage();
+        if (message != null) {
+            message = throwable.getMessage().replace('\n', '/');
+        } else {
+            message = throwable.toString();
+        }
+        request.getRequestProgressTracker().log("SCRIPT ERROR: {0}", message);
     }
 
     @NotNull
