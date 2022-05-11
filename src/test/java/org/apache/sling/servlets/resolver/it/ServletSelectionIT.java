@@ -97,6 +97,20 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
         .with(P_SELECTORS, new String[] { ".EMPTY." })
         .with(P_EXTENSIONS, new String[] { ".EMPTY." })
         .register(bundleContext);
+
+        new TestServlet("DuplicateA")
+        .with(P_PATHS, "/duplicate")
+        .with(P_STRICT_PATHS, "true")
+        .with(P_SELECTORS, new String[] { "dup", "licate" })
+        .with(P_EXTENSIONS, new String[] { "json" })
+        .register(bundleContext);
+
+        new TestServlet("DuplicateB")
+        .with(P_PATHS, "/duplicate")
+        .with(P_STRICT_PATHS, "true")
+        .with(P_SELECTORS, new String[] { "dup", "licate" })
+        .with(P_EXTENSIONS, new String[] { "json" })
+        .register(bundleContext);
     }
 
     @Test
@@ -187,5 +201,10 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
         assertTestServlet("/emptySel.", "EmptySelectors");
         assertTestServlet("/emptySel.ext", "EmptySelectors");
         assertTestServlet("/emptySel.sel.ext", HttpServletResponse.SC_FORBIDDEN);
+    }
+
+    @Test
+    public void testDuplicate() throws Exception {
+        assertTestServlet("/duplicate.dup.json", "DuplicateA");
     }
 }
