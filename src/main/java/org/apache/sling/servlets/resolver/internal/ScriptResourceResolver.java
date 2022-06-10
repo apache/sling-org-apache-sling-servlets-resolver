@@ -23,23 +23,24 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import org.apache.sling.api.resource.LoginException;
+import org.apache.sling.api.resource.PersistenceException;
 import org.apache.sling.api.resource.Resource;
+import org.apache.sling.api.resource.ResourceMetadata;
 import org.apache.sling.api.resource.ResourceResolver;
-import org.apache.sling.api.resource.ResourceWrapper;
+import org.apache.sling.api.resource.ValueMap;
 import org.apache.sling.api.wrappers.IteratorWrapper;
-import org.apache.sling.api.wrappers.ResourceResolverWrapper;
 import org.apache.sling.servlets.resolver.internal.resource.MergingServletResourceProvider;
 import org.apache.sling.spi.resource.provider.ResolveContext;
 import org.apache.sling.spi.resource.provider.ResourceContext;
 import org.apache.sling.spi.resource.provider.ResourceProvider;
-import org.jetbrains.annotations.NotNull;
 
-public class ScriptResourceResolver extends ResourceResolverWrapper {
+import javax.servlet.http.HttpServletRequest;
+
+public class ScriptResourceResolver implements ResourceResolver {
     private final ResourceResolver resolver;
     private final Supplier<MergingServletResourceProvider> providerSupplier;
 
     public ScriptResourceResolver(ResourceResolver resolver, Supplier<MergingServletResourceProvider> provider) {
-        super(resolver);
         this.resolver = resolver;
         this.providerSupplier = provider;
     }
@@ -58,7 +59,7 @@ public class ScriptResourceResolver extends ResourceResolverWrapper {
         MergingServletResourceProvider provider = this.providerSupplier.get();
 
         if (provider == null) {
-            return super.getResource(scriptPath);
+            return resolver.getResource(scriptPath);
         }
         else {
             return wrap(provider.getResource(new ResolveContext<Object>() {
@@ -96,7 +97,7 @@ public class ScriptResourceResolver extends ResourceResolverWrapper {
     }
 
     @Override
-    public Resource getResource(Resource base, @NotNull String path) {
+    public Resource getResource(Resource base, String path) {
         if (!path.startsWith("/") && base != null) {
             path = String.format("%s/%s", base.getPath(), path);
         }
@@ -107,7 +108,7 @@ public class ScriptResourceResolver extends ResourceResolverWrapper {
     public Iterator<Resource> listChildren(Resource parent) {
         MergingServletResourceProvider provider = this.providerSupplier.get();
         if (provider == null) {
-            return super.listChildren(parent);
+            return resolver.listChildren(parent);
         }
         else {
             return wrap(provider.listChildren(new ResolveContext<Object>() {
@@ -142,8 +143,160 @@ public class ScriptResourceResolver extends ResourceResolverWrapper {
         }
     }
 
-    private Resource wrap(Resource resource) {
-        if (resource != null && !(resource.getResourceResolver() instanceof ScriptResourceResolver)) {
+    protected final ResourceResolver getDelegate() {
+        return resolver;
+    }
+
+    @Override
+    public void close() {
+        getDelegate().close();
+    }
+
+    @Override
+    public void commit() throws PersistenceException {
+        getDelegate().commit();
+    }
+
+    @Override
+    public Resource create(final Resource parent, final String name, final Map<String, Object> properties) throws PersistenceException {
+        return getDelegate().create(parent, name, properties);
+    }
+
+    @Override
+    public boolean orderBefore(Resource resource, String s, String s1) throws UnsupportedOperationException, PersistenceException, IllegalArgumentException {
+        return getDelegate().orderBefore(resource, s, s1);
+    }
+
+    @Override
+    public void delete( final Resource resource) throws PersistenceException {
+        getDelegate().delete(resource);
+    }
+
+    @Override
+    public Iterator<Resource> findResources(final String query, final String language) {
+        return getDelegate().findResources(query, language);
+    }
+
+    @Override
+    public Object getAttribute(final String name) {
+        return getDelegate().getAttribute(name);
+    }
+
+    @Override
+    public Iterator<String> getAttributeNames() {
+        return getDelegate().getAttributeNames();
+    }
+
+    @Override
+    public String getParentResourceType(final Resource resource) {
+        return getDelegate().getParentResourceType(resource);
+    }
+
+    @Override
+    public String getParentResourceType(final String resourceType) {
+        return getDelegate().getParentResourceType(resourceType);
+    }
+
+    @Override
+    public String[] getSearchPath() {
+        return getDelegate().getSearchPath();
+    }
+
+    @Override
+    public String getUserID() {
+        return getDelegate().getUserID();
+    }
+
+    @Override
+    public boolean hasChanges() {
+        return getDelegate().hasChanges();
+    }
+
+    @Override
+    public boolean hasChildren(final Resource resource) {
+        return listChildren(resource).hasNext();
+    }
+
+    @Override
+    public boolean isLive() {
+        return getDelegate().isLive();
+    }
+
+    @Override
+    public boolean isResourceType(final Resource resource, final String resourceType) {
+        return getDelegate().isResourceType(resource, resourceType);
+    }
+
+    @Override
+    public String map(final HttpServletRequest request, final String resourcePath) {
+        return getDelegate().map(request, resourcePath);
+    }
+
+    @Override
+    public String map(final String resourcePath) {
+        return getDelegate().map(resourcePath);
+    }
+
+    @Override
+    public Iterator<Map<String, Object>> queryResources(final String query, final String language) {
+        return getDelegate().queryResources(query, language);
+    }
+
+    @Override
+    public void refresh() {
+        getDelegate().refresh();
+    }
+
+    @Override
+    public Resource resolve(final String absPath) {
+        return getDelegate().resolve(absPath);
+    }
+
+    @Override
+    @Deprecated
+    public Resource resolve(final HttpServletRequest request) {
+        return getDelegate().resolve(request);
+    }
+
+    @Override
+    public Resource resolve(final HttpServletRequest request, final String absPath) {
+        return getDelegate().resolve(request, absPath);
+    }
+
+    @Override
+    public void revert() {
+        getDelegate().revert();
+    }
+
+    @Override
+    public <AdapterType> AdapterType adaptTo(final Class<AdapterType> type) {
+        return getDelegate().adaptTo(type);
+    }
+
+    @Override
+    public Resource getParent(final Resource child) {
+        return getDelegate().getParent(child);
+    }
+
+    @Override
+    public Resource move(final String srcAbsPath, final String destAbsPath) throws PersistenceException {
+        return getDelegate().move(srcAbsPath, destAbsPath);
+    }
+
+    @Override
+    public Map<String, Object> getPropertyMap() {
+        return getDelegate().getPropertyMap();
+    }
+
+    @Override
+    public Resource copy(final String srcAbsPath, final String destAbsPath) throws PersistenceException {
+        return getDelegate().copy(srcAbsPath, destAbsPath);
+    }
+
+    Resource wrap(Resource resource) {
+        if (resource != null &&
+                !Resource.RESOURCE_TYPE_NON_EXISTING.equals(resource.getResourceType()) &&
+                !(resource.getResourceResolver() instanceof ScriptResourceResolver)) {
             resource = new ScriptResourceResolverResourceWrapper(resource);
         }
         return resource;
@@ -163,7 +316,7 @@ public class ScriptResourceResolver extends ResourceResolverWrapper {
 
     private Resource unwrap(Resource resource) {
         if (resource instanceof ScriptResourceResolverResourceWrapper) {
-            resource = ((ResourceWrapper) resource).getResource();
+            resource = ((ScriptResourceResolverResourceWrapper) resource).getDelegate();
         }
         return resource;
     }
@@ -173,14 +326,84 @@ public class ScriptResourceResolver extends ResourceResolverWrapper {
         return ScriptResourceResolver.wrap(resolver.clone(o), providerSupplier);
     }
 
-    private class ScriptResourceResolverResourceWrapper extends ResourceWrapper {
+    private class ScriptResourceResolverResourceWrapper implements Resource {
+        private final Resource delegate;
         public ScriptResourceResolverResourceWrapper(Resource resource) {
-            super(resource);
+            this.delegate = resource;
+        }
+
+        Resource getDelegate() {
+            return delegate;
         }
 
         @Override
         public ResourceResolver getResourceResolver() {
             return ScriptResourceResolver.this;
+        }
+
+        @Override
+        public Resource getChild( final String relPath) {
+            return ScriptResourceResolver.this.getResource(this, relPath);
+        }
+
+        @Override
+        public Iterable<Resource> getChildren() {
+            return ScriptResourceResolver.this.getChildren(this);
+        }
+
+        @Override
+        public String getName() {
+            return this.delegate.getName();
+        }
+
+        @Override
+        public Resource getParent() {
+            return ScriptResourceResolver.this.getParent(this);
+        }
+
+        @Override
+        public String getPath() {
+            return this.delegate.getPath();
+        }
+
+        @Override
+        public ResourceMetadata getResourceMetadata() {
+            return this.delegate.getResourceMetadata();
+        }
+
+        @Override
+        public String getResourceSuperType() {
+            return this.delegate.getResourceSuperType();
+        }
+
+        @Override
+        public String getResourceType() {
+            return this.delegate.getResourceType();
+        }
+
+        @Override
+        public ValueMap getValueMap() {
+            return this.delegate.getValueMap();
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return listChildren().hasNext();
+        }
+
+        @Override
+        public boolean isResourceType(final String resourceType) {
+            return this.delegate.isResourceType(resourceType);
+        }
+
+        @Override
+        public Iterator<Resource> listChildren() {
+            return getChildren().iterator();
+        }
+
+        @Override
+        public <AdapterType> AdapterType adaptTo(final Class<AdapterType> type) {
+            return this.delegate.adaptTo(type);
         }
     }
 }

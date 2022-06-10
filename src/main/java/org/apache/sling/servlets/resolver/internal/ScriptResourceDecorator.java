@@ -61,7 +61,7 @@ public class ScriptResourceDecorator implements ResourceDecorator {
                 script.getResourceMetadata().setResolutionPath(resolutionPath);
             }
 
-            return script;
+            return ScriptResourceResolver.wrap(resource.getResourceResolver(), () -> this.provider).wrap(script);
         }
         else {
             return resource;
@@ -77,7 +77,7 @@ public class ScriptResourceDecorator implements ResourceDecorator {
         return provider.getResource(new ResolveContext<Void>() {
             @Override
             public ResourceResolver getResourceResolver() {
-                return new ScriptResourceResolver(resource.getResourceResolver(), () -> provider);
+                return ScriptResourceResolver.wrap(resource.getResourceResolver(), () -> provider);
             }
 
             @Override
