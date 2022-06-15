@@ -18,6 +18,18 @@
  */
 package org.apache.sling.servlets.resolver.internal.resource;
 
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sling.api.resource.NonExistingResource;
+import org.apache.sling.api.resource.Resource;
+import org.apache.sling.api.resource.SyntheticResource;
+import org.apache.sling.spi.resource.provider.ResolveContext;
+import org.apache.sling.spi.resource.provider.ResourceContext;
+import org.apache.sling.spi.resource.provider.ResourceProvider;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.ServiceReference;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,17 +42,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.sling.api.resource.NonExistingResource;
-import org.apache.sling.api.resource.Resource;
-import org.apache.sling.api.resource.SyntheticResource;
-import org.apache.sling.spi.resource.provider.ResolveContext;
-import org.apache.sling.spi.resource.provider.ResourceContext;
-import org.apache.sling.spi.resource.provider.ResourceProvider;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.ServiceReference;
-
-public class MergingServletResourceProvider {
+public class MergingServletResourceProvider extends ResourceProvider<Object> {
     private final List<Pair<ServletResourceProvider, ServiceReference<?>>> registrations = new ArrayList<>();
 
     private final AtomicReference<ConcurrentHashMap<String, Set<String>>> tree = new AtomicReference<>(new ConcurrentHashMap<>());
@@ -124,6 +126,11 @@ public class MergingServletResourceProvider {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public @Nullable Resource getResource(@NotNull ResolveContext<Object> resolveContext, @NotNull String s, @NotNull ResourceContext resourceContext, @Nullable Resource resource) {
+        return getResource(resolveContext, s);
     }
 
     @SuppressWarnings("unchecked")

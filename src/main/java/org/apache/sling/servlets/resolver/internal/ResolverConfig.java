@@ -60,7 +60,12 @@ public @interface ResolverConfig {
     String[] servletresolver_defaultExtensions() default "html"; // NOSONAR
 
     @AttributeDefinition(name = "Mount Providers", description = "Should servlets be mounted as resource providers?" +
-        " If true (the default), servlets will be represented in the content tree using resource provider -" +
-        " otherwise, servlets will be decorated back into the content tree using a decorator.")
+        " If true (the default), servlets will be represented in the content tree using resource providers -" +
+        " otherwise, servlets will be decorated back into the content tree using a decorator unless mount path providers is true.")
     boolean servletresolver_mountProviders() default true; // NOSONAR
+
+    @AttributeDefinition(name = "Mount Path Providers", description = "Should servlets be mounted via a single resource provider per search path entry?" +
+            " If false (the default), servlets will be represented in the content tree using individual resource providers -" +
+            " otherwise, servlets will be mounted into the content tree using one resource provider per search path entry. This effectively overrides mount providers.")
+    boolean servletresolver_mountPathProviders() default false; // NOSONAR
 }

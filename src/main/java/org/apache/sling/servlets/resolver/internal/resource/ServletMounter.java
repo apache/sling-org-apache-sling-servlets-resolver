@@ -18,24 +18,6 @@
  */
 package org.apache.sling.servlets.resolver.internal.resource;
 
-import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_NAME;
-import static org.osgi.framework.Constants.SERVICE_ID;
-import static org.osgi.framework.Constants.SERVICE_PID;
-import static org.osgi.service.component.ComponentConstants.COMPONENT_NAME;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Dictionary;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import javax.servlet.Servlet;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-
 import org.apache.sling.api.request.RequestUtil;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.servlets.ServletResolver;
@@ -56,6 +38,25 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.servlet.Servlet;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Dictionary;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_NAME;
+import static org.osgi.framework.Constants.SERVICE_ID;
+import static org.osgi.framework.Constants.SERVICE_PID;
+import static org.osgi.service.component.ComponentConstants.COMPONENT_NAME;
 
 /**
  * The <code>SlingServletResolver</code> resolves a
@@ -84,9 +85,14 @@ public class ServletMounter {
 
     private final MergingServletResourceProvider provider;
 
-    private final ServiceRegistration<MergingServletResourceProvider> providerReg;
+    private final Set<ServiceRegistration<?>> providerRegs;
 
     private final ConcurrentHashMap<ResolutionCache, ResolutionCache> resolutionCaches = new ConcurrentHashMap<>();
+
+    private final BundleContext context;
+
+    private final boolean pathProviders;
+
 
     /**
      * Activate this component.
@@ -96,16 +102,30 @@ public class ServletMounter {
             @Reference(target = "(name=org.apache.sling)") ServletContext servletContext,
             final ResolverConfig config) {
         this.servletContext = servletContext;
+        this.context = context;
         servletResourceProviderFactory = new ServletResourceProviderFactory(config.servletresolver_servletRoot(),
                 resourceResolverFactory.getSearchPath());
 
-        if (!config.servletresolver_mountProviders()) {
+        if (config.servletresolver_mountPathProviders()) {
             provider = new MergingServletResourceProvider();
-            providerReg = context.registerService(MergingServletResourceProvider.class, provider, null);
-        }
-        else {
+            providerRegs = new HashSet<>();
+            pathProviders = true;
+            for (String path : resourceResolverFactory.getSearchPath()) {
+                final Dictionary<String, Object> params = new Hashtable<>();
+                params.put(ResourceProvider.PROPERTY_ROOT, path);
+                params.put(Constants.SERVICE_DESCRIPTION, "ServletResourceProvider for Servlets");
+                params.put("provider.mode", "passthrough");
+                providerRegs.add(context.registerService(ResourceProvider.class, provider, params));
+            }
+        } else if (!config.servletresolver_mountProviders()) {
+            provider = new MergingServletResourceProvider();
+            providerRegs = new HashSet<>();
+            pathProviders = false;
+            providerRegs.add(context.registerService(MergingServletResourceProvider.class, provider, null));
+        } else {
             provider = null;
-            providerReg = null;
+            providerRegs = null;
+            pathProviders = false;
         }
     }
 
@@ -127,8 +147,15 @@ public class ServletMounter {
         // destroy all servlets
         destroyAllServlets(refs);
 
-        if (providerReg != null) {
-            providerReg.unregister();
+        if (providerRegs != null) {
+            for (ServiceRegistration reg : providerRegs) {
+                try {
+                    reg.unregister();
+                } catch (IllegalStateException ex) {
+                    // Can happen during shutdown
+                }
+            }
+            providerRegs.clear();
         }
 
         // sanity check: clear array (it should be empty now anyway)
@@ -208,6 +235,21 @@ public class ServletMounter {
                 try {
                     if (this.provider != null) {
                         this.provider.add(srProvider, reference);
+                        if (pathProviders) {
+                            outer: for (final String path : srProvider.getServletPaths()) {
+                                String root = path.indexOf('/', 1) != -1 ? path.substring(0, path.indexOf('/', 1) + 1) : path;
+                                for (ServiceRegistration reg : providerRegs) {
+                                    if (root.equals(reg.getReference().getProperty(ResourceProvider.PROPERTY_ROOT))) {
+                                        continue outer;
+                                    }
+                                }
+                                final Dictionary<String, Object> params = new Hashtable<>();
+                                params.put(ResourceProvider.PROPERTY_ROOT, root);
+                                params.put(Constants.SERVICE_DESCRIPTION, "ServletResourceProvider for Servlets");
+                                params.put("provider.mode", "passthrough");
+                                providerRegs.add(context.registerService(ResourceProvider.class, provider, params));
+                            }
+                        }
                         resolutionCaches.values().forEach(ResolutionCache::flushCache);
                     }
                     else {
