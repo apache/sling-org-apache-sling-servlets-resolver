@@ -114,7 +114,7 @@ public class ServletMounter {
                 final Dictionary<String, Object> params = new Hashtable<>();
                 params.put(ResourceProvider.PROPERTY_ROOT, path);
                 params.put(Constants.SERVICE_DESCRIPTION, "ServletResourceProvider for Servlets");
-                params.put("provider.mode", "passthrough");
+                params.put(ResourceProvider.PROPERTY_MODE, ResourceProvider.MODE_PASSTHROUGH);
                 providerRegs.add(context.registerService(ResourceProvider.class, provider, params));
             }
         } else if (!config.servletresolver_mountProviders()) {
