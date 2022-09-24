@@ -95,11 +95,10 @@ public abstract class AbstractResourceCollector {
             }
             return o1.compareTo(o2);
         });
-        final Iterator<String> locations = new LocationIterator(resourceType, resourceSuperType,
-                                                                baseResourceType, resolver);
-        while (locations.hasNext()) {
-            final String location = locations.next();
-
+        
+        
+        List<String> locations = LocationCollector.getLocations(resourceType, resourceSuperType, baseResourceType, resolver);
+        locations.forEach(location -> {
             // get the location resource, use a synthetic resource if there
             // is no real location. There may still be children at this
             // location
@@ -111,7 +110,7 @@ public abstract class AbstractResourceCollector {
             }
             final Resource locationRes = getResource(resolver, path);
             getWeightedResources(resources, locationRes);
-        }
+        });
 
         List<Resource> result = new ArrayList<>(resources.size());
         result.addAll(resources);
