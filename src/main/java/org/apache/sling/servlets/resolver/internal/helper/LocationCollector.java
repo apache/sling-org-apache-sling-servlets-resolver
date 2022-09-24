@@ -20,7 +20,6 @@ package org.apache.sling.servlets.resolver.internal.helper;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -28,11 +27,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceUtil;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.sling.api.servlets.ServletResolverConstants.DEFAULT_RESOURCE_TYPE;
 
 /**
  * The <code>LocationCollector</code> provides access to an ordered collection
@@ -130,7 +126,7 @@ public class LocationCollector {
     @Nullable String handleResourceType (String resourceType) {
         boolean isBlank = StringUtils.isBlank(resourceType);
         boolean isAbsoluteResourceType = resourceType.startsWith("/");
-        String resourceSuperType = null;
+        String rst = null;
         if (!isBlank) {
             if (isAbsoluteResourceType) {
                 result.add(ResourceUtil.resourceTypeToPath(resourceType));
@@ -140,9 +136,9 @@ public class LocationCollector {
                 }
                 
             }
-            resourceSuperType = getResourceSuperType(resourceType);
+            rst = getResourceSuperType(resourceType);
         }
-        return resourceSuperType;
+        return rst;
     }
     
 
@@ -192,14 +188,14 @@ public class LocationCollector {
         // normalize resource type to a path string
         final String rtPath = ResourceUtil.resourceTypeToPath(resourceType);
         // get the resource type resource and check its super type
-        String resourceSuperType = null;
+        String rst = null;
         // if the path is absolute, use it directly
         if ( rtPath.startsWith("/") ) {
             final String candidatePath = rtPath;
 
             final Resource rtResource = resourceResolver.getResource(candidatePath);
             if ( rtResource != null ) {
-                resourceSuperType = rtResource.getResourceSuperType();
+                rst = rtResource.getResourceSuperType();
             }
 
         } else {
@@ -208,11 +204,11 @@ public class LocationCollector {
                 final String candidatePath = path + rtPath;
                 final Resource rtResource = resourceResolver.getResource(candidatePath);
                 if ( rtResource != null && rtResource.getResourceSuperType() != null ) {
-                    resourceSuperType = rtResource.getResourceSuperType();
+                    rst = rtResource.getResourceSuperType();
                     break;
                 }
             }
         }
-        return resourceSuperType;
+        return rst;
     }
 }
