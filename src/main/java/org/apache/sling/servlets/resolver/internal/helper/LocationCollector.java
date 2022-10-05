@@ -51,9 +51,9 @@ import org.slf4j.LoggerFactory;
  * </ol>
  */
 
-public class LocationCollector {
+class LocationCollector {
 
-    public static @NotNull List<String> getLocations(String resourceType, String resourceSuperType, String baseResourceType,
+    static @NotNull List<String> getLocations(String resourceType, String resourceSuperType, String baseResourceType,
                                                      ResourceResolver resolver) {
         LocationCollector collector = new LocationCollector(resourceType, resourceSuperType, baseResourceType, resolver);
         return collector.getResolvedLocations();
@@ -123,7 +123,7 @@ public class LocationCollector {
      * @param resourceType the resourceType
      * @return the resourceSuperType or null if the given resourceType does not have a resourceSuperType
      */
-    @Nullable String handleResourceType (@NotNull String resourceType) {
+    private @Nullable String handleResourceType (@NotNull String resourceType) {
         boolean isBlank = StringUtils.isBlank(resourceType);
         boolean isAbsoluteResourceType = resourceType.startsWith("/");
         String rst = null;
