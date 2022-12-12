@@ -18,19 +18,6 @@
  */
 package org.apache.sling.servlets.resolver.it;
 
-import static org.apache.sling.testing.paxexam.SlingOptions.slingServlets;
-import static org.apache.sling.testing.paxexam.SlingOptions.versionResolver;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.ops4j.pax.exam.CoreOptions.composite;
-import static org.ops4j.pax.exam.CoreOptions.junitBundles;
-import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
-import static org.ops4j.pax.exam.CoreOptions.options;
-import static org.ops4j.pax.exam.CoreOptions.vmOption;
-import static org.ops4j.pax.exam.CoreOptions.when;
-import static org.ops4j.pax.exam.cm.ConfigurationAdminOptions.newConfiguration;
-
 import java.lang.reflect.Method;
 
 import javax.inject.Inject;
@@ -45,9 +32,27 @@ import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
 import org.apache.sling.testing.paxexam.TestSupport;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
+import org.ops4j.pax.exam.options.ModifiableCompositeOption;
 import org.ops4j.pax.exam.options.extra.VMOption;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+
+import static org.apache.sling.testing.paxexam.SlingOptions.sling;
+import static org.apache.sling.testing.paxexam.SlingOptions.slingScripting;
+import static org.apache.sling.testing.paxexam.SlingOptions.slingXss;
+import static org.apache.sling.testing.paxexam.SlingOptions.versionResolver;
+import static org.apache.sling.testing.paxexam.SlingVersionResolver.SLING_GROUP_ID;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.ops4j.pax.exam.CoreOptions.composite;
+import static org.ops4j.pax.exam.CoreOptions.junitBundles;
+import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
+import static org.ops4j.pax.exam.CoreOptions.options;
+import static org.ops4j.pax.exam.CoreOptions.vmOption;
+import static org.ops4j.pax.exam.CoreOptions.when;
+import static org.ops4j.pax.exam.cm.ConfigurationAdminOptions.factoryConfiguration;
+import static org.ops4j.pax.exam.cm.ConfigurationAdminOptions.newConfiguration;
 
 public class ServletResolverTestSupport extends TestSupport {
 
@@ -91,24 +96,33 @@ public class ServletResolverTestSupport extends TestSupport {
             jacocoCommand = vmOption(jacocoOpt);
         }
 
-        
         final int httpPort = findFreePort();
-        versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.api");
-        versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.resourceresolver");
-        versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.scripting.core");
-        versionResolver.setVersionFromProject("org.apache.sling", "org.apache.sling.commons.johnzon");
-        versionResolver.setVersion("org.apache.sling", "org.apache.sling.engine", "2.7.2");
+        versionResolver.setVersionFromProject(SLING_GROUP_ID, "org.apache.sling.api");
+        versionResolver.setVersionFromProject(SLING_GROUP_ID, "org.apache.sling.resourceresolver");
+        versionResolver.setVersionFromProject(SLING_GROUP_ID, "org.apache.sling.scripting.core");
+        versionResolver.setVersionFromProject(SLING_GROUP_ID, "org.apache.sling.commons.johnzon");
+        versionResolver.setVersionFromProject(SLING_GROUP_ID, "org.apache.sling.engine");
+        versionResolver.setVersion(SLING_GROUP_ID, "org.apache.sling.auth.core", "1.6.0");
         return options(
             composite(
                 when(debugOption != null).useOptions(debugOption),
                 when(vmOption != null).useOptions(vmOption),
                 when(jacocoCommand != null).useOptions(jacocoCommand),
                 baseConfiguration(),
-                slingServlets(),
-                mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.converter").version("1.0.12"), // new Sling API dependency
-                testBundle("bundle.filename"),
+                sling(),
+                slingScripting(),
+                slingXss(),
+                factoryConfiguration("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended")
+                    .put("user.mapping", new String[]{"org.apache.sling.servlets.resolver:console=sling-readall", "org.apache.sling.servlets.resolver:scripts=sling-scripting"})
+                    .asOption(),
+
+                mavenBundle().groupId("org.osgi").artifactId("org.osgi.util.converter").version("1.0.9"), // new Sling API dependency
+                testBundle(),
                 mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.scripting.spi").versionAsInProject(),
                 mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.servlet-helpers").versionAsInProject(),
+                //
+                mavenBundle().groupId("commons-codec").artifactId("commons-codec").version("1.15"),
+                //
                 junitBundles(),
                 newConfiguration("org.apache.felix.http")
                     .put("org.osgi.service.http.port", httpPort)
@@ -123,10 +137,12 @@ public class ServletResolverTestSupport extends TestSupport {
                 newConfiguration("org.apache.sling.jcr.base.internal.LoginAdminWhitelist")
                     .put("whitelist.bundles.regexp", "^PAXEXAM.*$")
                     .asOption()
-            ).remove(
-                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.servlets.resolver").version(versionResolver) // remove bundle from slingQuickstartOakTar, added via testBundle in current version
             )
         );
+    }
+
+    protected Option testBundle() {
+        return testBundle("bundle.filename");
     }
 
     protected MockSlingHttpServletResponse executeRequest(final String path, final int expectedStatus) throws Exception {
