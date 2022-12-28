@@ -148,7 +148,7 @@ public class ServletMounter {
         destroyAllServlets(refs);
 
         if (providerRegs != null) {
-            for (ServiceRegistration reg : providerRegs) {
+            for (ServiceRegistration<?> reg : providerRegs) {
                 try {
                     reg.unregister();
                 } catch (IllegalStateException ex) {
@@ -238,7 +238,7 @@ public class ServletMounter {
                         if (pathProviders) {
                             outer: for (final String path : srProvider.getServletPaths()) {
                                 String root = path.indexOf('/', 1) != -1 ? path.substring(0, path.indexOf('/', 1) + 1) : path;
-                                for (ServiceRegistration reg : providerRegs) {
+                                for (ServiceRegistration<?> reg : providerRegs) {
                                     if (root.equals(reg.getReference().getProperty(ResourceProvider.PROPERTY_ROOT))) {
                                         continue outer;
                                     }

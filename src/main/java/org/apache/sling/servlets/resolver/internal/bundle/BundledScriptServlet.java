@@ -24,7 +24,6 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.script.ScriptException;
 import javax.servlet.GenericServlet;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -34,9 +33,7 @@ import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingException;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
-import org.apache.sling.api.SlingServletException;
 import org.apache.sling.api.resource.type.ResourceType;
-import org.apache.sling.api.scripting.ScriptEvaluationException;
 import org.apache.sling.scripting.spi.bundle.BundledRenderUnit;
 import org.apache.sling.scripting.spi.bundle.TypeProvider;
 import org.jetbrains.annotations.NotNull;

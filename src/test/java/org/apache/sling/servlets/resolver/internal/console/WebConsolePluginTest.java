@@ -106,7 +106,7 @@ public class WebConsolePluginTest {
         String jsonString = stringWriter.toString();
         String json = Json.createReader(new StringReader(jsonString)).readObject().toString();
 
-        Map<String, Object> expectedJsonPaths = new HashMap(){{
+        Map<String, Object> expectedJsonPaths = new HashMap<String, Object>(){{
             put("$.candidates", null);
             put("$.candidates.allowedServlets.length()", 1);
             put("$.candidates.deniedServlets.length()", 0);
@@ -150,7 +150,7 @@ public class WebConsolePluginTest {
         String jsonString = stringWriter.toString();
         String json = Json.createReader(new StringReader(jsonString)).readObject().toString();
 
-        Map<String, Object> expectedJsonPaths = new HashMap(){{
+        Map<String, Object> expectedJsonPaths = new HashMap<String, Object>(){{
             put("$.method", "GET");
         }};
 
@@ -188,7 +188,7 @@ public class WebConsolePluginTest {
         String jsonString = stringWriter.toString();
         String json = Json.createReader(new StringReader(jsonString)).readObject().toString();
 
-        Map<String, Object> expectedJsonPaths = new HashMap(){{
+        Map<String, Object> expectedJsonPaths = new HashMap<String, Object>(){{
             put("$.candidates", null);
             put("$.candidates.allowedServlets.length()", 0);
             put("$.candidates.deniedServlets.length()", 1);

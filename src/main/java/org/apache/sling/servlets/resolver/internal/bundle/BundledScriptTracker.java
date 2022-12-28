@@ -168,7 +168,6 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     inheritanceChain.add(baseTypeProvider);
                     if (!bundledRenderUnitCapability.getResourceTypes().isEmpty()) {
                         LinkedHashSet<String> resourceTypesRegistrationValueSet = new LinkedHashSet<>();
-                        int rtIndex = 0;
                         for (ResourceType resourceType : bundledRenderUnitCapability.getResourceTypes()) {
                             resourceTypesRegistrationValueSet.add(resourceType.toString());
                         }
