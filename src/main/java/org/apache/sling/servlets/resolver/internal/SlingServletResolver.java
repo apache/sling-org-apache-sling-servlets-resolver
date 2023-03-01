@@ -49,10 +49,10 @@ import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.resource.SyntheticResource;
+import org.apache.sling.api.servlets.ErrorHandler;
 import org.apache.sling.api.servlets.OptingServlet;
 import org.apache.sling.api.servlets.ServletResolver;
 import org.apache.sling.api.servlets.ServletResolverConstants;
-import org.apache.sling.engine.servlets.ErrorHandler;
 import org.apache.sling.serviceusermapping.ServiceUserMapped;
 import org.apache.sling.servlets.resolver.internal.defaults.DefaultErrorHandlerServlet;
 import org.apache.sling.servlets.resolver.internal.defaults.DefaultServlet;
@@ -266,7 +266,7 @@ public class SlingServletResolver
     // ---------- ErrorHandler interface --------------------------------------
 
     /**
-     * @see org.apache.sling.engine.servlets.ErrorHandler#handleError(int,
+     * @see org.apache.sling.api.servlets.ErrorHandler#handleError(int,
      *      String, SlingHttpServletRequest, SlingHttpServletResponse)
      */
     @Override
@@ -325,7 +325,7 @@ public class SlingServletResolver
     }
 
     /**
-     * @see org.apache.sling.engine.servlets.ErrorHandler#handleError(java.lang.Throwable, SlingHttpServletRequest, SlingHttpServletResponse)
+     * @see org.apache.sling.api.servlets.ErrorHandler#handleError(java.lang.Throwable, SlingHttpServletRequest, SlingHttpServletResponse)
      */
     @Override
     public void handleError(final Throwable throwable, final SlingHttpServletRequest request, final SlingHttpServletResponse response)
