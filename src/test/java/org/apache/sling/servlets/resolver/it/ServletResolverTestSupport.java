@@ -103,6 +103,7 @@ public class ServletResolverTestSupport extends TestSupport {
         versionResolver.setVersionFromProject(SLING_GROUP_ID, "org.apache.sling.commons.johnzon");
         versionResolver.setVersionFromProject(SLING_GROUP_ID, "org.apache.sling.engine");
         versionResolver.setVersion(SLING_GROUP_ID, "org.apache.sling.auth.core", "1.6.0");
+        versionResolver.setVersion("commons-fileupload", "commons-fileupload", "1.5");
         return options(
             composite(
                 when(debugOption != null).useOptions(debugOption),
