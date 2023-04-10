@@ -444,4 +444,36 @@ public class LocationCollectorTest extends HelperTestBase {
     	assertThat(loc,is(expected));
     }
  
+    
+    public void testAbsoluteResourceSuperType() throws Exception {
+        final String root = "/apps/";
+        resourceResolverOptions.setSearchPaths(new String[] {
+                root
+        });
+        
+        String resourceType="a/b";
+        String resourceTypePath= root + resourceType;
+        
+        String resourceSuperType= "/apps/c/d";
+        String resourceSuperTypePath = resourceSuperType;
+        
+        Map<String, Object> resourceTypeProps = new HashMap<>();
+        resourceTypeProps.put(ResourceResolver.PROPERTY_RESOURCE_TYPE, resourceType);
+        resourceTypeProps.put("sling:resourceSuperType", resourceSuperType);
+        
+		resourceResolver.create(getOrCreateParentResource(resourceResolver, resourceTypePath),
+				ResourceUtil.getName(resourceTypePath), resourceTypeProps);
+		resourceResolver.create(getOrCreateParentResource(resourceResolver, resourceSuperTypePath),
+				ResourceUtil.getName(resourceSuperTypePath), null);
+        
+        
+    	List<String> loc = getLocations(resourceType, resourceSuperType);
+    	
+    	List<String> expected = Arrays.asList(
+    			resourceTypePath,      			// /apps/a/b
+    			resourceSuperTypePath, 			// /apps/c/d
+    			root + DEFAULT_RESOURCE_TYPE 	// /apps/sling/servlet/default
+    			);
+    	assertThat(loc,is(expected));
+    }
 }
