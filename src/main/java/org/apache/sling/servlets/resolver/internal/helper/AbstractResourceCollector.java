@@ -158,10 +158,6 @@ public abstract class AbstractResourceCollector {
         Resource res = resolver.getResource(path);
 
         if (res == null) {
-            if (!path.startsWith("/")) {
-                path = "/".concat(path);
-            }
-
             res = new SyntheticResource(resolver, path, "$synthetic$");
         }
 
