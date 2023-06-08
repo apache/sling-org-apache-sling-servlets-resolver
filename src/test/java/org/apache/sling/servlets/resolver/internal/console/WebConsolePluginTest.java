@@ -237,7 +237,7 @@ public class WebConsolePluginTest {
                 "<option value='POST'>POST</option>\n" +
                 "</select>\n" +
                 "&nbsp;&nbsp;<input type='submit' value='Resolve' class='submit'>\n" +
-                "</td></tr>";
+                "</td></tr>".replace("\n", System.lineSeparator());
         assertThat(htmlString, CoreMatchers.containsString(expectedInputHTML));
 
         final String expectedDecomposedURLHTML = "<tr class='content'>\n" +
@@ -256,14 +256,14 @@ public class WebConsolePluginTest {
                 "</dd><dt>Suffix</dt>\n" +
                 "<dd>\n" +
                 "null</dd></dl>\n" +
-                "</td></tr>";
+                "</td></tr>".replace("\n", System.lineSeparator());
         assertThat(htmlString, CoreMatchers.containsString(expectedDecomposedURLHTML));
 
         final String expectedCandidatesHTML = "<tr class='content'>\n" +
                 "<td class='content'>Candidates</td>\n" +
                 "<td class='content' colspan='2'>Candidate servlets and scripts in order of preference for method " +
                 "GET:<br/>\n" +
-                "<ol class='servlets'>\n";
+                "<ol class='servlets'>\n".replace("\n", System.lineSeparator());
         assertThat(htmlString, CoreMatchers.containsString(expectedCandidatesHTML));
     }
 
@@ -308,7 +308,7 @@ public class WebConsolePluginTest {
                 "&nbsp;&nbsp;<input type='submit' value='Resolve' class='submit'>\n" +
                 "</td></tr>\n" +
                 "</table>\n" +
-                "</form>", htmlString);
+                "</form>".replace("\n", System.lineSeparator()), htmlString);
     }
 
     @Test
@@ -331,7 +331,7 @@ public class WebConsolePluginTest {
         webConsolePlugin.service(request, response);
 
         String htmlString = stringWriter.toString();
-        final String expectedDeniedElement = "<ol class='servlets'>\n" +
+        final String expectedDeniedElement = "<ol class='servlets'>" + System.lineSeparator() +
                 "<li><del>";
         assertThat(htmlString, CoreMatchers.containsString(expectedDeniedElement));
     }
