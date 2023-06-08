@@ -224,7 +224,7 @@ public class WebConsolePluginTest {
 
         String htmlString = stringWriter.toString();
 
-        final String expectedInputHTML = "<tr class='content'>\n" +
+        final String expectedInputHTML = ("<tr class='content'>\n" +
                 "<td class='content'>URL</td>\n" +
                 "<td class='content' colspan='2'><input type='text' name='url' value='/test.1.json' class='input' " +
                 "size='50'>\n" +
@@ -237,10 +237,10 @@ public class WebConsolePluginTest {
                 "<option value='POST'>POST</option>\n" +
                 "</select>\n" +
                 "&nbsp;&nbsp;<input type='submit' value='Resolve' class='submit'>\n" +
-                "</td></tr>".replace("\\n", System.lineSeparator());
+                "</td></tr>").replace("\n", System.lineSeparator());
         assertThat(htmlString, CoreMatchers.containsString(expectedInputHTML));
 
-        final String expectedDecomposedURLHTML = "<tr class='content'>\n" +
+        final String expectedDecomposedURLHTML = ("<tr class='content'>\n" +
                 "<td class='content'>Decomposed URL</td>\n" +
                 "<td class='content' colspan='2'><dl>\n" +
                 "<dt>Path</dt>\n" +
@@ -256,14 +256,14 @@ public class WebConsolePluginTest {
                 "</dd><dt>Suffix</dt>\n" +
                 "<dd>\n" +
                 "null</dd></dl>\n" +
-                "</td></tr>".replace("\\n", System.lineSeparator());
+                "</td></tr>").replace("\n", System.lineSeparator());
         assertThat(htmlString, CoreMatchers.containsString(expectedDecomposedURLHTML));
 
-        final String expectedCandidatesHTML = "<tr class='content'>\n" +
+        final String expectedCandidatesHTML = ("<tr class='content'>\n" +
                 "<td class='content'>Candidates</td>\n" +
                 "<td class='content' colspan='2'>Candidate servlets and scripts in order of preference for method " +
                 "GET:<br/>\n" +
-                "<ol class='servlets'>\n".replace("\\n", System.lineSeparator());
+                "<ol class='servlets'>\n").replace("\n", System.lineSeparator());
         assertThat(htmlString, CoreMatchers.containsString(expectedCandidatesHTML));
     }
 
@@ -286,7 +286,7 @@ public class WebConsolePluginTest {
         webConsolePlugin.service(request, response);
 
         String htmlString = stringWriter.toString();
-        assertEquals("<form method='get'><table class='content' cellpadding='0' cellspacing='0' width='100%'>\n" +
+        assertEquals(("<form method='get'><table class='content' cellpadding='0' cellspacing='0' width='100%'>\n" +
                 "<tr class='content'>\n" +
                 "<th colspan='3' class='content container'>Servlet Resolver Test</th>\n" +
                 "</tr>\n" +
@@ -308,7 +308,7 @@ public class WebConsolePluginTest {
                 "&nbsp;&nbsp;<input type='submit' value='Resolve' class='submit'>\n" +
                 "</td></tr>\n" +
                 "</table>\n" +
-                "</form>".replace("\\n", System.lineSeparator()), htmlString);
+                "</form>").replace("\n", System.lineSeparator()), htmlString);
     }
 
     @Test
