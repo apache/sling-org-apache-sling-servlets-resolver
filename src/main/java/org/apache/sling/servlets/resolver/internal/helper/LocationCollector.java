@@ -19,8 +19,10 @@
 package org.apache.sling.servlets.resolver.internal.helper;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
@@ -54,29 +56,13 @@ import org.slf4j.LoggerFactory;
 
 class LocationCollector {
 
-    static @NotNull List<Resource> getLocations(String resourceType, String resourceSuperType, String baseResourceType,
-                                                     ResourceResolver resolver) {
-        LocationCollector collector = new LocationCollector(resourceType, resourceSuperType, baseResourceType, resolver);
-        List<Resource> result = new ArrayList<>();
-        collector.getResolvedLocations().forEach((location) -> {
-	        // get the location resource, use a synthetic resource if there
-	        // is no real location. There may still be children at this
-	        // location
-	        final String path;
-	        if ( location.endsWith("/") ) {
-	            path = location.substring(0, location.length() - 1);
-	        } else {
-	            path = location;
-	        }
-	        final Resource locationRes = getResource(resolver, path);
-	        result.add(locationRes);
-        });
-        return result;
-    }
+	private static final String CACHE_KEY = LocationCollector.class.getName() + ".CacheKey";
 
     // The search path of the resource resolver
     private final String[] searchPath;
 
+    private Map<String,Resource> cacheMap;
+    
     private final ResourceResolver resolver;
     private final String baseResourceType;
     private final String resourceType;
@@ -88,12 +74,13 @@ class LocationCollector {
     private final List<String> result = new ArrayList<>();
 
     private LocationCollector(String resourceType, String resourceSuperType, String baseResourceType,
-                              ResourceResolver resolver) {
+                              ResourceResolver resolver, Map<String,Resource> cacheMap) {
 
         this.resourceType = resourceType;
         this.resourceSuperType = resourceSuperType;
         this.baseResourceType = baseResourceType;
         this.resolver = resolver;
+        this.cacheMap = cacheMap;
 
         String[] tmpPath = resolver.getSearchPath();
         if (tmpPath.length == 0) {
@@ -182,7 +169,7 @@ class LocationCollector {
                 && this.resourceSuperType != null ) {
             superType = this.resourceSuperType;
         } else {
-            superType = getResourceSuperType(resolver, resourceType);
+            superType = getResourceSuperTypeInternal(resourceType);
         }
 
         // detect circular dependency
@@ -198,15 +185,14 @@ class LocationCollector {
     }
 
     // this method is largely duplicated from ResourceUtil
-    private @Nullable String getResourceSuperType(final @NotNull ResourceResolver resourceResolver,
-                                                  final @NotNull String resourceType) {
+    private @Nullable String getResourceSuperTypeInternal(final @NotNull String resourceType) {
         // normalize resource type to a path string
         final String rtPath = ResourceUtil.resourceTypeToPath(resourceType);
         // get the resource type resource and check its super type
         String rst = null;
         // if the path is absolute, use it directly
         if (rtPath.startsWith("/")) {
-            final Resource rtResource = resourceResolver.getResource(rtPath);
+            final Resource rtResource = resolveResource(rtPath);
             if (rtResource != null) {
                 rst = rtResource.getResourceSuperType();
             }
@@ -214,7 +200,7 @@ class LocationCollector {
             // if the path is relative we use the search paths
             for (final String path : this.searchPath) {
                 final String candidatePath = path + rtPath;
-                final Resource rtResource = resourceResolver.getResource(candidatePath);
+                final Resource rtResource = resolveResource(candidatePath);
                 if (rtResource != null && rtResource.getResourceSuperType() != null) {
                     rst = rtResource.getResourceSuperType();
                     break;
@@ -224,14 +210,74 @@ class LocationCollector {
         return rst;
     }
     
-	protected static @NotNull Resource getResource(final ResourceResolver resolver, String path) {
-		Resource res = resolver.getResource(path);
-
-		if (res == null) {
-			res = new SyntheticResource(resolver, path, "$synthetic$");
+    /**
+     * Resolve a path to a resource; the cacheMap is used for it.
+     * @param path the path
+     * @return the resource for it or null
+     */
+    private @Nullable Resource resolveResource (@NotNull String path) {
+    	if (cacheMap.containsKey(path)) {
+    		return cacheMap.get(path);
+    	} else {
+    		Resource r = resolver.getResource(path);
+    		cacheMap.put(path, r);
+    		return r;
+    	}
+    }
+    
+    
+    
+    // ---- static helpers ---
+    
+	static @NotNull List<Resource> getLocations(String resourceType, String resourceSuperType, String baseResourceType,
+			ResourceResolver resolver) {
+		
+		@SuppressWarnings("unchecked")
+		Map<String,Resource> m = (Map<String,Resource>) resolver.getPropertyMap().get(CACHE_KEY);
+		if (m == null) {
+			m = new HashMap<>();
+			resolver.getPropertyMap().put(CACHE_KEY, m);
 		}
-
-		return res;
+		final Map<String,Resource> cacheMap = m;
+		
+		LocationCollector collector = new LocationCollector(resourceType, resourceSuperType, baseResourceType,
+				resolver, cacheMap);
+		List<Resource> result = new ArrayList<>();
+		collector.getResolvedLocations().forEach((location) -> {
+			// get the location resource, use a synthetic resource if there
+			// is no real location. There may still be children at this
+			// location
+			final String path;
+			if (location.endsWith("/")) {
+				path = location.substring(0, location.length() - 1);
+			} else {
+				path = location;
+			}
+			final Resource locationRes = getResource(resolver, path, cacheMap);
+			result.add(locationRes);
+		});
+		return result;
+	}
+    
+    /**
+     * Resolve a path to a resource
+     * @param resolver
+     * @param path
+     * @return a synthetic or "real" resource
+     */
+	protected static @NotNull Resource getResource(final @NotNull ResourceResolver resolver, 
+			@NotNull String path, @NotNull Map<String,Resource> cacheMap) {
+		
+		if (cacheMap.containsKey(path) && cacheMap.get(path) != null) {
+			return cacheMap.get(path);
+		} else {
+			Resource res = resolver.getResource(path);
+			if (res == null) {
+				res = new SyntheticResource(resolver, path, "$synthetic$");
+			}
+			cacheMap.put(path, res);
+			return res;
+		}
 	}
     
 }

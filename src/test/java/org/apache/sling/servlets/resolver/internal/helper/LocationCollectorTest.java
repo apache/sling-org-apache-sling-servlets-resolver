@@ -86,21 +86,6 @@ public class LocationCollectorTest {
         request.setResource(resource);
 		
 	}
-
-    List<Resource> getLocations(final String resourceType,
-            final String resourceSuperType) {
-        return getLocations(resourceType, resourceSuperType, DEFAULT_RESOURCE_TYPE);
-    }
-    
-    List<Resource> getLocations( final String resourceType,
-            final String resourceSuperType,
-            final String baseResourceType) {
-    	
-        return LocationCollector.getLocations(resourceType,
-                resourceSuperType,
-                baseResourceType,
-                resolver);
-    }
     
     @Test
     public void testSearchPathEmpty() {
@@ -134,6 +119,7 @@ public class LocationCollectorTest {
         assertThat(loc,isSameResourceList(expected));
     }
     
+    @Test
     public void testSearchPath2Elements() {
         String root0 = "/apps/";
         String root1 = "/libs/";
@@ -175,6 +161,7 @@ public class LocationCollectorTest {
         request.setResource(r);
     }
 
+    @Test
     public void testSearchPathEmptyAbsoluteType() {
         // expect path gets { "/" }
         searchPathOptions.setSearchPaths(null);
@@ -194,6 +181,7 @@ public class LocationCollectorTest {
         assertThat(loc,isSameResourceList(expected));
     }
     
+    @Test
     public void testSearchPath1ElementAbsoluteType() {
         String root0 = "/apps/";
         searchPathOptions.setSearchPaths(new String[] {
@@ -216,6 +204,7 @@ public class LocationCollectorTest {
         assertThat(loc,isSameResourceList(expected));
     }
     
+    @Test
     public void testSearchPath2ElementsAbsoluteType() {
         String root0 = "/apps/";
         String root1 = "/libs/";
@@ -240,6 +229,7 @@ public class LocationCollectorTest {
         assertThat(loc,isSameResourceList(expected));
     }
     
+    @Test
     public void testSearchPathEmptyWithSuper() {
         // expect path gets { "/" }
         searchPathOptions.setSearchPaths(null);
@@ -260,6 +250,7 @@ public class LocationCollectorTest {
         assertThat(loc,isSameResourceList(expected));
     }
     
+    @Test
     public void testSearchPath1ElementWithSuper() {
         String root0 = "/apps/";
         searchPathOptions.setSearchPaths(new String[] {
@@ -282,6 +273,7 @@ public class LocationCollectorTest {
         assertThat(loc,isSameResourceList(expected));
     }
     
+    @Test
     public void testSearchPath2ElementsWithSuper() {
         String root0 = "/apps/";
         String root1 = "/libs/";
@@ -309,6 +301,7 @@ public class LocationCollectorTest {
         assertThat(loc,isSameResourceList(expected));
     }
     
+    @Test
     public void testSearchPathEmptyAbsoluteTypeWithSuper() {
         // expect path gets { "/" }
         searchPathOptions.setSearchPaths(null);
@@ -333,6 +326,7 @@ public class LocationCollectorTest {
         assertThat(loc,isSameResourceList(expected));
     }
     
+    @Test
     public void testSearchPath1ElementAbsoluteTypeWithSuper() {
         String root0 = "/apps/";
         searchPathOptions.setSearchPaths(new String[] {
@@ -359,6 +353,7 @@ public class LocationCollectorTest {
         assertThat(loc,isSameResourceList(expected));
     }
     
+    @Test
     public void testSearchPath2ElementsAbsoluteTypeWithSuper() {
         String root0 = "/apps/";
         String root1 = "/libs/";
@@ -389,6 +384,7 @@ public class LocationCollectorTest {
         assertThat(loc,isSameResourceList(expected));
     }
     
+    @Test
     public void testScriptNameWithoutResourceType() {
         String root0 = "/apps/";
         String root1 = "/libs/";
@@ -405,6 +401,7 @@ public class LocationCollectorTest {
         assertThat(loc,isSameResourceList(expected));
     }
     
+    @Test
     public void testScriptNameWithResourceType() {
         String root0 = "/apps/";
         String root1 = "/libs/";
@@ -422,6 +419,7 @@ public class LocationCollectorTest {
         assertThat(loc,isSameResourceList(expected));
     }
     
+    @Test
     public void testScriptNameWithResourceTypeAndSuperType() {
         String root0 = "/apps/";
         String root1 = "/libs/";
@@ -442,6 +440,7 @@ public class LocationCollectorTest {
         assertThat(loc,isSameResourceList(expected));
     }
     
+    @Test
     public void testCircularResourceTypeHierarchy() {
         final String root1 = "/libs/";
         searchPathOptions.setSearchPaths(new String[] {
@@ -487,8 +486,13 @@ public class LocationCollectorTest {
         assertThat(loc,isSameResourceList(expected));
     }
     
-    
+    @Test
     public void testResolveDefaultResourceType() {
+    	
+    	searchPathOptions.setSearchPaths(new String[] {
+                "/apps/",
+                "/libs/"
+        });
     	
     	List<Resource> loc = getLocations(DEFAULT_RESOURCE_TYPE, resourceSuperType);
     	
@@ -500,7 +504,7 @@ public class LocationCollectorTest {
     	assertThat(loc,isSameResourceList(expected));
     }
  
-    
+    @Test
     public void testAbsoluteResourceSuperType() throws Exception {
         final String root = "/apps/";
         searchPathOptions.setSearchPaths(new String[] {
@@ -533,7 +537,7 @@ public class LocationCollectorTest {
     	assertThat(loc,isSameResourceList(expected));
     }
     
-    
+    @Test
     public void testNoSuperType() throws Exception {
         final String root = "/apps/";
         searchPathOptions.setSearchPaths(new String[] {
@@ -559,10 +563,60 @@ public class LocationCollectorTest {
     	assertThat(loc,isSameResourceList(expected));
     }
     
+
+    @Test
+    public void checkThatTheCacheIsUsed() {
+
+    	// The basic test setup is copied from testSearchPath2ElementsWithSuper
+        String root0 = "/apps/";
+        String root1 = "/libs/";
+        searchPathOptions.setSearchPaths(new String[] {
+                root0,
+                root1
+        });
+
+        // set resource super type
+        resourceSuperType = "foo:superBar";
+        resourceSuperTypePath = ResourceUtil.resourceTypeToPath(resourceSuperType);
+        replaceResource(null, resourceSuperType);
+
+        final Resource r = request.getResource();
+        
+    	// Execute the same call twice and expect that on 2nd time the ResourceResolver
+    	// is never used, because all is taken from the cache
+        getLocations(r.getResourceType(),
+                r.getResourceSuperType());
+        
+        Mockito.clearInvocations(resolver);
+        
+        getLocations(r.getResourceType(),
+                r.getResourceSuperType());
+    	
+        Mockito.verify(resolver, Mockito.never()).getResource(Mockito.anyString());
+    }
+    
+    
+    // --- helper ---
+    
     private Resource r (String path) {
     	return new SyntheticResource(resolver, path, "resourcetype");
     }
     
+    
+    List<Resource> getLocations(final String resourceType,
+            final String resourceSuperType) {
+        return getLocations(resourceType, resourceSuperType, DEFAULT_RESOURCE_TYPE);
+    }
+    
+    List<Resource> getLocations( final String resourceType,
+            final String resourceSuperType,
+            final String baseResourceType) {
+    	
+        return LocationCollector.getLocations(resourceType,
+                resourceSuperType,
+                baseResourceType,
+                resolver);
+    }
     
     // Mimic the searchpath semantic of the ResourceResolverFactory
     public class SearchPathOptions {
