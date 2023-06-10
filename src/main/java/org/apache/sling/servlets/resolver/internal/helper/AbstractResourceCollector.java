@@ -96,18 +96,8 @@ public abstract class AbstractResourceCollector {
         });
         
         
-        List<String> locations = LocationCollector.getLocations(resourceType, resourceSuperType, baseResourceType, resolver);
-        locations.forEach(location -> {
-            // get the location resource, use a synthetic resource if there
-            // is no real location. There may still be children at this
-            // location
-            final String path;
-            if ( location.endsWith("/") ) {
-                path = location.substring(0, location.length() - 1);
-            } else {
-                path = location;
-            }
-            final Resource locationRes = getResource(resolver, path);
+        List<Resource> locations = LocationCollector.getLocations(resourceType, resourceSuperType, baseResourceType, resolver);
+        locations.forEach(locationRes -> {
             getWeightedResources(resources, locationRes);
         });
 

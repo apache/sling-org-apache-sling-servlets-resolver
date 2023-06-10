@@ -19,28 +19,28 @@
 package org.apache.sling.servlets.resolver.internal.helper;
 
 import static org.apache.sling.api.servlets.ServletResolverConstants.DEFAULT_RESOURCE_TYPE;
+import static org.apache.sling.servlets.resolver.internal.helper.IsSameResourceList.isSameResourceList;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import org.apache.sling.api.resource.PersistenceException;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceUtil;
+import org.apache.sling.api.resource.SyntheticResource;
 
 public class LocationCollectorTest extends HelperTestBase {
 
-    List<String> getLocations(final String resourceType,
+    List<Resource> getLocations(final String resourceType,
             final String resourceSuperType) {
         return getLocations(resourceType, resourceSuperType, DEFAULT_RESOURCE_TYPE);
     }
     
-    List<String> getLocations( final String resourceType,
+    List<Resource> getLocations( final String resourceType,
             final String resourceSuperType,
             final String baseResourceType) {
         return LocationCollector.getLocations(resourceType,
@@ -54,13 +54,13 @@ public class LocationCollectorTest extends HelperTestBase {
         resourceResolverOptions.setSearchPaths(null);
 
         final Resource r = request.getResource();
-        List<String> loc = getLocations(r.getResourceType(),
+        List<Resource> loc = getLocations(r.getResourceType(),
                 r.getResourceSuperType());
         
-        List<String> expected = Arrays.asList(
-        		"/" + resourceTypePath, // /foo/bar
-                "/" + DEFAULT_RESOURCE_TYPE); // /sling/servlet/default
-        assertThat(loc,is(expected));
+        List<Resource> expected = Arrays.asList(
+        		r("/" + resourceTypePath), // /foo/bar
+                r("/" + DEFAULT_RESOURCE_TYPE)); // /sling/servlet/default
+        assertThat(loc,isSameResourceList(expected));
     }
     
     public void testSearchPath1Element() {
@@ -70,13 +70,13 @@ public class LocationCollectorTest extends HelperTestBase {
         });
 
         final Resource r = request.getResource();
-        List<String> loc = getLocations(r.getResourceType(),
+        List<Resource> loc = getLocations(r.getResourceType(),
                 r.getResourceSuperType());
         
-        List<String> expected = Arrays.asList(
-        		root0 + resourceTypePath, // /apps/foo/bar
-                root0 + DEFAULT_RESOURCE_TYPE); // /apps/sling/servlet/default
-        assertThat(loc,is(expected));
+        List<Resource> expected = Arrays.asList(
+        		r(root0 + resourceTypePath), // /apps/foo/bar
+                r(root0 + DEFAULT_RESOURCE_TYPE)); // /apps/sling/servlet/default
+        assertThat(loc,isSameResourceList(expected));
     }
     
     public void testSearchPath2Elements() {
@@ -88,15 +88,15 @@ public class LocationCollectorTest extends HelperTestBase {
         });
 
         final Resource r = request.getResource();
-        List<String> loc = getLocations(r.getResourceType(),
+        List<Resource> loc = getLocations(r.getResourceType(),
                 r.getResourceSuperType());
         
-        List<String> expected = Arrays.asList(
-        		root0 + resourceTypePath, // /apps/foo/bar
-                root1 + resourceTypePath, // /libs/foo/bar
-                root0 + DEFAULT_RESOURCE_TYPE, // /apps/sling/servlet/default
-                root1 + DEFAULT_RESOURCE_TYPE); // /libs/sling/servlet/default
-        assertThat(loc,is(expected));
+        List<Resource> expected = Arrays.asList(
+        		r(root0 + resourceTypePath), // /apps/foo/bar
+                r(root1 + resourceTypePath), // /libs/foo/bar
+                r(root0 + DEFAULT_RESOURCE_TYPE), // /apps/sling/servlet/default
+                r(root1 + DEFAULT_RESOURCE_TYPE)); // /libs/sling/servlet/default
+        assertThat(loc,isSameResourceList(expected));
     }
     
     /**
@@ -130,13 +130,13 @@ public class LocationCollectorTest extends HelperTestBase {
         replaceResource(resourceType, null);
 
         final Resource r = request.getResource();
-        List<String> loc = getLocations(r.getResourceType(),
+        List<Resource> loc = getLocations(r.getResourceType(),
                 r.getResourceSuperType());
         
-        List<String> expected = Arrays.asList(
-        		resourceTypePath, // /foo/bar
-                "/" + DEFAULT_RESOURCE_TYPE); // /sling/servlet/default
-        assertThat(loc,is(expected));
+        List<Resource> expected = Arrays.asList(
+        		r(resourceTypePath), // /foo/bar
+        		r("/" + DEFAULT_RESOURCE_TYPE)); // /sling/servlet/default
+        assertThat(loc,isSameResourceList(expected));
     }
     
     public void testSearchPath1ElementAbsoluteType() {
@@ -151,14 +151,14 @@ public class LocationCollectorTest extends HelperTestBase {
         replaceResource(resourceType, null);
 
         final Resource r = request.getResource();
-        List<String> loc = getLocations(r.getResourceType(),
+        List<Resource> loc = getLocations(r.getResourceType(),
                 r.getResourceSuperType());
         
         
-        List<String> expected = Arrays.asList(
-        		resourceTypePath, // /foo/bar
-                root0 + DEFAULT_RESOURCE_TYPE); // /apps/sling/servlet/default
-        assertThat(loc,is(expected));
+        List<Resource> expected = Arrays.asList(
+        		r(resourceTypePath), // /foo/bar
+                r(root0 + DEFAULT_RESOURCE_TYPE)); // /apps/sling/servlet/default
+        assertThat(loc,isSameResourceList(expected));
     }
     
     public void testSearchPath2ElementsAbsoluteType() {
@@ -175,14 +175,14 @@ public class LocationCollectorTest extends HelperTestBase {
         replaceResource(resourceType, null);
 
         final Resource r = request.getResource();
-        List<String> loc = getLocations(r.getResourceType(),
+        List<Resource> loc = getLocations(r.getResourceType(),
                 r.getResourceSuperType());
         
-        List<String> expected = Arrays.asList(
-        		resourceTypePath, // /foo/bar
-                root0 + DEFAULT_RESOURCE_TYPE, // /apps/sling/servlet/default
-                root1 + DEFAULT_RESOURCE_TYPE); // /libs/sling/servlet/default
-        assertThat(loc,is(expected));
+        List<Resource> expected = Arrays.asList(
+        		r(resourceTypePath), // /foo/bar
+                r(root0 + DEFAULT_RESOURCE_TYPE), // /apps/sling/servlet/default
+                r(root1 + DEFAULT_RESOURCE_TYPE)); // /libs/sling/servlet/default
+        assertThat(loc,isSameResourceList(expected));
     }
     
     public void testSearchPathEmptyWithSuper() {
@@ -195,14 +195,14 @@ public class LocationCollectorTest extends HelperTestBase {
         replaceResource(null, resourceSuperType);
 
         final Resource r = request.getResource();
-        List<String> loc = getLocations(r.getResourceType(),
+        List<Resource> loc = getLocations(r.getResourceType(),
                 r.getResourceSuperType());
         
-        List<String> expected = Arrays.asList(
-        		"/" + resourceTypePath, // /foo/bar
-                "/" + resourceSuperTypePath, // /foo/superBar
-                "/" + DEFAULT_RESOURCE_TYPE); // /sling/servlet/default
-        assertThat(loc,is(expected));
+        List<Resource> expected = Arrays.asList(
+        		r("/" + resourceTypePath), // /foo/bar
+                r("/" + resourceSuperTypePath), // /foo/superBar
+                r("/" + DEFAULT_RESOURCE_TYPE)); // /sling/servlet/default
+        assertThat(loc,isSameResourceList(expected));
     }
     
     public void testSearchPath1ElementWithSuper() {
@@ -217,14 +217,14 @@ public class LocationCollectorTest extends HelperTestBase {
         replaceResource(null, resourceSuperType);
 
         final Resource r = request.getResource();
-        List<String> loc = getLocations(r.getResourceType(),
+        List<Resource> loc = getLocations(r.getResourceType(),
                 r.getResourceSuperType());
         
-        List<String> expected = Arrays.asList(
-        		root0 + resourceTypePath, // /apps/foo/bar
-                root0 + resourceSuperTypePath, // /apps/foo/superBar
-                root0 + DEFAULT_RESOURCE_TYPE); // /apps/sling/servlet/default
-        assertThat(loc,is(expected));
+        List<Resource> expected = Arrays.asList(
+        		r(root0 + resourceTypePath), // /apps/foo/bar
+                r(root0 + resourceSuperTypePath), // /apps/foo/superBar
+                r(root0 + DEFAULT_RESOURCE_TYPE)); // /apps/sling/servlet/default
+        assertThat(loc,isSameResourceList(expected));
     }
     
     public void testSearchPath2ElementsWithSuper() {
@@ -241,17 +241,17 @@ public class LocationCollectorTest extends HelperTestBase {
         replaceResource(null, resourceSuperType);
 
         final Resource r = request.getResource();
-        List<String> loc = getLocations(r.getResourceType(),
+        List<Resource> loc = getLocations(r.getResourceType(),
                 r.getResourceSuperType());
         
-        List<String> expected = Arrays.asList(
-        		root0 + resourceTypePath, // /apps/foo/bar
-                root1 + resourceTypePath, // /libs/foo/bar
-                root0 + resourceSuperTypePath, // /apps/foo/superBar
-                root1 + resourceSuperTypePath, // /libs/foo/superBar
-                root0 + DEFAULT_RESOURCE_TYPE, // /apps/sling/servlet/default
-                root1 + DEFAULT_RESOURCE_TYPE); // /libs/sling/servlet/default
-        assertThat(loc,is(expected));
+        List<Resource> expected = Arrays.asList(
+        		r(root0 + resourceTypePath), // /apps/foo/bar
+                r(root1 + resourceTypePath), // /libs/foo/bar
+                r(root0 + resourceSuperTypePath), // /apps/foo/superBar
+                r(root1 + resourceSuperTypePath), // /libs/foo/superBar
+                r(root0 + DEFAULT_RESOURCE_TYPE), // /apps/sling/servlet/default
+                r(root1 + DEFAULT_RESOURCE_TYPE)); // /libs/sling/servlet/default
+        assertThat(loc,isSameResourceList(expected));
     }
     
     public void testSearchPathEmptyAbsoluteTypeWithSuper() {
@@ -268,14 +268,14 @@ public class LocationCollectorTest extends HelperTestBase {
         replaceResource(resourceType, resourceSuperType);
 
         final Resource r = request.getResource();
-        List<String> loc = getLocations(r.getResourceType(),
+        List<Resource> loc = getLocations(r.getResourceType(),
                 r.getResourceSuperType());
         
-        List<String> expected = Arrays.asList(
-        		resourceTypePath, // /foo/bar
-                "/" + resourceSuperTypePath, // /foo/superBar
-                "/" + DEFAULT_RESOURCE_TYPE); // /sling/servlet/default
-        assertThat(loc,is(expected));
+        List<Resource> expected = Arrays.asList(
+        		r(resourceTypePath), // /foo/bar
+                r("/" + resourceSuperTypePath), // /foo/superBar
+                r("/" + DEFAULT_RESOURCE_TYPE)); // /sling/servlet/default
+        assertThat(loc,isSameResourceList(expected));
     }
     
     public void testSearchPath1ElementAbsoluteTypeWithSuper() {
@@ -294,14 +294,14 @@ public class LocationCollectorTest extends HelperTestBase {
         replaceResource(resourceType, resourceSuperType);
 
         final Resource r = request.getResource();
-        List<String> loc = getLocations(r.getResourceType(),
+        List<Resource> loc = getLocations(r.getResourceType(),
                 r.getResourceSuperType());
         
-        List<String> expected = Arrays.asList(
-        		resourceTypePath, // /foo/bar
-                root0 + resourceSuperTypePath, // /apps/foo/superBar
-                root0 + DEFAULT_RESOURCE_TYPE); // /apps/sling/servlet/default
-        assertThat(loc,is(expected));
+        List<Resource> expected = Arrays.asList(
+        		r(resourceTypePath), // /foo/bar
+                r(root0 + resourceSuperTypePath), // /apps/foo/superBar
+                r(root0 + DEFAULT_RESOURCE_TYPE)); // /apps/sling/servlet/default
+        assertThat(loc,isSameResourceList(expected));
     }
     
     public void testSearchPath2ElementsAbsoluteTypeWithSuper() {
@@ -322,16 +322,16 @@ public class LocationCollectorTest extends HelperTestBase {
         replaceResource(resourceType, resourceSuperType);
 
         final Resource r = request.getResource();
-        List<String> loc = getLocations(r.getResourceType(),
+        List<Resource> loc = getLocations(r.getResourceType(),
                 r.getResourceSuperType());
         
-        List<String> expected = Arrays.asList(
-        		resourceTypePath, // /foo/bar
-                root0 + resourceSuperTypePath, // /apps/foo/superBar
-                root1 + resourceSuperTypePath, // /libs/foo/superBar
-                root0 + DEFAULT_RESOURCE_TYPE, // /apps/sling/servlet/default
-                root1 + DEFAULT_RESOURCE_TYPE); // /libs/sling/servlet/default
-        assertThat(loc,is(expected));
+        List<Resource> expected = Arrays.asList(
+        		r(resourceTypePath), // /foo/bar
+                r(root0 + resourceSuperTypePath), // /apps/foo/superBar
+                r(root1 + resourceSuperTypePath), // /libs/foo/superBar
+                r(root0 + DEFAULT_RESOURCE_TYPE), // /apps/sling/servlet/default
+                r(root1 + DEFAULT_RESOURCE_TYPE)); // /libs/sling/servlet/default
+        assertThat(loc,isSameResourceList(expected));
     }
     
     public void testScriptNameWithoutResourceType() {
@@ -341,11 +341,13 @@ public class LocationCollectorTest extends HelperTestBase {
                 root0,
                 root1
         });
-        List<String> loc = getLocations("",
+        List<Resource> loc = getLocations("",
                 null,"");
         
-        List<String> expected = Arrays.asList("/apps/","/libs/");
-        assertThat(loc,is(expected));
+        List<Resource> expected = Arrays.asList(
+        		r("/apps"),
+        		r("/libs"));
+        assertThat(loc,isSameResourceList(expected));
     }
     
     public void testScriptNameWithResourceType() {
@@ -355,14 +357,14 @@ public class LocationCollectorTest extends HelperTestBase {
                 root0,
                 root1
         });
-        List<String> loc = getLocations("a/b", null);
+        List<Resource> loc = getLocations("a/b", null);
         
-        List<String> expected = Arrays.asList(
-        		root0 + "a/b",
-                root1 + "a/b",
-                root0 + DEFAULT_RESOURCE_TYPE,
-                root1 + DEFAULT_RESOURCE_TYPE);
-        assertThat(loc,is(expected));
+        List<Resource> expected = Arrays.asList(
+        		r(root0 + "a/b"),
+                r(root1 + "a/b"),
+                r(root0 + DEFAULT_RESOURCE_TYPE),
+                r(root1 + DEFAULT_RESOURCE_TYPE));
+        assertThat(loc,isSameResourceList(expected));
     }
     
     public void testScriptNameWithResourceTypeAndSuperType() {
@@ -373,16 +375,16 @@ public class LocationCollectorTest extends HelperTestBase {
                 root1
         });
         
-        List<String> loc = getLocations("a/b", "c/d");
+        List<Resource> loc = getLocations("a/b", "c/d");
 
-        List<String> expected = Arrays.asList(
-        		root0 + "a/b",
-                root1 + "a/b",
-                root0 + "c/d",
-                root1 + "c/d",
-                root0 + DEFAULT_RESOURCE_TYPE,
-                root1 + DEFAULT_RESOURCE_TYPE);
-        assertThat(loc,is(expected));
+        List<Resource> expected = Arrays.asList(
+        		r(root0 + "a/b"),
+                r(root1 + "a/b"),
+                r(root0 + "c/d"),
+                r(root1 + "c/d"),
+                r(root0 + DEFAULT_RESOURCE_TYPE),
+                r(root1 + DEFAULT_RESOURCE_TYPE));
+        assertThat(loc,isSameResourceList(expected));
     }
     
     public void testCircularResourceTypeHierarchy() {
@@ -420,28 +422,27 @@ public class LocationCollectorTest extends HelperTestBase {
             fail("Did not expect a persistence exception: " + e.getMessage());
         }
         
-        List<String> loc = getLocations(resourceType, resourceSuperType);
+        List<Resource> loc = getLocations(resourceType, resourceSuperType);
         
-        List<String> expected = Arrays.asList(
-        		root1 + resourceType, // /libs/foo/bar
-                root1 + resourceSuperType, // /libs/foo/check1
-                root1 + resourceSuperType2, // /libs/foo/check2
-                root1 + DEFAULT_RESOURCE_TYPE); // /libs/sling/servlet/default
-        assertThat(loc,is(expected));
+        List<Resource> expected = Arrays.asList(
+        		r(root1 + resourceType), // /libs/foo/bar
+                r(root1 + resourceSuperType), // /libs/foo/check1
+                r(root1 + resourceSuperType2), // /libs/foo/check2
+                r(root1 + DEFAULT_RESOURCE_TYPE)); // /libs/sling/servlet/default
+        assertThat(loc,isSameResourceList(expected));
     }
     
     
     public void testResolveDefaultResourceType() {
     	
-    	List<String> loc = getLocations(DEFAULT_RESOURCE_TYPE, resourceSuperType);
+    	List<Resource> loc = getLocations(DEFAULT_RESOURCE_TYPE, resourceSuperType);
     	
-    	List<String> expected = Arrays.asList(
-    			"/apps/sling/servlet/default",
-    			"/libs/sling/servlet/default",
-    			"/apps/sling/servlet/default",
-    			"/libs/sling/servlet/default"
-    			);
-    	assertThat(loc,is(expected));
+    	List<Resource> expected = Arrays.asList(
+    			r("/apps/sling/servlet/default"),
+    			r("/libs/sling/servlet/default"),
+    			r("/apps/sling/servlet/default"),
+    			r("/libs/sling/servlet/default"));
+    	assertThat(loc,isSameResourceList(expected));
     }
  
     
@@ -467,14 +468,14 @@ public class LocationCollectorTest extends HelperTestBase {
 				ResourceUtil.getName(resourceSuperTypePath), null);
         
         
-    	List<String> loc = getLocations(resourceType, resourceSuperType);
+    	List<Resource> loc = getLocations(resourceType, resourceSuperType);
     	
-    	List<String> expected = Arrays.asList(
-    			resourceTypePath,      			// /apps/a/b
-    			resourceSuperTypePath, 			// /apps/c/d
-    			root + DEFAULT_RESOURCE_TYPE 	// /apps/sling/servlet/default
+    	List<Resource> expected = Arrays.asList(
+    			r(resourceTypePath),      			// /apps/a/b
+    			r(resourceSuperTypePath), 			// /apps/c/d
+    			r(root + DEFAULT_RESOURCE_TYPE) 	// /apps/sling/servlet/default
     			);
-    	assertThat(loc,is(expected));
+    	assertThat(loc,isSameResourceList(expected));
     }
     
     
@@ -494,13 +495,17 @@ public class LocationCollectorTest extends HelperTestBase {
 				ResourceUtil.getName(resourceTypePath), resourceTypeProps);
         
         
-    	List<String> loc = getLocations(resourceType, resourceSuperType);
+    	List<Resource> loc = getLocations(resourceType, resourceSuperType);
     	
-    	List<String> expected = Arrays.asList(
-    			resourceTypePath,      			// /apps/a/b
-    			root + DEFAULT_RESOURCE_TYPE 	// /apps/sling/servlet/default
+    	List<Resource> expected = Arrays.asList(
+    			r(resourceTypePath),      			// /apps/a/b
+    			r(root + DEFAULT_RESOURCE_TYPE) 	// /apps/sling/servlet/default
     			);
-    	assertThat(loc,is(expected));
+    	assertThat(loc,isSameResourceList(expected));
+    }
+    
+    private Resource r (String path) {
+    	return new SyntheticResource(resourceResolver, path, "resourcetype");
     }
     
 }

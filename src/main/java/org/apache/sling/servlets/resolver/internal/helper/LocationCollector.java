@@ -27,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceUtil;
+import org.apache.sling.api.resource.SyntheticResource;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.LoggerFactory;
@@ -53,10 +54,24 @@ import org.slf4j.LoggerFactory;
 
 class LocationCollector {
 
-    static @NotNull List<String> getLocations(String resourceType, String resourceSuperType, String baseResourceType,
+    static @NotNull List<Resource> getLocations(String resourceType, String resourceSuperType, String baseResourceType,
                                                      ResourceResolver resolver) {
         LocationCollector collector = new LocationCollector(resourceType, resourceSuperType, baseResourceType, resolver);
-        return collector.getResolvedLocations();
+        List<Resource> result = new ArrayList<>();
+        collector.getResolvedLocations().forEach((location) -> {
+	        // get the location resource, use a synthetic resource if there
+	        // is no real location. There may still be children at this
+	        // location
+	        final String path;
+	        if ( location.endsWith("/") ) {
+	            path = location.substring(0, location.length() - 1);
+	        } else {
+	            path = location;
+	        }
+	        final Resource locationRes = getResource(resolver, path);
+	        result.add(locationRes);
+        });
+        return result;
     }
 
     // The search path of the resource resolver
@@ -208,4 +223,15 @@ class LocationCollector {
         }
         return rst;
     }
+    
+	protected static @NotNull Resource getResource(final ResourceResolver resolver, String path) {
+		Resource res = resolver.getResource(path);
+
+		if (res == null) {
+			res = new SyntheticResource(resolver, path, "$synthetic$");
+		}
+
+		return res;
+	}
+    
 }
