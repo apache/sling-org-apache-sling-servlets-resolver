@@ -18,18 +18,21 @@
  */
 package org.apache.sling.servlets.resolver.internal.helper;
 
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.LoggerFactory;
 
 /**
- * The <code>LocationIterator</code> provides access to an ordered collection
+ * The <code>LocationCollector</code> provides access to an ordered collection
  * of absolute paths containing potential request handling. The primary order of
  * the collection is the resource type hierarchy with the base resource type at
  * the top. The secondary order is the search path retrieved from the resource
@@ -47,132 +50,97 @@ import org.slf4j.LoggerFactory;
  * <li><code>/libs/default</code></li>
  * </ol>
  */
-public class LocationIterator implements Iterator<String> {
 
-    // The resource resolver used to find resource super types of
-    // resource types
-    private final ResourceResolver resolver;
+class LocationCollector {
 
-    // The base resource type to be used as a final entry if there is
-    // no more resource super type. This is kind of the java.lang.Object
-    // the resource type hierarchy.
-    private final String baseResourceType;
+    static @NotNull List<String> getLocations(String resourceType, String resourceSuperType, String baseResourceType,
+                                                     ResourceResolver resolver) {
+        LocationCollector collector = new LocationCollector(resourceType, resourceSuperType, baseResourceType, resolver);
+        return collector.getResolvedLocations();
+    }
 
     // The search path of the resource resolver
     private final String[] searchPath;
 
-    // counter into the search path array
-    private int pathCounter;
-
-    // The resource type to use for the next iteration loop
-    private String resourceType;
-
-    // The first resource type to use
-    private final String firstResourceType;
-
-    // The first resource super type to use
-    private final String firstResourceSuperType;
-
-    // The current relative path generated from the resource type
-    private String relPath;
-
-    // the next absolute path to return from next(). This is null
-    // if there is no more location to return
-    private String nextLocation;
+    private final ResourceResolver resolver;
+    private final String baseResourceType;
+    private final String resourceType;
+    private final String resourceSuperType;
 
     /** Set of used resource types to detect a circular resource type hierarchy. */
     private final Set<String> usedResourceTypes = new HashSet<>();
+    
+    private final List<String> result = new ArrayList<>();
 
-    /**
-     * Creates an instance of this iterator starting with a location built from
-     * the resource type of the <code>resource</code> and ending with the
-     * given <code>baseResourceType</code>.
-     *
-     * @param resourceType the initial resource type.
-     * @param resourceSuperType the initial resource super type.
-     * @param baseResourceType The base resource type.
-     * @param resolver The resource resolver
-     */
-    public LocationIterator(String resourceType, String resourceSuperType, String baseResourceType,
-            ResourceResolver resolver) {
-        this.resolver = resolver;
+    private LocationCollector(String resourceType, String resourceSuperType, String baseResourceType,
+                              ResourceResolver resolver) {
+
+        this.resourceType = resourceType;
+        this.resourceSuperType = resourceSuperType;
         this.baseResourceType = baseResourceType;
+        this.resolver = resolver;
 
         String[] tmpPath = resolver.getSearchPath();
         if (tmpPath.length == 0) {
             tmpPath = new String[] { "/" };
         }
         searchPath = tmpPath;
-
-        this.firstResourceType = resourceType;
-        this.firstResourceSuperType = resourceSuperType;
-        // we start with the first resource type
-        this.resourceType = firstResourceType;
-
         this.usedResourceTypes.add(this.resourceType);
-
-        nextLocation = seek();
+        collectPaths();
     }
 
-    /**
-     * Returns <code>true</code> if there is another entry
-     */
-    public boolean hasNext() {
-        return nextLocation != null;
-    }
-
-    /**
-     * Returns the next entry of this iterator.
-     *
-     * @throws NoSuchElementException if {@link #hasNext()} returns
-     *             <code>false</code>.
-     */
-    public String next() {
-        if (!hasNext()) {
-            throw new NoSuchElementException();
-        }
-
-        String result = nextLocation;
-        nextLocation = seek();
+    private @NotNull List<String> getResolvedLocations() {
         return result;
     }
 
     /**
-     * @throws UnsupportedOperationException
+     * Collect all resource types
      */
-    @Override
-    public void remove() {
-        throw new UnsupportedOperationException();
-    }
-
-    private String seek() {
-
-        if (relPath == null) {
-
-            if (resourceType == null) {
-                return null;
-            }
-
-            String typePath = ResourceUtil.resourceTypeToPath(resourceType);
-            if (typePath.startsWith("/")) {
-                resourceType = getResourceSuperType(resourceType);
-                return typePath;
-            }
-
-            relPath = typePath;
+    private void collectPaths() {
+        
+        String rt = this.resourceType;
+        do {
+            String superType = handleResourceType(rt);
+            rt = superType;
+        } while (rt != null);
+        
+        // add default resourceTypes
+        final String defaultResourceTypeSuffix;
+        boolean blankResourceType = StringUtils.isBlank(resourceType);
+        if (blankResourceType) {
+            defaultResourceTypeSuffix = "";
+        } else {
+            defaultResourceTypeSuffix = this.baseResourceType;
         }
-
-        String result = searchPath[pathCounter].concat(relPath);
-
-        pathCounter++;
-        if (pathCounter >= searchPath.length) {
-            relPath = null;
-            resourceType = getResourceSuperType(resourceType);
-            pathCounter = 0;
+        for (String spath : searchPath) {
+            result.add(spath + defaultResourceTypeSuffix);
         }
-
-        return result;
     }
+    
+    /**
+     * Add all necessary path entries to the result list, and return the resourceSuperType
+     * for the given resourceType
+     * @param resourceType the resourceType
+     * @return the resourceSuperType or null if the given resourceType does not have a resourceSuperType
+     */
+    private @Nullable String handleResourceType (@NotNull String resourceType) {
+        boolean isBlank = StringUtils.isBlank(resourceType);
+        boolean isAbsoluteResourceType = resourceType.startsWith("/");
+        String rst = null;
+        if (!isBlank) {
+            if (isAbsoluteResourceType) {
+                result.add(ResourceUtil.resourceTypeToPath(resourceType));
+            } else {
+                for (String spath : searchPath) {
+                    result.add(spath + ResourceUtil.resourceTypeToPath(resourceType));
+                }
+                
+            }
+            rst = getResourceSuperType(resourceType);
+        }
+        return rst;
+    }
+    
 
     /**
      * Returns the resource super type of the given resource type:
@@ -186,7 +154,7 @@ public class LocationIterator implements Iterator<String> {
      * <li>Otherwise the base resource type is returned.</li>
      * </ol>
      */
-    private String getResourceSuperType(String resourceType) {
+    private @Nullable String getResourceSuperType(@NotNull String resourceType) {
 
         // if the current resource type is the default value, there are no more
         if (resourceType.equals(baseResourceType)) {
@@ -195,9 +163,9 @@ public class LocationIterator implements Iterator<String> {
 
         // get the super type of the current resource type
         String superType;
-        if (resourceType.equals(this.firstResourceType)
-                && this.firstResourceSuperType != null ) {
-            superType = this.firstResourceSuperType;
+        if (resourceType.equals(this.resourceType)
+                && this.resourceSuperType != null ) {
+            superType = this.resourceSuperType;
         } else {
             superType = getResourceSuperType(resolver, resourceType);
         }
@@ -211,42 +179,33 @@ public class LocationIterator implements Iterator<String> {
                 this.usedResourceTypes.add(superType);
             }
         }
-        // use default resource type if there is no super type any more
-        if (superType == null) {
-            superType = baseResourceType;
-        }
-
         return superType;
     }
 
     // this method is largely duplicated from ResourceUtil
-    private String getResourceSuperType(final ResourceResolver resourceResolver,
-                                        final String resourceType) {
+    private @Nullable String getResourceSuperType(final @NotNull ResourceResolver resourceResolver,
+                                                  final @NotNull String resourceType) {
         // normalize resource type to a path string
         final String rtPath = ResourceUtil.resourceTypeToPath(resourceType);
         // get the resource type resource and check its super type
-        String resourceSuperType = null;
+        String rst = null;
         // if the path is absolute, use it directly
-        if ( rtPath.startsWith("/") ) {
-            final String candidatePath = rtPath;
-
-            final Resource rtResource = resourceResolver.getResource(candidatePath);
-            if ( rtResource != null ) {
-                resourceSuperType = rtResource.getResourceSuperType();
+        if (rtPath.startsWith("/")) {
+            final Resource rtResource = resourceResolver.getResource(rtPath);
+            if (rtResource != null) {
+                rst = rtResource.getResourceSuperType();
             }
-
         } else {
             // if the path is relative we use the search paths
             for (final String path : this.searchPath) {
                 final String candidatePath = path + rtPath;
                 final Resource rtResource = resourceResolver.getResource(candidatePath);
-                if ( rtResource != null && rtResource.getResourceSuperType() != null ) {
-                    resourceSuperType = rtResource.getResourceSuperType();
+                if (rtResource != null && rtResource.getResourceSuperType() != null) {
+                    rst = rtResource.getResourceSuperType();
                     break;
                 }
             }
         }
-        return resourceSuperType;
+        return rst;
     }
-
 }
