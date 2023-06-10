@@ -23,7 +23,6 @@ import static org.apache.sling.servlets.resolver.internal.helper.HelperTestBase.
 import static org.apache.sling.servlets.resolver.internal.helper.HelperTestBase.getOrCreateParentResource;
 import static org.apache.sling.servlets.resolver.internal.helper.IsSameResourceList.isSameResourceList;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -441,7 +440,7 @@ public class LocationCollectorTest {
     }
     
     @Test
-    public void testCircularResourceTypeHierarchy() {
+    public void testCircularResourceTypeHierarchy() throws PersistenceException {
         final String root1 = "/libs/";
         searchPathOptions.setSearchPaths(new String[] {
                 root1
@@ -456,27 +455,18 @@ public class LocationCollectorTest {
         Map<String, Object> resource2Props = new HashMap<>();
         resource2Props.put(ResourceResolver.PROPERTY_RESOURCE_TYPE, resourceType);
         resource2Props.put("sling:resourceSuperType", resourceSuperType2);
-        try {
-            resolver.create(getOrCreateParentResource(resolver, resource2Path),
+        resolver.create(getOrCreateParentResource(resolver, resource2Path),
                     ResourceUtil.getName(resource2Path),
                     resource2Props);
-        } catch (PersistenceException e) {
-            fail("Did not expect a persistence exception: " + e.getMessage());
-        }
 
         String resource3Path = root1 + resourceSuperType2;
         Map<String, Object> resource3Props = new HashMap<>();
         resource3Props.put(ResourceResolver.PROPERTY_RESOURCE_TYPE, resourceType);
-        resource3Props.put("sling:resourceSuperType", resourceType);
-        try {
-        	resolver.create(getOrCreateParentResource(resolver, resource3Path),
-                    ResourceUtil.getName(resource3Path),
-                    resource3Props);
-        } catch (PersistenceException e) {
-            fail("Did not expect a persistence exception: " + e.getMessage());
-        }
-        
-        List<Resource> loc = getLocations(resourceType, resourceSuperType);
+		resource3Props.put("sling:resourceSuperType", resourceType);
+		resolver.create(getOrCreateParentResource(resolver, resource3Path), ResourceUtil.getName(resource3Path),
+				resource3Props);
+
+		List<Resource> loc = getLocations(resourceType, resourceSuperType);
         
         List<Resource> expected = Arrays.asList(
         		r(root1 + resourceType), // /libs/foo/bar
