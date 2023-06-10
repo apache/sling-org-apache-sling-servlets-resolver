@@ -215,7 +215,7 @@ class LocationCollector {
      * @param path the path
      * @return the resource for it or null
      */
-    private @Nullable Resource resolveResource (@NotNull String path) {
+    private @Nullable Resource resolveResource(@NotNull String path) {
     	if (cacheMap.containsKey(path)) {
     		return cacheMap.get(path);
     	} else {
