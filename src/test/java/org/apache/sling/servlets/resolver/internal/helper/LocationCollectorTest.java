@@ -19,10 +19,14 @@
 package org.apache.sling.servlets.resolver.internal.helper;
 
 import static org.apache.sling.api.servlets.ServletResolverConstants.DEFAULT_RESOURCE_TYPE;
+import static org.apache.sling.servlets.resolver.internal.helper.HelperTestBase.addOrReplaceResource;
+import static org.apache.sling.servlets.resolver.internal.helper.HelperTestBase.getOrCreateParentResource;
 import static org.apache.sling.servlets.resolver.internal.helper.IsSameResourceList.isSameResourceList;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.fail;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,8 +36,56 @@ import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.resource.SyntheticResource;
+import org.apache.sling.commons.testing.sling.MockSlingHttpServletRequest;
+import org.apache.sling.testing.mock.sling.junit.SlingContext;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.mockito.Mockito;
 
-public class LocationCollectorTest extends HelperTestBase {
+
+public class LocationCollectorTest {
+	
+	@Rule
+	public final SlingContext context = new SlingContext();
+	
+	SearchPathOptions searchPathOptions = new SearchPathOptions();
+    protected String resourcePath;
+    protected String resourceType;
+    protected String resourceTypePath;
+    protected String resourceSuperType;
+    protected String resourceSuperTypePath;
+	
+	protected Resource resource;
+	protected MockSlingHttpServletRequest request;
+	
+	
+	protected ResourceResolver resolver; // required because of the spy
+	
+	@Before
+	public void setup() throws Exception {
+
+		searchPathOptions = new SearchPathOptions();
+		resolver = Mockito.spy(context.resourceResolver());
+		Mockito.when(resolver.getSearchPath()).thenAnswer( invocation -> {
+			return searchPathOptions.getSearchPath();
+		});
+		
+        resourceType = "foo:bar";
+        resourceTypePath = ResourceUtil.resourceTypeToPath(resourceType);
+
+        resourcePath = "/content/page";
+        context.build().resource("/content",Collections.emptyMap()).commit();
+        Resource parent = resolver.getResource("/content");
+        resource = resolver.create(parent, "page",
+                Collections.singletonMap(ResourceResolver.PROPERTY_RESOURCE_TYPE, resourceType));
+
+        request = new MockSlingHttpServletRequest(resourcePath, "print.A4", "html", null, null);
+        request.setMethod("GET");
+        request.setResourceResolver(resolver);
+        request.setResource(resource);
+		
+	}
 
     List<Resource> getLocations(final String resourceType,
             final String resourceSuperType) {
@@ -43,15 +95,17 @@ public class LocationCollectorTest extends HelperTestBase {
     List<Resource> getLocations( final String resourceType,
             final String resourceSuperType,
             final String baseResourceType) {
+    	
         return LocationCollector.getLocations(resourceType,
                 resourceSuperType,
                 baseResourceType,
-                this.resourceResolver);
+                resolver);
     }
     
+    @Test
     public void testSearchPathEmpty() {
         // expect path gets { "/" }
-        resourceResolverOptions.setSearchPaths(null);
+        searchPathOptions.setSearchPaths(null);
 
         final Resource r = request.getResource();
         List<Resource> loc = getLocations(r.getResourceType(),
@@ -63,9 +117,10 @@ public class LocationCollectorTest extends HelperTestBase {
         assertThat(loc,isSameResourceList(expected));
     }
     
+    @Test
     public void testSearchPath1Element() {
         String root0 = "/apps/";
-        resourceResolverOptions.setSearchPaths(new String[] {
+        searchPathOptions.setSearchPaths(new String[] {
                 root0
         });
 
@@ -82,7 +137,7 @@ public class LocationCollectorTest extends HelperTestBase {
     public void testSearchPath2Elements() {
         String root0 = "/apps/";
         String root1 = "/libs/";
-        resourceResolverOptions.setSearchPaths(new String[] {
+        searchPathOptions.setSearchPaths(new String[] {
                 root0,
                 root1
         });
@@ -116,13 +171,13 @@ public class LocationCollectorTest extends HelperTestBase {
         if (newResourceSuperType != null) {
             props.put("sling:resourceSuperType", newResourceSuperType);
         }
-        Resource r = addOrReplaceResource(resourceResolver, resource.getPath(), props);
+        Resource r = addOrReplaceResource(resolver, resource.getPath(), props);
         request.setResource(r);
     }
 
     public void testSearchPathEmptyAbsoluteType() {
         // expect path gets { "/" }
-        resourceResolverOptions.setSearchPaths(null);
+        searchPathOptions.setSearchPaths(null);
 
         // absolute resource type
         resourceType = "/foo/bar";
@@ -141,7 +196,7 @@ public class LocationCollectorTest extends HelperTestBase {
     
     public void testSearchPath1ElementAbsoluteType() {
         String root0 = "/apps/";
-        resourceResolverOptions.setSearchPaths(new String[] {
+        searchPathOptions.setSearchPaths(new String[] {
                 root0
         });
 
@@ -164,7 +219,7 @@ public class LocationCollectorTest extends HelperTestBase {
     public void testSearchPath2ElementsAbsoluteType() {
         String root0 = "/apps/";
         String root1 = "/libs/";
-        resourceResolverOptions.setSearchPaths(new String[] {
+        searchPathOptions.setSearchPaths(new String[] {
                 root0,
                 root1
         });
@@ -187,7 +242,7 @@ public class LocationCollectorTest extends HelperTestBase {
     
     public void testSearchPathEmptyWithSuper() {
         // expect path gets { "/" }
-        resourceResolverOptions.setSearchPaths(null);
+        searchPathOptions.setSearchPaths(null);
 
         // set resource super type
         resourceSuperType = "foo:superBar";
@@ -207,7 +262,7 @@ public class LocationCollectorTest extends HelperTestBase {
     
     public void testSearchPath1ElementWithSuper() {
         String root0 = "/apps/";
-        resourceResolverOptions.setSearchPaths(new String[] {
+        searchPathOptions.setSearchPaths(new String[] {
                 root0
         });
 
@@ -230,7 +285,7 @@ public class LocationCollectorTest extends HelperTestBase {
     public void testSearchPath2ElementsWithSuper() {
         String root0 = "/apps/";
         String root1 = "/libs/";
-        resourceResolverOptions.setSearchPaths(new String[] {
+        searchPathOptions.setSearchPaths(new String[] {
                 root0,
                 root1
         });
@@ -256,7 +311,7 @@ public class LocationCollectorTest extends HelperTestBase {
     
     public void testSearchPathEmptyAbsoluteTypeWithSuper() {
         // expect path gets { "/" }
-        resourceResolverOptions.setSearchPaths(null);
+        searchPathOptions.setSearchPaths(null);
 
         // absolute resource type
         resourceType = "/foo/bar";
@@ -280,7 +335,7 @@ public class LocationCollectorTest extends HelperTestBase {
     
     public void testSearchPath1ElementAbsoluteTypeWithSuper() {
         String root0 = "/apps/";
-        resourceResolverOptions.setSearchPaths(new String[] {
+        searchPathOptions.setSearchPaths(new String[] {
                 root0
         });
 
@@ -307,7 +362,7 @@ public class LocationCollectorTest extends HelperTestBase {
     public void testSearchPath2ElementsAbsoluteTypeWithSuper() {
         String root0 = "/apps/";
         String root1 = "/libs/";
-        resourceResolverOptions.setSearchPaths(new String[] {
+        searchPathOptions.setSearchPaths(new String[] {
                 root0,
                 root1
         });
@@ -337,7 +392,7 @@ public class LocationCollectorTest extends HelperTestBase {
     public void testScriptNameWithoutResourceType() {
         String root0 = "/apps/";
         String root1 = "/libs/";
-        resourceResolverOptions.setSearchPaths(new String[] {
+        searchPathOptions.setSearchPaths(new String[] {
                 root0,
                 root1
         });
@@ -353,7 +408,7 @@ public class LocationCollectorTest extends HelperTestBase {
     public void testScriptNameWithResourceType() {
         String root0 = "/apps/";
         String root1 = "/libs/";
-        resourceResolverOptions.setSearchPaths(new String[] {
+        searchPathOptions.setSearchPaths(new String[] {
                 root0,
                 root1
         });
@@ -370,7 +425,7 @@ public class LocationCollectorTest extends HelperTestBase {
     public void testScriptNameWithResourceTypeAndSuperType() {
         String root0 = "/apps/";
         String root1 = "/libs/";
-        resourceResolverOptions.setSearchPaths(new String[] {
+        searchPathOptions.setSearchPaths(new String[] {
                 root0,
                 root1
         });
@@ -389,7 +444,7 @@ public class LocationCollectorTest extends HelperTestBase {
     
     public void testCircularResourceTypeHierarchy() {
         final String root1 = "/libs/";
-        resourceResolverOptions.setSearchPaths(new String[] {
+        searchPathOptions.setSearchPaths(new String[] {
                 root1
         });
 
@@ -403,7 +458,7 @@ public class LocationCollectorTest extends HelperTestBase {
         resource2Props.put(ResourceResolver.PROPERTY_RESOURCE_TYPE, resourceType);
         resource2Props.put("sling:resourceSuperType", resourceSuperType2);
         try {
-            resourceResolver.create(getOrCreateParentResource(resourceResolver, resource2Path),
+            resolver.create(getOrCreateParentResource(resolver, resource2Path),
                     ResourceUtil.getName(resource2Path),
                     resource2Props);
         } catch (PersistenceException e) {
@@ -415,7 +470,7 @@ public class LocationCollectorTest extends HelperTestBase {
         resource3Props.put(ResourceResolver.PROPERTY_RESOURCE_TYPE, resourceType);
         resource3Props.put("sling:resourceSuperType", resourceType);
         try {
-            resourceResolver.create(getOrCreateParentResource(resourceResolver, resource3Path),
+        	resolver.create(getOrCreateParentResource(resolver, resource3Path),
                     ResourceUtil.getName(resource3Path),
                     resource3Props);
         } catch (PersistenceException e) {
@@ -448,7 +503,7 @@ public class LocationCollectorTest extends HelperTestBase {
     
     public void testAbsoluteResourceSuperType() throws Exception {
         final String root = "/apps/";
-        resourceResolverOptions.setSearchPaths(new String[] {
+        searchPathOptions.setSearchPaths(new String[] {
                 root
         });
         
@@ -462,9 +517,9 @@ public class LocationCollectorTest extends HelperTestBase {
         resourceTypeProps.put(ResourceResolver.PROPERTY_RESOURCE_TYPE, resourceType);
         resourceTypeProps.put("sling:resourceSuperType", resourceSuperType);
         
-		resourceResolver.create(getOrCreateParentResource(resourceResolver, resourceTypePath),
+        resolver.create(getOrCreateParentResource(resolver, resourceTypePath),
 				ResourceUtil.getName(resourceTypePath), resourceTypeProps);
-		resourceResolver.create(getOrCreateParentResource(resourceResolver, resourceSuperTypePath),
+        resolver.create(getOrCreateParentResource(resolver, resourceSuperTypePath),
 				ResourceUtil.getName(resourceSuperTypePath), null);
         
         
@@ -481,7 +536,7 @@ public class LocationCollectorTest extends HelperTestBase {
     
     public void testNoSuperType() throws Exception {
         final String root = "/apps/";
-        resourceResolverOptions.setSearchPaths(new String[] {
+        searchPathOptions.setSearchPaths(new String[] {
                 root
         });
         
@@ -491,7 +546,7 @@ public class LocationCollectorTest extends HelperTestBase {
         Map<String, Object> resourceTypeProps = new HashMap<>();
         resourceTypeProps.put(ResourceResolver.PROPERTY_RESOURCE_TYPE, resourceType);
         
-		resourceResolver.create(getOrCreateParentResource(resourceResolver, resourceTypePath),
+        resolver.create(getOrCreateParentResource(resolver, resourceTypePath),
 				ResourceUtil.getName(resourceTypePath), resourceTypeProps);
         
         
@@ -505,7 +560,28 @@ public class LocationCollectorTest extends HelperTestBase {
     }
     
     private Resource r (String path) {
-    	return new SyntheticResource(resourceResolver, path, "resourcetype");
+    	return new SyntheticResource(resolver, path, "resourcetype");
     }
+    
+    
+    // Mimic the searchpath semantic of the ResourceResolverFactory
+    public class SearchPathOptions {
+    	
+    	String[] searchPath = new String[0];
+    	
+    	public void setSearchPaths(String[] searchpath) {
+    		if (searchpath == null) {
+    			this.searchPath = new String[0];
+    		} else {
+    			this.searchPath = searchpath;
+    		}
+    	}
+    	
+    	public String[] getSearchPath() {
+    		return searchPath;
+    	}
+    }
+    
+    
     
 }

@@ -54,7 +54,7 @@ public class IsSameResourceList extends TypeSafeMatcher<List<Resource>>{
 	
 	@Override
 	public void describeTo(Description description) {
-		description.appendText("isSameListOfResources for");
+		description.appendText("isSameListOfResources for " + baseLine);
 		
 	}
 	
