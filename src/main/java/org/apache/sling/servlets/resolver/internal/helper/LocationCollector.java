@@ -243,7 +243,7 @@ class LocationCollector {
 		LocationCollector collector = new LocationCollector(resourceType, resourceSuperType, baseResourceType,
 				resolver, cacheMap);
 		List<Resource> result = new ArrayList<>();
-		collector.getResolvedLocations().forEach((location) -> {
+		collector.getResolvedLocations().forEach(location -> {
 			// get the location resource, use a synthetic resource if there
 			// is no real location. There may still be children at this
 			// location

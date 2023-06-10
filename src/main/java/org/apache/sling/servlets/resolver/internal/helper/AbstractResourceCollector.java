@@ -97,9 +97,7 @@ public abstract class AbstractResourceCollector {
         
         
         List<Resource> locations = LocationCollector.getLocations(resourceType, resourceSuperType, baseResourceType, resolver);
-        locations.forEach(locationRes -> {
-            getWeightedResources(resources, locationRes);
-        });
+        locations.forEach(locationRes -> getWeightedResources(resources, locationRes));
 
         List<Resource> result = new ArrayList<>(resources.size());
         result.addAll(resources);
