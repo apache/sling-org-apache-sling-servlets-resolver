@@ -84,13 +84,6 @@ public class WebConsolePlugin extends HttpServlet {
     private static final String PARAMETER_METHOD = "method";
 
     private static final String SERVICE_USER_CONSOLE = "console";
-    private static final String CONSOLE_PATH_WARNING =
-                    "Note that in a real Sling request, the path might vary depending on the existence of"
-                    + " resources that partially match it. "
-                    + "<br/>This utility does not take this into account and uses the first dot to split"
-                    + " between path and selectors/extension. "
-                    + "<br/>As a workaround, you can replace dots with underline characters, for example, when " +
-                            "testing such a URL.";
 
     @Reference(target="("+ServiceUserMapped.SUBSERVICENAME+"=" + SERVICE_USER_CONSOLE + ")")
     private ServiceUserMapped consoleServiceUserMapped; // NOSONAR
@@ -124,7 +117,7 @@ public class WebConsolePlugin extends HttpServlet {
     @Override
     protected void service(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException {
         final String url = request.getParameter(PARAMETER_URL);
-        final RequestPathInfo requestPathInfo = getRequestPathInfo(url);
+        
         String method = request.getParameter(PARAMETER_METHOD);
         if (StringUtils.isBlank(method)) {
             method = "GET";
@@ -133,7 +126,7 @@ public class WebConsolePlugin extends HttpServlet {
         String requestURI = request.getRequestURI();
         try (final ResourceResolver resourceResolver = resourceResolverFactory.getServiceResourceResolver(Collections.singletonMap(ResourceResolverFactory.SUBSERVICE, (Object)SERVICE_USER_CONSOLE))) {
             final PrintWriter pw = response.getWriter();
-
+            final RequestPathInfo requestPathInfo = getRequestPathInfo(url, resourceResolver);
             if (requestURI.endsWith("json")) {
                 pw.println("{");
                 if (StringUtils.isNotBlank(url)) {
@@ -142,7 +135,6 @@ public class WebConsolePlugin extends HttpServlet {
                 if (StringUtils.isNotBlank(requestPathInfo.getResourcePath())) {
                     printJSONCandidatesElement(pw, resourceResolver, requestPathInfo, method);
                 }
-                pw.printf("  \"warningMsg\" : \"%s\",%n", CONSOLE_PATH_WARNING.replace("<br/>", ""));
                 pw.printf("  \"method\" : \"%s\"%n", StringEscapeUtils.escapeJson(method));
                 pw.print("}");
 
@@ -323,8 +315,6 @@ public class WebConsolePlugin extends HttpServlet {
             pw.println("<dt>Path</dt>");
             dd(pw);
             pw.print(ResponseUtil.escapeXml(requestPathInfo.getResourcePath()));
-            pw.print("<br/>");
-            pw.print(String.format("<em>%s</em>", CONSOLE_PATH_WARNING));
             closeDd(pw);
             pw.println("<dt>Selectors</dt>");
             dd(pw);
@@ -474,15 +464,14 @@ public class WebConsolePlugin extends HttpServlet {
         }
     }
 
-    static RequestPathInfo getRequestPathInfo(String urlString) {
+    static RequestPathInfo getRequestPathInfo(String urlString, ResourceResolver resourceResolver) {
 
-        if(urlString == null) {
+        if (urlString == null) {
             urlString = "";
         }
 
-        // For the path, take everything up to the first dot
         String fullPath = urlString;
-        if(urlString.contains("http")) {
+        if (urlString.contains("http")) {
             try {
                 fullPath = new URL(urlString).getPath();
             } catch(MalformedURLException ignore) {
@@ -490,6 +479,7 @@ public class WebConsolePlugin extends HttpServlet {
             }
         }
         return SlingUriBuilder.create()
+            .setResourceResolver(resourceResolver)
             .setPath(fullPath)
             .build();
     }

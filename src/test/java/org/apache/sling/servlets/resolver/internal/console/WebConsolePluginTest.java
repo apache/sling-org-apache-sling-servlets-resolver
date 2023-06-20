@@ -245,10 +245,7 @@ public class WebConsolePluginTest {
                 "<td class='content' colspan='2'><dl>\n" +
                 "<dt>Path</dt>\n" +
                 "<dd>\n" +
-                "/test<br/><em>Note that in a real Sling request, the path might vary depending on the existence of " +
-                "resources that partially match it. <br/>This utility does not take this into account and uses the " +
-                "first dot to split between path and selectors/extension. <br/>As a workaround, you can replace dots " +
-                "with underline characters, for example, when testing such a URL.</em></dd><dt>Selectors</dt>\n" +
+                "/test</dd><dt>Selectors</dt>\n" +
                 "<dd>\n" +
                 "[1]</dd><dt>Extension</dt>\n" +
                 "<dd>\n" +

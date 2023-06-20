@@ -62,8 +62,6 @@ public class DecomposedURLTest {
                     null
             });
 
-            // dots are always considered separators between path and selectors/extension,
-            // as mentioned on the webconsole plugin path warning.
             result.add(new Object[] {
                     "/home/users/geometrixx-outdoors/emily.andrews@mailinator.com/profile.form.html/content/geometrixx-outdoors/en/user/profile",
                     "/home/users/geometrixx-outdoors/emily",
@@ -72,20 +70,11 @@ public class DecomposedURLTest {
                     "/profile.form.html/content/geometrixx-outdoors/en/user/profile"
             });
 
-            // the trick is to replace dots with _, which gives the same results as
-            // if a resource exists at ...@mailinator.com/profile
-            result.add(new Object[] {
-                    "/home/users/geometrixx-outdoors/emily_andrews@mailinator_com/profile.form.html/content/geometrixx-outdoors/en/user/profile",
-                    "/home/users/geometrixx-outdoors/emily_andrews@mailinator_com/profile",
-                    "html",
-                    "form",
-                    "/content/geometrixx-outdoors/en/user/profile"
-            });
             return result;
     }
 
     public DecomposedURLTest(String input, String path, String extension, String selectors, String suffix) {
-        rpi = WebConsolePlugin.getRequestPathInfo(input);
+        rpi = WebConsolePlugin.getRequestPathInfo(input, null);
         this.path = path;
         this.extension = extension;
         this.selectors = selectors;
