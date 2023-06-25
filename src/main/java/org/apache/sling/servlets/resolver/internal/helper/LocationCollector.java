@@ -19,11 +19,14 @@
 package org.apache.sling.servlets.resolver.internal.helper;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.Resource;
@@ -73,8 +76,10 @@ class LocationCollector {
     
     private final List<String> result = new ArrayList<>();
 
-    private LocationCollector(String resourceType, String resourceSuperType, String baseResourceType,
-                              ResourceResolver resolver, Map<String,Resource> cacheMap) {
+    private LocationCollector(@NotNull String resourceType, @NotNull String resourceSuperType, 
+    		@NotNull String baseResourceType,
+            @NotNull ResourceResolver resolver, 
+            @NotNull Map<String,Resource> cacheMap) {
 
         this.resourceType = resourceType;
         this.resourceSuperType = resourceSuperType;
@@ -232,37 +237,45 @@ class LocationCollector {
 	static @NotNull List<Resource> getLocations(String resourceType, String resourceSuperType, String baseResourceType,
 			ResourceResolver resolver) {
 		
-		@SuppressWarnings("unchecked")
-		Map<String,Resource> m = (Map<String,Resource>) resolver.getPropertyMap().get(CACHE_KEY);
-		if (m == null) {
-			m = new HashMap<>();
-			resolver.getPropertyMap().put(CACHE_KEY, m);
-		}
-		final Map<String,Resource> cacheMap = m;
+		final Map<String,Resource> cacheMap = getCacheMap(resolver);
 		
 		LocationCollector collector = new LocationCollector(resourceType, resourceSuperType, baseResourceType,
 				resolver, cacheMap);
-		List<Resource> result = new ArrayList<>();
-		collector.getResolvedLocations().forEach(location -> {
-			// get the location resource, use a synthetic resource if there
-			// is no real location. There may still be children at this
-			// location
-			final String path;
-			if (location.endsWith("/")) {
-				path = location.substring(0, location.length() - 1);
+		
+		// get the location resource, use a synthetic resource if there
+		// is no real location. There may still be children at this
+		// location
+		return collector.getResolvedLocations().stream()
+		  .map(LocationCollector::removeTrailingSlash)
+		  .map(path -> getResource(resolver,path,cacheMap))
+		  .collect(Collectors.toList());
+	}
+
+	private static Map<String, Resource> getCacheMap(@NotNull ResourceResolver resolver) {
+		Map<String, Resource> cacheMap;
+		Object c = resolver.getPropertyMap().get(CACHE_KEY);
+		
+		if (c != null) {
+			if (c instanceof Map<?,?>) {
+				cacheMap = (Map<String,Resource>) resolver.getPropertyMap().get(CACHE_KEY);
 			} else {
-				path = location;
+				// it's of an incorrect type, so probably somebody else is using it.
+				// Just use the map for now, but do not store it as cache to the ResourceResolver
+				cacheMap = new HashMap<>();
 			}
-			final Resource locationRes = getResource(resolver, path, cacheMap);
-			result.add(locationRes);
-		});
-		return result;
+		} else {
+			// this is good enough, as ResourceResolvers should be used only by a single thread anyway
+			cacheMap = Collections.synchronizedMap(new HashMap<String,Resource>());
+			resolver.getPropertyMap().put(CACHE_KEY, cacheMap);
+		}
+		return cacheMap;
 	}
     
     /**
-     * Resolve a path to a resource
+     * Resolve a path to a resource, either via the cache or the ResourceResolver
      * @param resolver
      * @param path
+     * @param cacheMap the cache map to use
      * @return a synthetic or "real" resource
      */
 	protected static @NotNull Resource getResource(final @NotNull ResourceResolver resolver, 
@@ -279,5 +292,19 @@ class LocationCollector {
 			return res;
 		}
 	}
+	
+	/**
+	 * Remove the last character if it's a trailing "/"
+	 * @param input
+	 * @return if input ends with a "/", returns the input without the "/" character at its end; input otherwise
+	 */
+	private static @NotNull String removeTrailingSlash (@NotNull String input) {
+		if (input.endsWith("/")) {
+			return input.substring(0, input.length() - 1);
+		} else {
+			return input;
+		}
+	}
+	
     
 }
