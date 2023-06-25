@@ -234,12 +234,22 @@ class LocationCollector {
     
     // ---- static helpers ---
     
-	static @NotNull List<Resource> getLocations(String resourceType, String resourceSuperType, String baseResourceType,
-			ResourceResolver resolver) {
+    /**
+     * Return a list of resources, which represent potential matches for the given resourceType, resourceSuperType, 
+     * considering the constraints of the baseResourceType.
+     * @param resourceType 
+     * @param resourceSuperType
+     * @param baseResourceType
+     * @param resolver
+     * @return a list of non-null resources
+     */
+	static @NotNull List<Resource> getLocations(@NotNull String resourceType, 
+			@NotNull String resourceSuperType, 
+			@NotNull String baseResourceType,
+			@NotNull ResourceResolver resolver) {
 		
 		final Map<String,Resource> cacheMap = getCacheMap(resolver);
-		
-		LocationCollector collector = new LocationCollector(resourceType, resourceSuperType, baseResourceType,
+		final LocationCollector collector = new LocationCollector(resourceType, resourceSuperType, baseResourceType,
 				resolver, cacheMap);
 		
 		// get the location resource, use a synthetic resource if there
