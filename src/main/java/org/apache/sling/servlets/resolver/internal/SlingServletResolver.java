@@ -132,6 +132,9 @@ public class SlingServletResolver
      * The default extensions
      */
     private AtomicReference<String[]> defaultExtensions = new AtomicReference<>();
+    
+    private boolean useResourceCaching;
+    
 
     private final PathBasedServletAcceptor pathBasedServletAcceptor = new PathBasedServletAcceptor();
 
@@ -295,7 +298,7 @@ public class SlingServletResolver
             String extension = request.getRequestPathInfo().getExtension();
             ResourceCollector locationUtil = new ResourceCollector(String.valueOf(status),
                     DEFAULT_ERROR_HANDLER_RESOURCE_TYPE, resource,
-                    extension, this.executionPaths.get());
+                    extension, this.executionPaths.get(), this.useResourceCaching);
             Servlet servlet = getServletInternal(locationUtil, request, scriptResolver);
 
             // fall back to default servlet if none
@@ -353,7 +356,7 @@ public class SlingServletResolver
                 String extension = request.getRequestPathInfo().getExtension();
                 ResourceCollector locationUtil = new ResourceCollector(tClass.getSimpleName(),
                         DEFAULT_ERROR_HANDLER_RESOURCE_TYPE, resource,
-                        extension, this.executionPaths.get());
+                        extension, this.executionPaths.get(), this.useResourceCaching);
                 servlet = getServletInternal(locationUtil, request, scriptResolver);
 
                 // go to the base class
@@ -470,9 +473,9 @@ public class SlingServletResolver
             // the resource type is not absolute, so lets go for the deep search
             final AbstractResourceCollector locationUtil;
             if ( request != null ) {
-                locationUtil = ResourceCollector.create(request, this.executionPaths.get(), this.defaultExtensions.get());
+                locationUtil = ResourceCollector.create(request, this.executionPaths.get(), this.defaultExtensions.get(), this.useResourceCaching);
             } else {
-                locationUtil = NamedScriptResourceCollector.create(scriptNameOrResourceType, resource, this.executionPaths.get());
+                locationUtil = NamedScriptResourceCollector.create(scriptNameOrResourceType, resource, this.executionPaths.get(), this.useResourceCaching);
             }
             servlet = getServletInternal(locationUtil, request, resolver);
 
@@ -598,7 +601,7 @@ public class SlingServletResolver
         final ResourceCollector locationUtil = new ResourceCollector(
             ServletResolverConstants.DEFAULT_ERROR_HANDLER_METHOD,
             DEFAULT_ERROR_HANDLER_RESOURCE_TYPE, resource,
-            extension, this.executionPaths.get());
+            extension, this.executionPaths.get(), this.useResourceCaching);
         final Servlet servlet = getServletInternal(locationUtil, request, resolver);
         if (servlet != null) {
             return servlet;
@@ -677,6 +680,7 @@ public class SlingServletResolver
 
         this.executionPaths.set(getExecutionPaths(config.servletresolver_paths()));
         this.defaultExtensions.set(config.servletresolver_defaultExtensions());
+        this.useResourceCaching = config.enable_resource_caching();
 
         // setup default servlet
         this.getDefaultServlet();

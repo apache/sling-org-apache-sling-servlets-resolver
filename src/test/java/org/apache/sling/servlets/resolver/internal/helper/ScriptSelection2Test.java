@@ -171,7 +171,7 @@ public class ScriptSelection2Test {
                               List<String> scriptEngineFactoriesExtensions, String... expectedScripts) {
         SlingHttpServletRequest request = prepareRequest(method, contentResource, selectors, extension);
         final ResourceCollector collector =
-                ResourceCollector.create(request, context.resourceResolver().getSearchPath(), new String[]{"html"});
+                ResourceCollector.create(request, context.resourceResolver().getSearchPath(), new String[]{"html"}, true);
         final Collection<Resource> s = collector.getServlets(request.getResourceResolver(), scriptEngineFactoriesExtensions);
         if (expectedScripts == null || expectedScripts.length == 0) {
             assertFalse("No script must be found", s.iterator().hasNext());

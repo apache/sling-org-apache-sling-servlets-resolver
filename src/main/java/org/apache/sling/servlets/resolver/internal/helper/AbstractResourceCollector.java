@@ -53,17 +53,21 @@ public abstract class AbstractResourceCollector {
     protected final String resourceSuperType;
 
     protected final String[] executionPaths;
+    
+    protected boolean useResourceCaching;
 
     protected AbstractResourceCollector(final String baseResourceType,
             final String resourceType,
             final String resourceSuperType,
             final String extension,
-            final String[] executionPaths) {
+            final String[] executionPaths,
+            final boolean useResourceCaching) {
         this.baseResourceType = baseResourceType;
         this.resourceType = resourceType;
         this.resourceSuperType = resourceSuperType;
         this.extension = extension;
         this.executionPaths = executionPaths;
+        this.useResourceCaching = useResourceCaching;
     }
 
     public final Collection<Resource> getServlets(final ResourceResolver resolver, final List<String> scriptExtensions) {
@@ -96,7 +100,8 @@ public abstract class AbstractResourceCollector {
         });
         
         
-        List<Resource> locations = LocationCollector.getLocations(resourceType, resourceSuperType, baseResourceType, resolver);
+        List<Resource> locations = LocationCollector.getLocations(resourceType, resourceSuperType, 
+        		baseResourceType, resolver, this.useResourceCaching);
         locations.forEach(locationRes -> getWeightedResources(resources, locationRes));
 
         List<Resource> result = new ArrayList<>(resources.size());

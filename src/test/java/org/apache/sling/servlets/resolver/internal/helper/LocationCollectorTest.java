@@ -40,10 +40,23 @@ import org.apache.sling.testing.mock.sling.junit.SlingContext;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 import org.mockito.Mockito;
 
-
+@RunWith(Parameterized.class)
 public class LocationCollectorTest {
+	
+	// Run the test both with and without resource caching enabled
+	@Parameters
+	public static Iterable<Object> data() {
+		return Arrays.asList(true, false);
+	}
+	
+	@Parameter
+	public boolean useResourceCaching;
 	
 	@Rule
 	public final SlingContext context = new SlingContext();
@@ -557,6 +570,11 @@ public class LocationCollectorTest {
     @Test
     public void checkThatTheCacheIsUsed() {
 
+    	// skip if the test runs without caching
+    	if (!useResourceCaching) {
+    		return;
+    	}
+    	
     	// The basic test setup is copied from testSearchPath2ElementsWithSuper
         String root0 = "/apps/";
         String root1 = "/libs/";
@@ -605,7 +623,7 @@ public class LocationCollectorTest {
         return LocationCollector.getLocations(resourceType,
                 resourceSuperType,
                 baseResourceType,
-                resolver);
+                resolver, useResourceCaching);
     }
     
     // Mimic the searchpath semantic of the ResourceResolverFactory

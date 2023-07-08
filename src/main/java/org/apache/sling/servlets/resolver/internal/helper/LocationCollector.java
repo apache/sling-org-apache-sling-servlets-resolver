@@ -69,6 +69,7 @@ class LocationCollector {
     private final String baseResourceType;
     private final String resourceType;
     private final String resourceSuperType;
+    private final boolean useResourceCaching;
 
     /** Set of used resource types to detect a circular resource type hierarchy. */
     private final Set<String> usedResourceTypes = new HashSet<>();
@@ -78,13 +79,15 @@ class LocationCollector {
     private LocationCollector(@NotNull String resourceType, @NotNull String resourceSuperType, 
     		@NotNull String baseResourceType,
             @NotNull ResourceResolver resolver, 
-            @NotNull Map<String,Resource> cacheMap) {
+            @NotNull Map<String,Resource> cacheMap,
+            final boolean useResourceCaching) {
 
         this.resourceType = resourceType;
         this.resourceSuperType = resourceSuperType;
         this.baseResourceType = baseResourceType;
         this.resolver = resolver;
         this.cacheMap = cacheMap;
+        this.useResourceCaching = useResourceCaching;
 
         String[] tmpPath = resolver.getSearchPath();
         if (tmpPath.length == 0) {
@@ -220,7 +223,7 @@ class LocationCollector {
      * @return the resource for it or null
      */
     private @Nullable Resource resolveResource(@NotNull String path) {
-    	if (cacheMap.containsKey(path)) {
+    	if (useResourceCaching && cacheMap.containsKey(path)) {
     		return cacheMap.get(path);
     	} else {
     		Resource r = resolver.getResource(path);
@@ -245,11 +248,12 @@ class LocationCollector {
 	static @NotNull List<Resource> getLocations(@NotNull String resourceType, 
 			@NotNull String resourceSuperType, 
 			@NotNull String baseResourceType,
-			@NotNull ResourceResolver resolver) {
+			@NotNull ResourceResolver resolver,
+			boolean useResourceCaching) {
 		
 		final Map<String,Resource> cacheMap = getCacheMap(resolver);
 		final LocationCollector collector = new LocationCollector(resourceType, resourceSuperType, baseResourceType,
-				resolver, cacheMap);
+				resolver, cacheMap, useResourceCaching);
 		
 		// get the location resource, use a synthetic resource if there
 		// is no real location. There may still be children at this
