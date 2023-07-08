@@ -23,6 +23,7 @@ import static org.apache.sling.servlets.resolver.internal.helper.HelperTestBase.
 import static org.apache.sling.servlets.resolver.internal.helper.HelperTestBase.getOrCreateParentResource;
 import static org.apache.sling.servlets.resolver.internal.helper.IsSameResourceList.isSameResourceList;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -601,6 +602,31 @@ public class LocationCollectorTest {
                 r.getResourceSuperType());
     	
         Mockito.verify(resolver, Mockito.never()).getResource(Mockito.anyString());
+    }
+    
+    @Test
+    public void testWithCacheMapKeyAlreadyUsed() {
+    	// if the cacheKey in the ResourceResolverMap is already used, make sure that it's not overwritten
+    	// this is an adapted copy of the testSearchPath1Element testcase
+    	
+        String root0 = "/apps/";
+        searchPathOptions.setSearchPaths(new String[] {
+                root0
+        });
+
+        final Resource r = request.getResource();
+        final Object storedElement = "randomString";
+        r.getResourceResolver().getPropertyMap().put(LocationCollector.CACHE_KEY, storedElement);
+        List<Resource> loc = getLocations(r.getResourceType(),
+                r.getResourceSuperType());
+        
+        List<Resource> expected = Arrays.asList(
+        		r(root0 + resourceTypePath), // /apps/foo/bar
+                r(root0 + DEFAULT_RESOURCE_TYPE)); // /apps/sling/servlet/default
+        assertThat(loc,isSameResourceList(expected));
+    	
+        assertEquals(storedElement, r.getResourceResolver().getPropertyMap().get(LocationCollector.CACHE_KEY));
+    	
     }
     
     

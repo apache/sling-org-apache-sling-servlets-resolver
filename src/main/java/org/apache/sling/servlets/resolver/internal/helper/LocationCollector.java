@@ -58,7 +58,7 @@ import org.slf4j.LoggerFactory;
 
 class LocationCollector {
 
-	private static final String CACHE_KEY = LocationCollector.class.getName() + ".CacheKey";
+	protected static final String CACHE_KEY = LocationCollector.class.getName() + ".CacheKey";
 
     // The search path of the resource resolver
     private final String[] searchPath;
