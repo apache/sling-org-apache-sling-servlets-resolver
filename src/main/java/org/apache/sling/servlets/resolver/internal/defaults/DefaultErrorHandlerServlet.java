@@ -80,21 +80,13 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
             statusMessage = statusToString(statusCode);
         }
 
-        if (!res.isCommitted()) {
-            res.reset();
-
-            //properly consider the 'Accept' header conditions to decide whether to send json or html back
-            if (req instanceof HttpServletRequest &&
-                    JSON_CONTENT_TYPE.equals(new MediaRangeList((HttpServletRequest)req).prefer(HTML_CONTENT_TYPE, JSON_CONTENT_TYPE))) {
-                renderJson(req, res, statusMessage, requestUri, servletName, statusCode);
-            } else {
-                //default to HTML rendering
-                renderHtml(req, res, statusMessage, requestUri, servletName, statusCode);
-            }
+        //properly consider the 'Accept' header conditions to decide whether to send json or html back
+        if (req instanceof HttpServletRequest &&
+                JSON_CONTENT_TYPE.equals(new MediaRangeList((HttpServletRequest)req).prefer(HTML_CONTENT_TYPE, JSON_CONTENT_TYPE))) {
+            renderJson(req, res, statusMessage, requestUri, servletName, statusCode);
         } else {
-            // Response already committed: don't change status, but report
-            // the error inline and warn about that
-            log.warn("Response already committed, unable to change status or write error response for " + statusMessage);
+            //default to HTML rendering
+            renderHtml(req, res, statusMessage, requestUri, servletName, statusCode);
         }
     }
 
