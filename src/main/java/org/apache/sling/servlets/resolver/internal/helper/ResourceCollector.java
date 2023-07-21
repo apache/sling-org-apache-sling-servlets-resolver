@@ -86,20 +86,21 @@ public class ResourceCollector extends AbstractResourceCollector {
      */
     public static ResourceCollector create(
             final SlingHttpServletRequest request,
-            final String[] executionPaths, final String[] defaultExtensions) {
+            final String[] executionPaths, final String[] defaultExtensions, boolean UseResourceCaching) {
         final RequestPathInfo requestPathInfo = request.getRequestPathInfo();
         final boolean isDefaultExtension = ArrayUtils.contains(defaultExtensions, requestPathInfo.getExtension());
         return new ResourceCollector(request.getResource(), requestPathInfo.getExtension(), executionPaths, isDefaultExtension,
-                request.getMethod(), requestPathInfo.getSelectors());
+                request.getMethod(), requestPathInfo.getSelectors(), UseResourceCaching);
     }
 
     public static ResourceCollector create(final Resource resource,
             final String extension,
             final String[] executionPaths, final String[] defaultExtensions,
-            final String methodName, final String[] selectors
+            final String methodName, final String[] selectors, boolean useResourceCaching
             ) {
         boolean isDefaultExtension = ArrayUtils.contains(defaultExtensions, extension);
-        return new ResourceCollector(resource, extension, executionPaths, isDefaultExtension, methodName, selectors);
+        return new ResourceCollector(resource, extension, executionPaths, isDefaultExtension, 
+        		methodName, selectors, useResourceCaching);
     }
 
     /**
@@ -122,7 +123,7 @@ public class ResourceCollector extends AbstractResourceCollector {
     public ResourceCollector(final String methodName,
             final String baseResourceType, final Resource resource,
             final String[] executionPaths) {
-       this(methodName, baseResourceType, resource, null, executionPaths);
+       this(methodName, baseResourceType, resource, null, executionPaths,false);
     }
 
     /**
@@ -144,12 +145,13 @@ public class ResourceCollector extends AbstractResourceCollector {
     public ResourceCollector(final String methodName,
             final String baseResourceType, final Resource resource,
             final String extension,
-            final String[] executionPaths) {
+            final String[] executionPaths,
+            final boolean useResourceCaching) {
         super((baseResourceType != null
                 ? baseResourceType
                 : ServletResolverConstants.DEFAULT_RESOURCE_TYPE),
             resource.getResourceType(), resource.getResourceSuperType(),
-            extension, executionPaths);
+            extension, executionPaths, useResourceCaching);
         this.methodName = methodName;
         this.requestSelectors = new String[0];
         this.numRequestSelectors = 0;
@@ -185,11 +187,12 @@ public class ResourceCollector extends AbstractResourceCollector {
             final String[] executionPaths,
             final boolean isDefaultExtension,
             final String methodName,
-            final String[] selectors) {
+            final String[] selectors,
+            final boolean useResourceCaching) {
         super(ServletResolverConstants.DEFAULT_RESOURCE_TYPE,
                 resource.getResourceType(),
                 resource.getResourceSuperType(),
-                extension, executionPaths);
+                extension, executionPaths, useResourceCaching);
             this.methodName = methodName;
 
             this.suffExt = "." + extension;

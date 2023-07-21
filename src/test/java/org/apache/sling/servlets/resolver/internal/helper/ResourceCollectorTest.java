@@ -389,7 +389,7 @@ public class ResourceCollectorTest extends HelperTestBase {
             pathMap.put(name, path);
         }
 
-        ResourceCollector lu = ResourceCollector.create(request, null, new String[] {"html"});
+        ResourceCollector lu = ResourceCollector.create(request, null, new String[] {"html"}, true);
         Collection<Resource> res;
         if (scriptEngineExtensions != null) {
             res = lu.getServlets(request.getResourceResolver(), scriptEngineExtensions);

@@ -68,4 +68,12 @@ public @interface ResolverConfig {
             " If false (the default), servlets will be represented in the content tree using individual resource providers -" +
             " otherwise, servlets will be mounted into the content tree using one resource provider per search path entry. This effectively overrides mount providers.")
     boolean servletresolver_mountPathProviders() default false; // NOSONAR
+    
+    
+    @AttributeDefinition(name="use resource caching", description = "Use an optimized version of the servlet resolution which "
+    		+ "uses caching within the ResourceResolver.")
+    boolean enable_resource_caching() default true;
+    
+    
+    
 }

@@ -53,17 +53,21 @@ public abstract class AbstractResourceCollector {
     protected final String resourceSuperType;
 
     protected final String[] executionPaths;
+    
+    protected boolean useResourceCaching;
 
     protected AbstractResourceCollector(final String baseResourceType,
             final String resourceType,
             final String resourceSuperType,
             final String extension,
-            final String[] executionPaths) {
+            final String[] executionPaths,
+            final boolean useResourceCaching) {
         this.baseResourceType = baseResourceType;
         this.resourceType = resourceType;
         this.resourceSuperType = resourceSuperType;
         this.extension = extension;
         this.executionPaths = executionPaths;
+        this.useResourceCaching = useResourceCaching;
     }
 
     public final Collection<Resource> getServlets(final ResourceResolver resolver, final List<String> scriptExtensions) {
@@ -96,20 +100,9 @@ public abstract class AbstractResourceCollector {
         });
         
         
-        List<String> locations = LocationCollector.getLocations(resourceType, resourceSuperType, baseResourceType, resolver);
-        locations.forEach(location -> {
-            // get the location resource, use a synthetic resource if there
-            // is no real location. There may still be children at this
-            // location
-            final String path;
-            if ( location.endsWith("/") ) {
-                path = location.substring(0, location.length() - 1);
-            } else {
-                path = location;
-            }
-            final Resource locationRes = getResource(resolver, path);
-            getWeightedResources(resources, locationRes);
-        });
+        List<Resource> locations = LocationCollector.getLocations(resourceType, resourceSuperType, 
+        		baseResourceType, resolver, this.useResourceCaching);
+        locations.forEach(locationRes -> getWeightedResources(resources, locationRes));
 
         List<Resource> result = new ArrayList<>(resources.size());
         result.addAll(resources);

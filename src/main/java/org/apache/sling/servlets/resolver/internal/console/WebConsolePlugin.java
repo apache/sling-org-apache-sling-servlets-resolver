@@ -353,7 +353,7 @@ public class WebConsolePlugin extends HttpServlet {
                     executionPaths.get(),
                     defaultExtensions.get(),
                     method,
-                    requestPathInfo.getSelectors());
+                    requestPathInfo.getSelectors(),true);
             servlets = locationUtil.getServlets(resourceResolver, resolutionCache.getScriptEngineExtensions());
         }
 

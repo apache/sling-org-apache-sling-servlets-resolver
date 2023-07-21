@@ -39,7 +39,8 @@ public class NamedScriptResourceCollector extends AbstractResourceCollector {
 
     public static NamedScriptResourceCollector create(final String name,
             final Resource resource,
-            final String[] executionPaths) {
+            final String[] executionPaths,
+            final boolean useResourceCaching) {
         final String resourceType;
         final String resourceSuperType;
         final String baseResourceType;
@@ -66,7 +67,8 @@ public class NamedScriptResourceCollector extends AbstractResourceCollector {
                 resourceSuperType,
                 scriptName,
                 extension,
-                executionPaths);
+                executionPaths,
+                useResourceCaching);
     }
 
     public NamedScriptResourceCollector(final String baseResourceType,
@@ -74,8 +76,9 @@ public class NamedScriptResourceCollector extends AbstractResourceCollector {
                               final String resourceSuperType,
                               final String scriptName,
                               final String extension,
-                              final String[] executionPaths) {
-        super(baseResourceType, resourceType, resourceSuperType, extension, executionPaths);
+                              final String[] executionPaths,
+                              final boolean useResourceCaching) {
+        super(baseResourceType, resourceType, resourceSuperType, extension, executionPaths, useResourceCaching);
         this.scriptName = scriptName;
         // create the hash code once
         final String key = baseResourceType + ':' + this.scriptName + ':' +
