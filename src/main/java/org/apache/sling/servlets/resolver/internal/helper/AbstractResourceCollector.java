@@ -20,7 +20,10 @@ package org.apache.sling.servlets.resolver.internal.helper;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -30,6 +33,8 @@ import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.resource.SyntheticResource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The <code>ResourceCollector</code> class provides a single public method -
@@ -38,6 +43,13 @@ import org.apache.sling.api.resource.SyntheticResource;
  * script to handle a request to the given resource.
  */
 public abstract class AbstractResourceCollector {
+    
+    
+    
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractResourceCollector.class);
+    
+    
+    protected final static String CACHE_KEY_CHILDREN_LIST = AbstractResourceCollector.class.getName() + ".childrenList";
 
     // the most generic resource type to use. This may be null in which
     // case the default servlet name will be used as the base name
@@ -196,6 +208,53 @@ public abstract class AbstractResourceCollector {
             return scriptName.substring(lastIndexOf + 1);
         }
         return null;
+    }
+    
+    /**
+     * Retrieves the list of children for a resource
+     * @param parent the resource for which the children should be retrieved
+     * @param useCaching if true try to read the list from the cache
+     * @return the children (or an empty list of no children are present)
+     */
+    static List<Resource> getChildrenList(Resource parent, boolean useCaching) {
+        
+        List<Resource> childList = new ArrayList<Resource>();
+        if (useCaching) {
+            
+            // init the caching structure
+            Map<String,List<Resource>> childrenListMap = new HashMap<String,List<Resource>>();
+            Map<String,Object> cache = parent.getResourceResolver().getPropertyMap();
+            if (!cache.containsKey(CACHE_KEY_CHILDREN_LIST)) {
+                childrenListMap = new HashMap<String,List<Resource>>();
+                cache.put(CACHE_KEY_CHILDREN_LIST, childrenListMap);
+               
+            } else {
+                Object entry = cache.get(CACHE_KEY_CHILDREN_LIST);
+                if (entry instanceof HashMap) {
+                    childrenListMap = (Map<String,List<Resource>>) cache.get(CACHE_KEY_CHILDREN_LIST); 
+                } else {
+                    // unexpected type
+                    LOG.debug("Found key '{}' used with the unexpected type '{}', not caching the resource children list", 
+                            CACHE_KEY_CHILDREN_LIST, entry.getClass().getName());
+                }
+            }
+            
+            // lookup
+            if (childrenListMap.containsKey(parent.getPath())) {
+                // this is a cache hit
+                List<Resource> result = childrenListMap.get(parent.getPath());
+                LOG.trace("getChildrenList cache-hit for {} with {} child resources", parent.getPath(), result.size());
+                return result;
+            }
+            // it's a cache miss
+            childrenListMap.put(parent.getPath(),childList);
+        }
+        Iterator<Resource> childrenIterator = parent.listChildren();
+        while (childrenIterator.hasNext()) {
+            childList.add(childrenIterator.next());
+        }
+        LOG.trace("getChildrenList cache-miss for {} with {} child resources", parent.getPath(),childList.size());
+        return childList;   
     }
 
 }
