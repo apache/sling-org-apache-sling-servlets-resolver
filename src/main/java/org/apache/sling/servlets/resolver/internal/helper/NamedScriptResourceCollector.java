@@ -18,7 +18,6 @@
  */
 package org.apache.sling.servlets.resolver.internal.helper;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
