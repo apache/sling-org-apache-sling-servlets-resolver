@@ -49,7 +49,7 @@ public abstract class AbstractResourceCollector {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractResourceCollector.class);
     
     
-    protected final static String CACHE_KEY_CHILDREN_LIST = AbstractResourceCollector.class.getName() + ".childrenList";
+    protected static final String CACHE_KEY_CHILDREN_LIST = AbstractResourceCollector.class.getName() + ".childrenList";
 
     // the most generic resource type to use. This may be null in which
     // case the default servlet name will be used as the base name
@@ -218,14 +218,14 @@ public abstract class AbstractResourceCollector {
      */
     static List<Resource> getChildrenList(Resource parent, boolean useCaching) {
         
-        List<Resource> childList = new ArrayList<Resource>();
+        List<Resource> childList = new ArrayList<>();
         if (useCaching) {
             
             // init the caching structure
-            Map<String,List<Resource>> childrenListMap = new HashMap<String,List<Resource>>();
+            Map<String,List<Resource>> childrenListMap = new HashMap<>();
             Map<String,Object> cache = parent.getResourceResolver().getPropertyMap();
             if (!cache.containsKey(CACHE_KEY_CHILDREN_LIST)) {
-                childrenListMap = new HashMap<String,List<Resource>>();
+                childrenListMap = new HashMap<>();
                 cache.put(CACHE_KEY_CHILDREN_LIST, childrenListMap);
                
             } else {
