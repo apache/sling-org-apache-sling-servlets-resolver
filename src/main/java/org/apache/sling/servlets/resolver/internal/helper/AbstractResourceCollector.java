@@ -44,11 +44,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AbstractResourceCollector {
     
-    
-    
     private static final Logger LOG = LoggerFactory.getLogger(AbstractResourceCollector.class);
-    
-    
     protected static final String CACHE_KEY_CHILDREN_LIST = AbstractResourceCollector.class.getName() + ".childrenList";
 
     // the most generic resource type to use. This may be null in which
@@ -211,11 +207,13 @@ public abstract class AbstractResourceCollector {
     }
     
     /**
-     * Retrieves the list of children for a resource
+     * Retrieves the list of children for a resource; if useCaching is set to true, it is
+     * tried to read the result from a cache, and persist any non-cached result there as well.
      * @param parent the resource for which the children should be retrieved
      * @param useCaching if true try to read the list from the cache
-     * @return the children (or an empty list of no children are present)
+     * @return the children (or an empty list if no children are present)
      */
+    @SuppressWarnings("unchecked")
     static List<Resource> getChildrenList(Resource parent, boolean useCaching) {
         
         List<Resource> childList = new ArrayList<>();
@@ -239,14 +237,14 @@ public abstract class AbstractResourceCollector {
                 }
             }
             
-            // lookup
+            // cache lookup
             if (childrenListMap.containsKey(parent.getPath())) {
                 // this is a cache hit
                 List<Resource> result = childrenListMap.get(parent.getPath());
                 LOG.trace("getChildrenList cache-hit for {} with {} child resources", parent.getPath(), result.size());
                 return result;
             }
-            // it's a cache miss
+            // it's a cache miss, store any result in the cache
             childrenListMap.put(parent.getPath(),childList);
         }
         Iterator<Resource> childrenIterator = parent.listChildren();
