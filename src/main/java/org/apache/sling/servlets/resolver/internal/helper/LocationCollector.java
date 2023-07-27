@@ -56,7 +56,7 @@ import org.slf4j.LoggerFactory;
  * </ol>
  */
 
-class LocationCollector {
+public class LocationCollector {
 
 	protected static final String CACHE_KEY = LocationCollector.class.getName() + ".CacheKey";
 
@@ -319,5 +319,17 @@ class LocationCollector {
 		}
 	}
 	
+	
+	/**
+	 * Purge all cache entries owned by the LocationCollector 
+	 * @param resolver the resolver owning that cache
+	 */
+	public static void clearCache(ResourceResolver resolver) {
+		 Object cache = resolver.getPropertyMap().get(CACHE_KEY);
+		 if (cache instanceof Map) {
+			 Map<String,Resource> cacheMap = (Map<String,Resource>) cache;
+			 cacheMap.clear();
+		 }
+	}
     
 }

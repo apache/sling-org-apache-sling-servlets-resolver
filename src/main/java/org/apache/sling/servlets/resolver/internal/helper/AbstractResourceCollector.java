@@ -254,5 +254,18 @@ public abstract class AbstractResourceCollector {
         LOG.trace("getChildrenList cache-miss for {} with {} child resources", parent.getPath(),childList.size());
         return childList;   
     }
+    
+    /**
+     * Clear the child list cache for this ResoureResolver
+     * @param resolver
+     */
+    public static void clearCache(ResourceResolver resolver) {
+    	Object o = resolver.getPropertyMap().get(CACHE_KEY_CHILDREN_LIST);
+    	if (o instanceof HashMap) {
+    		Map<String,List<Resource>> childrenListMap = (HashMap) o;
+    		childrenListMap.clear();
+    	}
+    }
+    
 
 }
