@@ -21,6 +21,7 @@ package org.apache.sling.servlets.resolver.internal.helper;
 import static org.junit.Assert.assertEquals;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.testing.mock.sling.junit.SlingContext;
@@ -53,6 +54,12 @@ public class AbstractResourceCollectorTest {
         assertEquals(3,children.size());
         children = AbstractResourceCollector.getChildrenList(spy, true);
         Mockito.verify(spy,Mockito.times(1)).listChildren();
+        
+        Map<String,List<Resource>> map = (Map<String, List<Resource>>) 
+        		context.resourceResolver().getPropertyMap().get(AbstractResourceCollector.CACHE_KEY_CHILDREN_LIST);
+        assertEquals(1, map.values().size());
+        AbstractResourceCollector.clearCache(context.resourceResolver());
+        assertEquals(0, map.values().size());
     }
     
     
@@ -64,7 +71,7 @@ public class AbstractResourceCollectorTest {
         List<Resource> children = AbstractResourceCollector.getChildrenList(spy, false);
         assertEquals(3,children.size());
         children = AbstractResourceCollector.getChildrenList(spy, false);
-        Mockito.verify(spy,Mockito.times(2)).listChildren();
+        Mockito.verify(spy,Mockito.times(2)).listChildren(); 
     }
     
     @Test
@@ -78,6 +85,9 @@ public class AbstractResourceCollectorTest {
         assertEquals(3,children.size());
         children = AbstractResourceCollector.getChildrenList(spy, true);
         Mockito.verify(spy,Mockito.times(2)).listChildren();
+        assertEquals(payload, context.resourceResolver().getPropertyMap().get(AbstractResourceCollector.CACHE_KEY_CHILDREN_LIST));
+        
+        AbstractResourceCollector.clearCache(context.resourceResolver());
         assertEquals(payload, context.resourceResolver().getPropertyMap().get(AbstractResourceCollector.CACHE_KEY_CHILDREN_LIST));
     }
 }
