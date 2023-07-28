@@ -389,11 +389,11 @@ public class SlingServletResolver
         if ( scriptResolver == null ) {
             // no per thread, let's use the shared one
             synchronized ( this.sharedScriptResolver ) {
-            	invalidateCache(this.sharedScriptResolver.get());
                 this.sharedScriptResolver.get().refresh();
             }
             scriptResolver = this.sharedScriptResolver.get();
         }
+        invalidateCache(this.sharedScriptResolver.get());
         return scriptResolver;
     }
 
@@ -405,7 +405,6 @@ public class SlingServletResolver
         if ( event.getType() == SlingRequestEvent.EventType.EVENT_INIT ) {
             try {
             	ResourceResolver clone = this.sharedScriptResolver.get().clone(null);
-            	invalidateCache(clone);
             		this.perThreadScriptResolver.set(clone);
             } catch (final LoginException e) {
                 LOGGER.error("Unable to create new script resolver clone", e);
