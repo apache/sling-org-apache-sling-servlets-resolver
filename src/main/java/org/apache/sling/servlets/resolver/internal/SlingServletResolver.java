@@ -393,7 +393,7 @@ public class SlingServletResolver
             }
             scriptResolver = this.sharedScriptResolver.get();
         }
-        invalidateCache(this.sharedScriptResolver.get());
+        invalidateCache(scriptResolver);
         return scriptResolver;
     }
 
