@@ -79,7 +79,12 @@ import org.slf4j.LoggerFactory;
  * The <code>SlingServletResolver</code> resolves a
  * servlet for a request by implementing the {@link ServletResolver} interface.
  *
- * The resolver uses an own session to find the scripts.
+ * The SlingServletResolver uses uses dedicated ResourceResolver(s) for resolving the servlets.
+ * In case the thread is handling a request, the {@link #onEvent(SlingRequestEvent)} method is called by the
+ * Sling engine and a per-thread ResourceResolver is created, used and also closed when the request is
+ * finished.
+ * 
+ * In case the thread does execute not within the context of a request, a shared ResourceResolver instance is used.
  *
  */
 @Component(name = ResolverConfig.PID,
@@ -389,11 +394,14 @@ public class SlingServletResolver
         if ( scriptResolver == null ) {
             // no per thread, let's use the shared one
             synchronized ( this.sharedScriptResolver ) {
+            	// invalidate all caches and refresh to see the latest updates
+            	if (this.useResourceCaching) {
+            		invalidateCache(this.sharedScriptResolver.get());
+            	}
                 this.sharedScriptResolver.get().refresh();
             }
             scriptResolver = this.sharedScriptResolver.get();
         }
-        invalidateCache(scriptResolver);
         return scriptResolver;
     }
 
@@ -405,7 +413,7 @@ public class SlingServletResolver
         if ( event.getType() == SlingRequestEvent.EventType.EVENT_INIT ) {
             try {
             	ResourceResolver clone = this.sharedScriptResolver.get().clone(null);
-            		this.perThreadScriptResolver.set(clone);
+            	this.perThreadScriptResolver.set(clone);
             } catch (final LoginException e) {
                 LOGGER.error("Unable to create new script resolver clone", e);
             }
