@@ -459,7 +459,7 @@ public class SlingServletResolver
         if (scriptNameOrResourceType.charAt(0) == '/') {
             final String scriptPath = ResourceUtil.normalize(scriptNameOrResourceType);
             if (scriptPath != null &&  isPathAllowed(scriptPath, this.executionPaths.get()) ) {
-                final Resource res = resolver.getResource(scriptPath);
+                final Resource res = AbstractResourceCollector.getResourceOrNull(resolver,scriptPath,useResourceCaching);
                 servlet = this.getServlet(res);
                 if (servlet != null && !pathBasedServletAcceptor.accept(request, servlet)) {
                     if(LOGGER.isDebugEnabled()) {

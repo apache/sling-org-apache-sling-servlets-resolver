@@ -158,8 +158,8 @@ public abstract class AbstractResourceCollector {
      * @return The actual resource at the given <code>path</code> or a
      *         synthetic resource representing the path location.
      */
-    protected final Resource getResource(final ResourceResolver resolver,
-                                         String path,
+    protected final @NotNull Resource getResource(@NotNull final ResourceResolver resolver,
+                                         @NotNull String path,
                                          boolean useCaching) {
         Resource res = getResourceOrNull(resolver,path, useCaching);
 
