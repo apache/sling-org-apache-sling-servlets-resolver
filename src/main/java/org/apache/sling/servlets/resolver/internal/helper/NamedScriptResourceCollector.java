@@ -95,7 +95,7 @@ public class NamedScriptResourceCollector extends AbstractResourceCollector {
         if ( this.extension != null ) {
             final String path = ResourceUtil.normalize(location.getPath() + '/' + this.scriptName);
             if ( SlingServletResolver.isPathAllowed(path, this.executionPaths) ) {
-                final Resource current = resolver.getResource(path);
+                final Resource current = getResourceOrNull(resolver, path, useResourceCaching);
                 if ( current != null ) {
                     this.addWeightedResource(resources, current, 0, WeightedResource.WEIGHT_EXTENSION);
                 }
@@ -110,7 +110,7 @@ public class NamedScriptResourceCollector extends AbstractResourceCollector {
             current = location;
             name = this.scriptName;
         } else {
-            current = getResource(resolver, location.getPath() + '/' + this.scriptName.substring(0, pos));
+            current = getResource(resolver, location.getPath() + '/' + this.scriptName.substring(0, pos), useResourceCaching);
             name = this.scriptName.substring(pos + 1);
         }
         final List<Resource> children = getChildrenList(current, useResourceCaching);

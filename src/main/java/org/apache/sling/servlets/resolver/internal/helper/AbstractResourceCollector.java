@@ -33,6 +33,8 @@ import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.resource.SyntheticResource;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +48,8 @@ public abstract class AbstractResourceCollector {
     
     private static final Logger LOG = LoggerFactory.getLogger(AbstractResourceCollector.class);
     protected static final String CACHE_KEY_CHILDREN_LIST = AbstractResourceCollector.class.getName() + ".childrenList";
+    
+    protected static final String CACHE_KEY_RESOURCES = AbstractResourceCollector.class.getName() + ".resources";
 
     // the most generic resource type to use. This may be null in which
     // case the default servlet name will be used as the base name
@@ -155,8 +159,9 @@ public abstract class AbstractResourceCollector {
      *         synthetic resource representing the path location.
      */
     protected final Resource getResource(final ResourceResolver resolver,
-                                         String path) {
-        Resource res = resolver.getResource(path);
+                                         String path,
+                                         boolean useCaching) {
+        Resource res = getResourceOrNull(resolver,path, useCaching);
 
         if (res == null) {
             res = new SyntheticResource(resolver, path, "$synthetic$");
@@ -214,7 +219,7 @@ public abstract class AbstractResourceCollector {
      * @return the children (or an empty list if no children are present)
      */
     @SuppressWarnings("unchecked")
-    static List<Resource> getChildrenList(Resource parent, boolean useCaching) {
+    static @NotNull List<Resource> getChildrenList(@NotNull Resource parent, boolean useCaching) {
         
         List<Resource> childList = new ArrayList<>();
         if (useCaching) {
@@ -255,16 +260,62 @@ public abstract class AbstractResourceCollector {
         return childList;   
     }
     
-    /**
-     * Clear the child list cache for this ResoureResolver
+    /* Clear all caching structures
      * @param resolver
      */
-    public static void clearCache(ResourceResolver resolver) {
-    	Object o = resolver.getPropertyMap().get(CACHE_KEY_CHILDREN_LIST);
-    	if (o instanceof HashMap) {
-    		Map<String,List<Resource>> childrenListMap = (HashMap) o;
+    public static void clearCache(@NotNull ResourceResolver resolver) {
+    	Object o1 = resolver.getPropertyMap().get(CACHE_KEY_CHILDREN_LIST);
+    	if (o1 instanceof HashMap) {
+    		Map<String,List<Resource>> childrenListMap = (HashMap) o1;
     		childrenListMap.clear();
     	}
+    	Object o2 = resolver.getPropertyMap().get(CACHE_KEY_RESOURCES);
+    	if (o2 instanceof HashMap) {
+    		Map<String,Resource> resourceMap = (HashMap<String,Resource>) o2;
+    		resourceMap.clear();
+    	}
+    }
+    
+    /**
+     * Resolvers a resource or null if there is no resource resolved from the given path. 
+     * @param resolver the resourceResolver to use
+     * @param path the path to the resource
+     * @param useCaching indicates if caching should be used
+     * @return a resource or null if no resource can be resolved
+     */
+    public static @Nullable Resource getResourceOrNull(@NotNull ResourceResolver resolver, @NotNull String path, boolean useCaching) {
+    	Object o = resolver.getPropertyMap().get(CACHE_KEY_RESOURCES);
+    	if (useCaching) {
+	    	if (o!= null && o instanceof Map) {
+	    		// cache structure already initialized
+	    		final Map<String,Resource> resourceMap = (Map<String,Resource>) o;
+	    		if (resourceMap.containsKey(path)) {
+	    			// cache hit
+	    			LOG.debug("getResourceOrNull cache-hit for path {}", path);
+	    			return resourceMap.get(path);
+	    		} else {
+	    			// cache miss
+	    			LOG.debug("getResourceOrNull cache-miss for path {}", path);
+	    			final Resource resource = resolver.getResource(path);
+	    			resourceMap.put(path, resource);
+	    			return resource;
+	    		}
+	    	}
+	    	if (o == null) {
+	    		// cache structure not initialized yet
+	    		LOG.debug("getResourceOrNull cache-miss on init for path {}", path);
+	    		final Map<String,Resource> resourceMap = new HashMap<>();
+	    		resolver.getPropertyMap().put(CACHE_KEY_RESOURCES, resourceMap);
+	    		final Resource resource = resolver.getResource(path);
+	    		resourceMap.put(path, resource);
+	    		return resource;
+	    	}
+	    	// key already used by someone else
+	    	LOG.trace("Found key '{}' used with the unexpected type '{}', not caching the resource for path {}", 
+	    			CACHE_KEY_RESOURCES, o.getClass().getName(), path);
+    	}
+    	Resource resource = resolver.getResource(path);
+    	return resource;
     }
     
 
