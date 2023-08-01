@@ -291,11 +291,11 @@ public abstract class AbstractResourceCollector {
 	    		final Map<String,Resource> resourceMap = (Map<String,Resource>) o;
 	    		if (resourceMap.containsKey(path)) {
 	    			// cache hit
-	    			LOG.debug("getResourceOrNull cache-hit for path {}", path);
+	    			LOG.trace("getResourceOrNull cache-hit for path {}", path);
 	    			return resourceMap.get(path);
 	    		} else {
 	    			// cache miss
-	    			LOG.debug("getResourceOrNull cache-miss for path {}", path);
+	    			LOG.trace("getResourceOrNull cache-miss for path {}", path);
 	    			final Resource resource = resolver.getResource(path);
 	    			resourceMap.put(path, resource);
 	    			return resource;
@@ -303,7 +303,7 @@ public abstract class AbstractResourceCollector {
 	    	}
 	    	if (o == null) {
 	    		// cache structure not initialized yet
-	    		LOG.debug("getResourceOrNull cache-miss on init for path {}", path);
+	    		LOG.trace("getResourceOrNull cache-miss on init for path {}", path);
 	    		final Map<String,Resource> resourceMap = new HashMap<>();
 	    		resolver.getPropertyMap().put(CACHE_KEY_RESOURCES, resourceMap);
 	    		final Resource resource = resolver.getResource(path);
@@ -311,7 +311,7 @@ public abstract class AbstractResourceCollector {
 	    		return resource;
 	    	}
 	    	// key already used by someone else
-	    	LOG.trace("Found key '{}' used with the unexpected type '{}', not caching the resource for path {}", 
+	    	LOG.debug("Found key '{}' used with the unexpected type '{}', not caching the resource for path {}", 
 	    			CACHE_KEY_RESOURCES, o.getClass().getName(), path);
     	}
     	return resolver.getResource(path);
