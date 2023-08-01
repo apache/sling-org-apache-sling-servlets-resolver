@@ -286,7 +286,7 @@ public abstract class AbstractResourceCollector {
     public static @Nullable Resource getResourceOrNull(@NotNull ResourceResolver resolver, @NotNull String path, boolean useCaching) {
     	Object o = resolver.getPropertyMap().get(CACHE_KEY_RESOURCES);
     	if (useCaching) {
-	    	if (o!= null && o instanceof Map) {
+	    	if (o instanceof Map) {
 	    		// cache structure already initialized
 	    		final Map<String,Resource> resourceMap = (Map<String,Resource>) o;
 	    		if (resourceMap.containsKey(path)) {
@@ -314,8 +314,7 @@ public abstract class AbstractResourceCollector {
 	    	LOG.trace("Found key '{}' used with the unexpected type '{}', not caching the resource for path {}", 
 	    			CACHE_KEY_RESOURCES, o.getClass().getName(), path);
     	}
-    	Resource resource = resolver.getResource(path);
-    	return resource;
+    	return resolver.getResource(path);
     }
     
 
