@@ -18,7 +18,7 @@
  */
 package org.apache.sling.servlets.resolver.internal.helper;
 
-import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.sling.api.resource.Resource;
@@ -95,7 +95,7 @@ public class NamedScriptResourceCollector extends AbstractResourceCollector {
         if ( this.extension != null ) {
             final String path = ResourceUtil.normalize(location.getPath() + '/' + this.scriptName);
             if ( SlingServletResolver.isPathAllowed(path, this.executionPaths) ) {
-                final Resource current = resolver.getResource(path);
+                final Resource current = getResourceOrNull(resolver, path, useResourceCaching);
                 if ( current != null ) {
                     this.addWeightedResource(resources, current, 0, WeightedResource.WEIGHT_EXTENSION);
                 }
@@ -110,12 +110,11 @@ public class NamedScriptResourceCollector extends AbstractResourceCollector {
             current = location;
             name = this.scriptName;
         } else {
-            current = getResource(resolver, location.getPath() + '/' + this.scriptName.substring(0, pos));
+            current = getResource(resolver, location.getPath() + '/' + this.scriptName.substring(0, pos), useResourceCaching);
             name = this.scriptName.substring(pos + 1);
         }
-        final Iterator<Resource> children = resolver.listChildren(current);
-        while (children.hasNext()) {
-            final Resource child = children.next();
+        final List<Resource> children = getChildrenList(current, useResourceCaching);
+        for (Resource child: children) {
 
             if ( SlingServletResolver.isPathAllowed(child.getPath(), this.executionPaths) ) {
                 final String currentScriptName = child.getName();

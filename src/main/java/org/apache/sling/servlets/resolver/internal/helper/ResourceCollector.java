@@ -19,7 +19,7 @@
 package org.apache.sling.servlets.resolver.internal.helper;
 
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -228,9 +228,8 @@ public class ResourceCollector extends AbstractResourceCollector {
                     ? requestSelectors[selIdx]
                     : null;
 
-            Iterator<Resource> children = resolver.listChildren(current);
-            while (children.hasNext()) { // NOSONAR
-                Resource child = children.next();
+            List<Resource> children = getChildrenList(current, isDefaultExtension);
+            for (Resource child: children) {
 
                 if (!SlingServletResolver.isPathAllowed(child.getPath(), this.executionPaths)) {
                     continue;

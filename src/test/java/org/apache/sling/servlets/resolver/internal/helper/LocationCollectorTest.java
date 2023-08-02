@@ -24,6 +24,7 @@ import static org.apache.sling.servlets.resolver.internal.helper.HelperTestBase.
 import static org.apache.sling.servlets.resolver.internal.helper.IsSameResourceList.isSameResourceList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -595,13 +596,17 @@ public class LocationCollectorTest {
     	// is never used, because all is taken from the cache
         getLocations(r.getResourceType(),
                 r.getResourceSuperType());
-        
         Mockito.clearInvocations(resolver);
-        
         getLocations(r.getResourceType(),
                 r.getResourceSuperType());
-    	
         Mockito.verify(resolver, Mockito.never()).getResource(Mockito.anyString());
+        
+        // validate the cache cleanup
+        int cacheEntries = ((Map<String,Resource>) resolver.getPropertyMap().get(LocationCollector.CACHE_KEY)).size();
+        assertTrue(cacheEntries > 0);
+        LocationCollector.clearCache(resolver);
+        assertEquals(0,((Map<String,Resource>) resolver.getPropertyMap().get(LocationCollector.CACHE_KEY)).size());
+        
     }
     
     @Test
@@ -626,6 +631,11 @@ public class LocationCollectorTest {
         assertThat(loc,isSameResourceList(expected));
     	
         assertEquals(storedElement, r.getResourceResolver().getPropertyMap().get(LocationCollector.CACHE_KEY));
+        
+        // make sure that a cache clear does not clear this entry
+        LocationCollector.clearCache(resolver);
+        assertEquals(storedElement, r.getResourceResolver().getPropertyMap().get(LocationCollector.CACHE_KEY));
+        
     	
     }
     

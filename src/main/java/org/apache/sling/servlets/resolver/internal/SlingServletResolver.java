@@ -57,6 +57,7 @@ import org.apache.sling.serviceusermapping.ServiceUserMapped;
 import org.apache.sling.servlets.resolver.internal.defaults.DefaultErrorHandlerServlet;
 import org.apache.sling.servlets.resolver.internal.defaults.DefaultServlet;
 import org.apache.sling.servlets.resolver.internal.helper.AbstractResourceCollector;
+import org.apache.sling.servlets.resolver.internal.helper.LocationCollector;
 import org.apache.sling.servlets.resolver.internal.helper.NamedScriptResourceCollector;
 import org.apache.sling.servlets.resolver.internal.helper.ResourceCollector;
 import org.apache.sling.servlets.resolver.internal.resolution.ResolutionCache;
@@ -78,7 +79,12 @@ import org.slf4j.LoggerFactory;
  * The <code>SlingServletResolver</code> resolves a
  * servlet for a request by implementing the {@link ServletResolver} interface.
  *
- * The resolver uses an own session to find the scripts.
+ * The SlingServletResolver uses uses dedicated ResourceResolver(s) for resolving the servlets.
+ * In case the thread is handling a request, the {@link #onEvent(SlingRequestEvent)} method is called by the
+ * Sling engine and a per-thread ResourceResolver is created, used and also closed when the request is
+ * finished.
+ * 
+ * In case the thread does execute not within the context of a request, a shared ResourceResolver instance is used.
  *
  */
 @Component(name = ResolverConfig.PID,
@@ -388,6 +394,8 @@ public class SlingServletResolver
         if ( scriptResolver == null ) {
             // no per thread, let's use the shared one
             synchronized ( this.sharedScriptResolver ) {
+            	// invalidate all caches and refresh to see the latest updates
+           		invalidateCache(this.sharedScriptResolver.get());
                 this.sharedScriptResolver.get().refresh();
             }
             scriptResolver = this.sharedScriptResolver.get();
@@ -402,7 +410,8 @@ public class SlingServletResolver
     public void onEvent(final SlingRequestEvent event) {
         if ( event.getType() == SlingRequestEvent.EventType.EVENT_INIT ) {
             try {
-                this.perThreadScriptResolver.set(this.sharedScriptResolver.get().clone(null));
+            	ResourceResolver clone = this.sharedScriptResolver.get().clone(null);
+            	this.perThreadScriptResolver.set(clone);
             } catch (final LoginException e) {
                 LOGGER.error("Unable to create new script resolver clone", e);
             }
@@ -448,7 +457,7 @@ public class SlingServletResolver
         if (scriptNameOrResourceType.charAt(0) == '/') {
             final String scriptPath = ResourceUtil.normalize(scriptNameOrResourceType);
             if (scriptPath != null &&  isPathAllowed(scriptPath, this.executionPaths.get()) ) {
-                final Resource res = resolver.getResource(scriptPath);
+                final Resource res = AbstractResourceCollector.getResourceOrNull(resolver,scriptPath,useResourceCaching);
                 servlet = this.getServlet(res);
                 if (servlet != null && !pathBasedServletAcceptor.accept(request, servlet)) {
                     if(LOGGER.isDebugEnabled()) {
@@ -795,4 +804,10 @@ public class SlingServletResolver
         }
         return executionPaths;
     }
+    
+	protected void invalidateCache(ResourceResolver r) {
+		LocationCollector.clearCache(r);
+		AbstractResourceCollector.clearCache(r);
+	}
+    
 }
