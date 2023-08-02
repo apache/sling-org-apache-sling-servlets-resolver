@@ -395,9 +395,7 @@ public class SlingServletResolver
             // no per thread, let's use the shared one
             synchronized ( this.sharedScriptResolver ) {
             	// invalidate all caches and refresh to see the latest updates
-            	if (this.useResourceCaching) {
-            		invalidateCache(this.sharedScriptResolver.get());
-            	}
+           		invalidateCache(this.sharedScriptResolver.get());
                 this.sharedScriptResolver.get().refresh();
             }
             scriptResolver = this.sharedScriptResolver.get();
