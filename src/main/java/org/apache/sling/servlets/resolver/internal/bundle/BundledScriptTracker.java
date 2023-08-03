@@ -1,21 +1,21 @@
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- ~ Licensed to the Apache Software Foundation (ASF) under one
- ~ or more contributor license agreements.  See the NOTICE file
- ~ distributed with this work for additional information
- ~ regarding copyright ownership.  The ASF licenses this file
- ~ to you under the Apache License, Version 2.0 (the
- ~ "License"); you may not use this file except in compliance
- ~ with the License.  You may obtain a copy of the License at
- ~
- ~   http://www.apache.org/licenses/LICENSE-2.0
- ~
- ~ Unless required by applicable law or agreed to in writing,
- ~ software distributed under the License is distributed on an
- ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- ~ KIND, either express or implied.  See the License for the
- ~ specific language governing permissions and limitations
- ~ under the License.
- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.apache.sling.servlets.resolver.internal.bundle;
 
 import java.io.IOException;
@@ -54,7 +54,6 @@ import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.request.RequestDispatcherOptions;
-import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.resource.type.ResourceType;
 import org.apache.sling.api.servlets.ServletResolverConstants;
@@ -63,6 +62,7 @@ import org.apache.sling.scripting.spi.bundle.BundledRenderUnit;
 import org.apache.sling.scripting.spi.bundle.BundledRenderUnitCapability;
 import org.apache.sling.scripting.spi.bundle.BundledRenderUnitFinder;
 import org.apache.sling.scripting.spi.bundle.TypeProvider;
+import org.apache.sling.servlets.resolver.internal.helper.SearchPathProvider;
 import org.apache.sling.servlets.resolver.internal.resource.ServletMounter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -83,6 +83,7 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.util.tracker.BundleTracker;
 import org.osgi.util.tracker.BundleTrackerCustomizer;
 import org.slf4j.Logger;
@@ -111,12 +112,11 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     @Reference
     private ServletMounter mounter;
 
-    @Reference
-    private ResourceResolverFactory resourceResolverFactory;
+    private final AtomicReference<BundleContext> bundleContext = new AtomicReference<>();
+    private final AtomicReference<BundleTracker<List<ServiceRegistration<Servlet>>>> tracker = new AtomicReference<>();
+    private final AtomicReference<Map<Set<String>, ServiceRegistration<Servlet>>> dispatchers = new AtomicReference<>();
 
-    private AtomicReference<BundleContext> bundleContext = new AtomicReference<>();
-    private AtomicReference<BundleTracker<List<ServiceRegistration<Servlet>>>> tracker = new AtomicReference<>();
-    private AtomicReference<Map<Set<String>, ServiceRegistration<Servlet>>> dispatchers = new AtomicReference<>();
+    private volatile List<String> searchPaths;
 
     @Activate
     protected void activate(BundleContext context) {
@@ -135,6 +135,24 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         }
         bundleContext.set(null);
         dispatchers.set(null);
+    }
+
+    @Reference(policy = ReferencePolicy.DYNAMIC, updated = "bindResourceResolverFactory")
+    protected void bindSearchPathProvider(final SearchPathProvider searchPathProvider) {
+        final boolean reconfiguration = this.searchPaths != null;
+        this.searchPaths = searchPathProvider.getSearchPaths();
+        if (reconfiguration) {
+            // reconfiguration
+            BundleTracker<List<ServiceRegistration<Servlet>>> bt = tracker.get();
+            if (bt != null) {
+                bt.close();
+                bt.open();
+            }
+        }
+    }
+
+    protected void unbindSearchPathProvider(final SearchPathProvider searchPathProvider) {
+        // nothing to do
     }
 
     @Override
@@ -173,7 +191,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         }
                         String[] resourceTypesRegistrationValue = resourceTypesRegistrationValueSet.stream().filter(rt -> {
                             if (!rt.startsWith("/")) {
-                                for (String prefix : resourceResolverFactory.getSearchPath()) {
+                                for (String prefix : this.searchPaths) {
                                     if (resourceTypesRegistrationValueSet.contains(prefix.concat(rt))) {
                                         return false;
                                     }
@@ -274,7 +292,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                                             if (resourceType.startsWith("/")) {
                                                 path = resourceType + "/" + resourceType.substring(resourceType.lastIndexOf('/') + 1) + "." + FilenameUtils.getExtension(scriptName);
                                             } else {
-                                                path = resourceResolverFactory.getSearchPath().get(0) + resourceType + "/" + resourceType.substring(resourceType.lastIndexOf('/') + 1) + "." + FilenameUtils.getExtension(scriptName);
+                                                path = this.searchPaths.get(0) + resourceType + "/" + resourceType.substring(resourceType.lastIndexOf('/') + 1) + "." + FilenameUtils.getExtension(scriptName);
                                             }
                                             properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, path);
                                         }
