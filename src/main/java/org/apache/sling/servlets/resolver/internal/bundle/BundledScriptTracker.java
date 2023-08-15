@@ -137,7 +137,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         dispatchers.set(null);
     }
 
-    @Reference(policy = ReferencePolicy.DYNAMIC, updated = "bindResourceResolverFactory")
+    @Reference(policy = ReferencePolicy.DYNAMIC, updated = "bindSearchPathProvider")
     protected void bindSearchPathProvider(final SearchPathProvider searchPathProvider) {
         final boolean reconfiguration = this.searchPaths != null;
         this.searchPaths = searchPathProvider.getSearchPaths();
