@@ -18,7 +18,6 @@
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 package org.apache.sling.servlets.resolver.internal.bundle;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -29,12 +28,13 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.type.ResourceType;
 import org.apache.sling.api.servlets.ServletResolverConstants;
-import org.apache.sling.commons.osgi.PropertiesUtil;
 import org.apache.sling.scripting.spi.bundle.BundledRenderUnitCapability;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Version;
 import org.osgi.framework.wiring.BundleCapability;
+import org.osgi.util.converter.Converters;
+import org.osgi.util.converter.TypeReference;
 
 class BundledRenderUnitCapabilityImpl  implements BundledRenderUnitCapability {
 
@@ -167,7 +167,7 @@ class BundledRenderUnitCapabilityImpl  implements BundledRenderUnitCapability {
         Map<String, Object> attributes = capability.getAttributes();
         Set<ResourceType> resourceTypes = new LinkedHashSet<>();
         String[] capabilityResourceTypes =
-                PropertiesUtil.toStringArray(attributes.get(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES), new String[0]);
+                Converters.standardConverter().convert(attributes.get(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES)).to(String[].class);
         Version version = (Version) attributes.get(BundledScriptTracker.AT_VERSION);
         for (String rt : capabilityResourceTypes) {
             if (version == null) {
@@ -179,8 +179,7 @@ class BundledRenderUnitCapabilityImpl  implements BundledRenderUnitCapability {
         return new BundledRenderUnitCapabilityImpl(
                 resourceTypes,
                 (String) attributes.get(ServletResolverConstants.SLING_SERVLET_PATHS),
-                Arrays.asList(
-                        PropertiesUtil.toStringArray(attributes.get(ServletResolverConstants.SLING_SERVLET_SELECTORS), new String[0])),
+                Converters.standardConverter().convert(attributes.get(ServletResolverConstants.SLING_SERVLET_SELECTORS)).to(new TypeReference<List<String>>() {}),
                 (String) attributes.get(ServletResolverConstants.SLING_SERVLET_EXTENSIONS),
                 (String) attributes.get(ServletResolverConstants.SLING_SERVLET_METHODS),
                 (String) attributes.get(BundledScriptTracker.AT_EXTENDS),

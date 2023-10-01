@@ -38,10 +38,10 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.servlets.HttpConstants;
-import org.apache.sling.commons.osgi.PropertiesUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
+import org.osgi.util.converter.Converters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -147,10 +147,10 @@ public class ServletResourceProviderFactory {
             log.debug("create({}): Registering servlet for paths {}",
                     getServiceReferenceInfo(ref), pathSet);
         }
-        String resourceSuperType = PropertiesUtil.toString(ref.getProperty(SLING_SERVLET_RESOURCE_SUPER_TYPE), null);
+        String resourceSuperType = Converters.standardConverter().convert(ref.getProperty(SLING_SERVLET_RESOURCE_SUPER_TYPE)).to(String.class);
         Set<String> resourceSuperTypeMarkers = new HashSet<>();
         if (StringUtils.isNotEmpty(resourceSuperType) && !ServletResource.DEFAULT_RESOURCE_SUPER_TYPE.equals(resourceSuperType)) {
-            for (String rt : PropertiesUtil.toStringArray(ref.getProperty(SLING_SERVLET_RESOURCE_TYPES))) {
+            for (String rt : Converters.standardConverter().convert(ref.getProperty(SLING_SERVLET_RESOURCE_TYPES)).to(String[].class)) {
                 if (!rt.startsWith("/")) {
                     rt = getPrefix(ref).concat(ResourceUtil.resourceTypeToPath(rt));
                 }
@@ -211,23 +211,21 @@ public class ServletResourceProviderFactory {
      * @param ref
      */
     private void addByPath(Set<String> pathSet, ServiceReference<Servlet> ref) {
-        String[] paths = PropertiesUtil.toStringArray(ref.getProperty(SLING_SERVLET_PATHS));
-        if (paths != null && paths.length > 0) {
-            for (String path : paths) {
-                if (!path.startsWith("/")) {
-                    path = getPrefix(ref).concat(path);
-                }
+        String[] paths = Converters.standardConverter().convert(ref.getProperty(SLING_SERVLET_PATHS)).to(String[].class);
+        for (String path : paths) {
+            if (!path.startsWith("/")) {
+                path = getPrefix(ref).concat(path);
+            }
 
-                // add the unmodified path
-                pathSet.add(path);
+            // add the unmodified path
+            pathSet.add(path);
 
-                String[] types = PropertiesUtil.toStringArray(ref.getProperty(SLING_SERVLET_RESOURCE_TYPES));
+            String[] types = Converters.standardConverter().convert(ref.getProperty(SLING_SERVLET_RESOURCE_TYPES)).to(String[].class);
 
-                if ((types == null || types.length == 0) || StringUtils.isEmpty(FilenameUtils.getExtension(path))) {
-                    // ensure we have another entry which has the .servlet ext. if there wasn't one to begin with
-                    // Radu says: this will make sure that scripts are equal to servlets in the resolution process
-                    pathSet.add(ensureServletNameExtension(path));
-                }
+            if ((types.length == 0) || StringUtils.isEmpty(FilenameUtils.getExtension(path))) {
+                // ensure we have another entry which has the .servlet ext. if there wasn't one to begin with
+                // Radu says: this will make sure that scripts are equal to servlets in the resolution process
+                pathSet.add(ensureServletNameExtension(path));
             }
         }
     }
@@ -238,13 +236,13 @@ public class ServletResourceProviderFactory {
      * @param ref
      */
     private void addByType(Set<String> pathSet, ServiceReference<Servlet> ref) {
-        String[] types = PropertiesUtil.toStringArray(ref.getProperty(SLING_SERVLET_RESOURCE_TYPES));
-        String[] paths = PropertiesUtil.toStringArray(ref.getProperty(SLING_SERVLET_PATHS));
+        String[] types = Converters.standardConverter().convert(ref.getProperty(SLING_SERVLET_RESOURCE_TYPES)).to(String[].class);
+        String[] paths = Converters.standardConverter().convert(ref.getProperty(SLING_SERVLET_PATHS)).to(String[].class);
         boolean hasPathRegistration = true;
-        if (paths == null || paths.length == 0) {
+        if (paths.length == 0) {
             hasPathRegistration = false;
         }
-        if (types == null || types.length == 0) {
+        if (types.length == 0) {
             if (log.isDebugEnabled()) {
                 log.debug("addByType({}): no resource types declared",
                         getServiceReferenceInfo(ref));
@@ -253,20 +251,20 @@ public class ServletResourceProviderFactory {
         }
 
         // check for selectors
-        String[] selectors = PropertiesUtil.toStringArray(ref.getProperty(SLING_SERVLET_SELECTORS));
-        if (selectors == null) {
+        String[] selectors = Converters.standardConverter().convert(ref.getProperty(SLING_SERVLET_SELECTORS)).to(String[].class);
+        if (selectors.length == 0) {
             selectors = new String[] { null };
         }
 
         // we have types and expect extensions and/or methods
-        String[] extensions = PropertiesUtil.toStringArray(ref.getProperty(SLING_SERVLET_EXTENSIONS));
+        String[] extensions = Converters.standardConverter().convert(ref.getProperty(SLING_SERVLET_EXTENSIONS)).to(String[].class);
 
         // handle the methods property specially (SLING-430)
-        String[] methods = PropertiesUtil.toStringArray(ref.getProperty(SLING_SERVLET_METHODS));
-        if (methods == null || methods.length == 0) {
+        String[] methods = Converters.standardConverter().convert(ref.getProperty(SLING_SERVLET_METHODS)).to(String[].class);
+        if (methods.length == 0) {
 
             // SLING-512 only, set default methods if no extensions are declared
-            if ((extensions == null || extensions.length == 0) && !hasPathRegistration) {
+            if (extensions.length == 0 && !hasPathRegistration) {
                 if (log.isDebugEnabled()) {
                     log.debug(
                         "addByType({}): No methods declared, assuming GET/HEAD",
@@ -307,8 +305,8 @@ public class ServletResourceProviderFactory {
                 }
 
                 boolean pathAdded = false;
-                if (extensions != null) {
-                    if (methods != null) {
+                if (extensions.length > 0) {
+                    if (methods != null && methods.length > 0) {
                         // both methods and extensions declared
                         for (String ext : extensions) {
                             for (String method : methods) {
