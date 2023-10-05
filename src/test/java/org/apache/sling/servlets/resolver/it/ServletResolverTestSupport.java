@@ -32,7 +32,6 @@ import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
 import org.apache.sling.testing.paxexam.TestSupport;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
-import org.ops4j.pax.exam.options.ModifiableCompositeOption;
 import org.ops4j.pax.exam.options.extra.VMOption;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -121,6 +120,7 @@ public class ServletResolverTestSupport extends TestSupport {
                 testBundle(),
                 mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.scripting.spi").versionAsInProject(),
                 mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.servlet-helpers").versionAsInProject(),
+                mavenBundle().groupId("org.glassfish").artifactId("jakarta.json").versionAsInProject(),
                 //
                 mavenBundle().groupId("commons-codec").artifactId("commons-codec").version("1.15"),
                 //

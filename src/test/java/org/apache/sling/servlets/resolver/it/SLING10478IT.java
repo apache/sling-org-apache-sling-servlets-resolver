@@ -27,8 +27,8 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 
-import javax.json.Json;
-import javax.json.stream.JsonGenerator;
+import jakarta.json.Json;
+import jakarta.json.stream.JsonGenerator;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -121,7 +121,7 @@ public class SLING10478IT extends ServletResolverTestSupport {
         try {
             final String output = executeRequest(M_GET, path, HttpServletResponse.SC_NOT_FOUND).getOutputAsString();
             assertNotNull(output);
-            assertTrue(output.contains("hello"));
+            assertTrue(output, output.contains("hello"));
         } catch (InvocationTargetException t) {
             Throwable cause = t.getCause();
             if (cause instanceof IllegalStateException && "Writer Already Closed".equals(cause.getMessage())) {
