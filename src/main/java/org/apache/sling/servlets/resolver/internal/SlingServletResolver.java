@@ -452,6 +452,16 @@ public class SlingServletResolver
             final ResourceResolver resolver) {
         Servlet servlet = null;
 
+        if (isInvalidPath(scriptNameOrResourceType)) {
+            if (request != null) {
+                request.getRequestProgressTracker().log(
+                        "Will not look for a servlet at {0} as it contains more than two consecutive dots",
+                        scriptNameOrResourceType
+                        );
+            }
+            return null;
+        }
+
         // first check whether the type of a resource is the absolute
         // path of a servlet (or script)
         if (scriptNameOrResourceType.charAt(0) == '/') {
@@ -730,6 +740,33 @@ public class SlingServletResolver
 
         this.executionPaths.set(null);
         this.defaultExtensions.set(null);
+    }
+
+    /**
+     * Reject paths with more than two consecutive dots
+     * @param path The path
+     * @return {@code true} if the path is invalid
+     */
+    public static boolean isInvalidPath(final String path) {
+        int index = 0;
+        while (index < path.length()) {
+            int charCount = 0;
+            int dotCount = 0;
+            // count dots (".") and total chars in each path segment (between two '/')
+            while (index < path.length() && path.charAt(index) != '/') {
+                if (path.charAt(index) == '.') {
+                    dotCount++;
+                }
+                charCount++;
+                index++;
+            }
+            // if all chars are dots (".") and there are more than two dots, then the path is rejected
+            if (charCount > 2 && dotCount == charCount) {
+                return true;
+            }
+            index++;
+        }
+        return false;
     }
 
     /**

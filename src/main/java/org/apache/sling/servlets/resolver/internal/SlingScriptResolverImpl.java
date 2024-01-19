@@ -63,32 +63,34 @@ public class SlingScriptResolverImpl
     @Override
     public SlingScript findScript(final ResourceResolver resourceResolver, final String name)
     throws SlingException {
-
-        // is the path absolute
         SlingScript script = null;
-        if (name.startsWith("/")) {
+        // is the path valid
+        if (!SlingServletResolver.isInvalidPath(name)) {
+            // is the path absolute
+            if (name.startsWith("/")) {
 
-            final String path = ResourceUtil.normalize(name);
-            if ( SlingServletResolver.isPathAllowed(path, this.executionPaths) ) {
-                final Resource resource = resourceResolver.getResource(path);
-                if ( resource != null ) {
-                    script = resource.adaptTo(SlingScript.class);
-                }
-            }
-        } else {
-
-            // relative script resolution against search path
-            final String[] path = resourceResolver.getSearchPath();
-            for (int i = 0; script == null && i < path.length; i++) {
-                final String scriptPath = ResourceUtil.normalize(path[i] + name);
-                if ( SlingServletResolver.isPathAllowed(scriptPath, this.executionPaths) ) {
-                    final Resource resource = resourceResolver.getResource(scriptPath);
-                    if (resource != null) {
+                final String path = ResourceUtil.normalize(name);
+                if ( SlingServletResolver.isPathAllowed(path, this.executionPaths) ) {
+                    final Resource resource = resourceResolver.getResource(path);
+                    if ( resource != null ) {
                         script = resource.adaptTo(SlingScript.class);
                     }
                 }
-            }
+            } else {
 
+                // relative script resolution against search path
+                final String[] path = resourceResolver.getSearchPath();
+                for (int i = 0; script == null && i < path.length; i++) {
+                    final String scriptPath = ResourceUtil.normalize(path[i] + name);
+                    if ( SlingServletResolver.isPathAllowed(scriptPath, this.executionPaths) ) {
+                        final Resource resource = resourceResolver.getResource(scriptPath);
+                        if (resource != null) {
+                            script = resource.adaptTo(SlingScript.class);
+                        }
+                    }
+                }
+
+            }
         }
 
         // log result
