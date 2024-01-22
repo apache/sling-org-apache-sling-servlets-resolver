@@ -65,5 +65,13 @@ public class SlingServletResolverTest {
         assertFalse(SlingServletResolver.isInvalidPath("aa/.."));
         assertTrue(SlingServletResolver.isInvalidPath("aa/..."));
         assertTrue(SlingServletResolver.isInvalidPath("aa/...."));
+
+        assertFalse(SlingServletResolver.isInvalidPath("aa/b.../"));
+        assertFalse(SlingServletResolver.isInvalidPath("aa/...b/"));
+        assertFalse(SlingServletResolver.isInvalidPath("aa/b...b/"));
+
+        assertFalse(SlingServletResolver.isInvalidPath("aa/b.c.d.e.f/"));
+        assertFalse(SlingServletResolver.isInvalidPath("aa/b.c.d...e.f/"));
+
     }
 }
