@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.Resource;
@@ -222,18 +223,18 @@ public abstract class AbstractResourceCollector {
     static @NotNull List<Resource> getChildrenList(@NotNull Resource parent, boolean useCaching) {
         
         List<Resource> childList = new ArrayList<>();
+        Map<String,List<Resource>> childrenListMap = null;
         if (useCaching) {
             
             // init the caching structure
-            Map<String,List<Resource>> childrenListMap = new HashMap<>();
             Map<String,Object> cache = parent.getResourceResolver().getPropertyMap();
             if (!cache.containsKey(CACHE_KEY_CHILDREN_LIST)) {
-                childrenListMap = new HashMap<>();
+                childrenListMap = new ConcurrentHashMap<>();
                 cache.put(CACHE_KEY_CHILDREN_LIST, childrenListMap);
                
             } else {
                 Object entry = cache.get(CACHE_KEY_CHILDREN_LIST);
-                if (entry instanceof HashMap) {
+                if (entry instanceof Map) {
                     childrenListMap = (Map<String,List<Resource>>) cache.get(CACHE_KEY_CHILDREN_LIST); 
                 } else {
                     // unexpected type
@@ -243,20 +244,24 @@ public abstract class AbstractResourceCollector {
             }
             
             // cache lookup
-            if (childrenListMap.containsKey(parent.getPath())) {
+            if (childrenListMap != null && childrenListMap.containsKey(parent.getPath())) {
                 // this is a cache hit
                 List<Resource> result = childrenListMap.get(parent.getPath());
                 LOG.trace("getChildrenList cache-hit for {} with {} child resources", parent.getPath(), result.size());
                 return result;
             }
-            // it's a cache miss, store any result in the cache
-            childrenListMap.put(parent.getPath(),childList);
+
         }
+     
         Iterator<Resource> childrenIterator = parent.listChildren();
         while (childrenIterator.hasNext()) {
             childList.add(childrenIterator.next());
         }
-        LOG.trace("getChildrenList cache-miss for {} with {} child resources", parent.getPath(),childList.size());
+        if (useCaching && childrenListMap != null) {
+            // it's a cache miss, store any result in the cache
+            childrenListMap.put(parent.getPath(),childList);
+            LOG.trace("getChildrenList cache-miss for {} with {} child resources", parent.getPath(),childList.size());
+        }
         return childList;   
     }
     
@@ -265,13 +270,13 @@ public abstract class AbstractResourceCollector {
      */
     public static void clearCache(@NotNull ResourceResolver resolver) {
     	Object o1 = resolver.getPropertyMap().get(CACHE_KEY_CHILDREN_LIST);
-    	if (o1 instanceof HashMap) {
-    		Map<String,List<Resource>> childrenListMap = (HashMap) o1;
+    	if (o1 instanceof Map) {
+    		Map<String,List<Resource>> childrenListMap = (Map) o1;
     		childrenListMap.clear();
     	}
     	Object o2 = resolver.getPropertyMap().get(CACHE_KEY_RESOURCES);
-    	if (o2 instanceof HashMap) {
-    		Map<String,Resource> resourceMap = (HashMap<String,Resource>) o2;
+    	if (o2 instanceof Map) {
+    		Map<String,Resource> resourceMap = (Map<String,Resource>) o2;
     		resourceMap.clear();
     	}
     }
