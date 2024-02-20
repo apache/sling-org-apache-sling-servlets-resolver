@@ -45,10 +45,10 @@ import org.slf4j.LoggerFactory;
  * script to handle a request to the given resource.
  */
 public abstract class AbstractResourceCollector {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(AbstractResourceCollector.class);
     protected static final String CACHE_KEY_CHILDREN_LIST = AbstractResourceCollector.class.getName() + ".childrenList";
-    
+
     protected static final String CACHE_KEY_RESOURCES = AbstractResourceCollector.class.getName() + ".resources";
 
     // the most generic resource type to use. This may be null in which
@@ -65,7 +65,7 @@ public abstract class AbstractResourceCollector {
     protected final String resourceSuperType;
 
     protected final String[] executionPaths;
-    
+
     protected boolean useResourceCaching;
 
     protected AbstractResourceCollector(final String baseResourceType,
@@ -110,10 +110,10 @@ public abstract class AbstractResourceCollector {
             }
             return o1.compareTo(o2);
         });
-        
-        
+
+
         List<Resource> locations = LocationCollector.getLocations(resourceType, resourceSuperType, 
-        		baseResourceType, resolver, this.useResourceCaching);
+                baseResourceType, resolver, this.useResourceCaching);
         locations.forEach(locationRes -> getWeightedResources(resources, locationRes));
 
         List<Resource> result = new ArrayList<>(resources.size());
@@ -122,7 +122,7 @@ public abstract class AbstractResourceCollector {
     }
 
     protected abstract void getWeightedResources(final Set<WeightedResource> resources,
-                                                 final Resource location);
+            final Resource location);
 
     /**
      * Creates a {@link WeightedResource} and adds it to the set of resources.
@@ -143,7 +143,7 @@ public abstract class AbstractResourceCollector {
             final int numSelectors,
             final int methodPrefixWeight) {
         final WeightedResource lr = new WeightedResource(resources.size(), resource,
-            numSelectors, methodPrefixWeight);
+                numSelectors, methodPrefixWeight);
         resources.add(lr);
     }
 
@@ -159,8 +159,8 @@ public abstract class AbstractResourceCollector {
      *         synthetic resource representing the path location.
      */
     protected final @NotNull Resource getResource(@NotNull final ResourceResolver resolver,
-                                         @NotNull String path,
-                                         boolean useCaching) {
+            @NotNull String path,
+            boolean useCaching) {
         Resource res = getResourceOrNull(resolver,path, useCaching);
 
         if (res == null) {
@@ -180,9 +180,9 @@ public abstract class AbstractResourceCollector {
         }
         final AbstractResourceCollector o = (AbstractResourceCollector)obj;
         return stringEquals(resourceType, o.resourceType)
-             && stringEquals(resourceSuperType, o.resourceSuperType)
-             && stringEquals(extension, o.extension)
-             && stringEquals(baseResourceType, o.baseResourceType);
+                && stringEquals(resourceSuperType, o.resourceSuperType)
+                && stringEquals(extension, o.extension)
+                && stringEquals(baseResourceType, o.baseResourceType);
     }
 
     @Override
@@ -210,7 +210,7 @@ public abstract class AbstractResourceCollector {
         }
         return null;
     }
-    
+
     /**
      * Retrieves the list of children for a resource; if useCaching is set to true, it is
      * tried to read the result from a cache, and persist any non-cached result there as well.
@@ -220,17 +220,17 @@ public abstract class AbstractResourceCollector {
      */
     @SuppressWarnings("unchecked")
     static @NotNull List<Resource> getChildrenList(@NotNull Resource parent, boolean useCaching) {
-        
+
         List<Resource> childList = new ArrayList<>();
         if (useCaching) {
-            
+
             // init the caching structure
             Map<String,List<Resource>> childrenListMap = new HashMap<>();
             Map<String,Object> cache = parent.getResourceResolver().getPropertyMap();
             if (!cache.containsKey(CACHE_KEY_CHILDREN_LIST)) {
                 childrenListMap = new HashMap<>();
                 cache.put(CACHE_KEY_CHILDREN_LIST, childrenListMap);
-               
+
             } else {
                 Object entry = cache.get(CACHE_KEY_CHILDREN_LIST);
                 if (entry instanceof HashMap) {
@@ -241,7 +241,7 @@ public abstract class AbstractResourceCollector {
                             CACHE_KEY_CHILDREN_LIST, entry.getClass().getName());
                 }
             }
-            
+
             // cache lookup
             if (childrenListMap.containsKey(parent.getPath())) {
                 // this is a cache hit
@@ -259,23 +259,23 @@ public abstract class AbstractResourceCollector {
         LOG.trace("getChildrenList cache-miss for {} with {} child resources", parent.getPath(),childList.size());
         return childList;   
     }
-    
+
     /* Clear all caching structures
      * @param resolver
      */
     public static void clearCache(@NotNull ResourceResolver resolver) {
-    	Object o1 = resolver.getPropertyMap().get(CACHE_KEY_CHILDREN_LIST);
-    	if (o1 instanceof HashMap) {
-    		Map<String,List<Resource>> childrenListMap = (HashMap) o1;
-    		childrenListMap.clear();
-    	}
-    	Object o2 = resolver.getPropertyMap().get(CACHE_KEY_RESOURCES);
-    	if (o2 instanceof HashMap) {
-    		Map<String,Resource> resourceMap = (HashMap<String,Resource>) o2;
-    		resourceMap.clear();
-    	}
+        Object o1 = resolver.getPropertyMap().get(CACHE_KEY_CHILDREN_LIST);
+        if (o1 instanceof HashMap) {
+            Map<String,List<Resource>> childrenListMap = (HashMap) o1;
+            childrenListMap.clear();
+        }
+        Object o2 = resolver.getPropertyMap().get(CACHE_KEY_RESOURCES);
+        if (o2 instanceof HashMap) {
+            Map<String,Resource> resourceMap = (HashMap<String,Resource>) o2;
+            resourceMap.clear();
+        }
     }
-    
+
     /**
      * Resolvers a resource or null if there is no resource resolved from the given path. 
      * @param resolver the resourceResolver to use
@@ -284,38 +284,38 @@ public abstract class AbstractResourceCollector {
      * @return a resource or null if no resource can be resolved
      */
     public static @Nullable Resource getResourceOrNull(@NotNull ResourceResolver resolver, @NotNull String path, boolean useCaching) {
-    	Object o = resolver.getPropertyMap().get(CACHE_KEY_RESOURCES);
-    	if (useCaching) {
-	    	if (o instanceof Map) {
-	    		// cache structure already initialized
-	    		final Map<String,Resource> resourceMap = (Map<String,Resource>) o;
-	    		if (resourceMap.containsKey(path)) {
-	    			// cache hit
-	    			LOG.trace("getResourceOrNull cache-hit for path {}", path);
-	    			return resourceMap.get(path);
-	    		} else {
-	    			// cache miss
-	    			LOG.trace("getResourceOrNull cache-miss for path {}", path);
-	    			final Resource resource = resolver.getResource(path);
-	    			resourceMap.put(path, resource);
-	    			return resource;
-	    		}
-	    	}
-	    	if (o == null) {
-	    		// cache structure not initialized yet
-	    		LOG.trace("getResourceOrNull cache-miss on init for path {}", path);
-	    		final Map<String,Resource> resourceMap = new HashMap<>();
-	    		resolver.getPropertyMap().put(CACHE_KEY_RESOURCES, resourceMap);
-	    		final Resource resource = resolver.getResource(path);
-	    		resourceMap.put(path, resource);
-	    		return resource;
-	    	}
-	    	// key already used by someone else
-	    	LOG.debug("Found key '{}' used with the unexpected type '{}', not caching the resource for path {}", 
-	    			CACHE_KEY_RESOURCES, o.getClass().getName(), path);
-    	}
-    	return resolver.getResource(path);
+        Object o = resolver.getPropertyMap().get(CACHE_KEY_RESOURCES);
+        if (useCaching) {
+            if (o instanceof Map) {
+                // cache structure already initialized
+                final Map<String,Resource> resourceMap = (Map<String,Resource>) o;
+                if (resourceMap.containsKey(path)) {
+                    // cache hit
+                    LOG.trace("getResourceOrNull cache-hit for path {}", path);
+                    return resourceMap.get(path);
+                } else {
+                    // cache miss
+                    LOG.trace("getResourceOrNull cache-miss for path {}", path);
+                    final Resource resource = resolver.getResource(path);
+                    resourceMap.put(path, resource);
+                    return resource;
+                }
+            }
+            if (o == null) {
+                // cache structure not initialized yet
+                LOG.trace("getResourceOrNull cache-miss on init for path {}", path);
+                final Map<String,Resource> resourceMap = new HashMap<>();
+                resolver.getPropertyMap().put(CACHE_KEY_RESOURCES, resourceMap);
+                final Resource resource = resolver.getResource(path);
+                resourceMap.put(path, resource);
+                return resource;
+            }
+            // key already used by someone else
+            LOG.debug("Found key '{}' used with the unexpected type '{}', not caching the resource for path {}", 
+                    CACHE_KEY_RESOURCES, o.getClass().getName(), path);
+        }
+        return resolver.getResource(path);
     }
-    
+
 
 }
