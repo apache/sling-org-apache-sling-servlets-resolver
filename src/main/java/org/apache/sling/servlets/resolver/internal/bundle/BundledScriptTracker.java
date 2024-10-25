@@ -178,147 +178,10 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
             if (!capabilities.isEmpty()) {
                 Set<BundledRenderUnitCapability> bundledRenderUnitCapabilities = new HashSet<>(cache.values());
                 bundledRenderUnitCapabilities = reduce(bundledRenderUnitCapabilities);
-                List<ServiceRegistration<Servlet>> serviceRegistrations = bundledRenderUnitCapabilities.stream().flatMap(bundledRenderUnitCapability ->
-                {
-                    Hashtable<String, Object> properties = new Hashtable<>();
-                    BundledRenderUnit executable = null;
-                    TypeProvider baseTypeProvider = new TypeProviderImpl(bundledRenderUnitCapability, bundle);
-                    LinkedHashSet<TypeProvider> inheritanceChain = new LinkedHashSet<>();
-                    inheritanceChain.add(baseTypeProvider);
-                    if (!bundledRenderUnitCapability.getResourceTypes().isEmpty()) {
-                        LinkedHashSet<String> resourceTypesRegistrationValueSet = new LinkedHashSet<>();
-                        for (ResourceType resourceType : bundledRenderUnitCapability.getResourceTypes()) {
-                            resourceTypesRegistrationValueSet.add(resourceType.toString());
-                        }
-                        String[] resourceTypesRegistrationValue = resourceTypesRegistrationValueSet.stream().filter(rt -> {
-                            if (!rt.startsWith("/")) {
-                                for (String prefix : this.searchPaths) {
-                                    if (resourceTypesRegistrationValueSet.contains(prefix.concat(rt))) {
-                                        return false;
-                                    }
-                                }
-                            }
-                            return true;
-                        }).toArray(String[]::new);
-                        properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES, resourceTypesRegistrationValue);
-
-                        String extension = bundledRenderUnitCapability.getExtension();
-                        if (!StringUtils.isEmpty(extension)) {
-                            properties.put(ServletResolverConstants.SLING_SERVLET_EXTENSIONS, extension);
-                        }
-
-                        if (!bundledRenderUnitCapability.getSelectors().isEmpty()) {
-                            properties.put(ServletResolverConstants.SLING_SERVLET_SELECTORS, bundledRenderUnitCapability.getSelectors().toArray());
-                        }
-
-                        if (StringUtils.isNotEmpty(bundledRenderUnitCapability.getMethod())) {
-                            properties.put(ServletResolverConstants.SLING_SERVLET_METHODS, bundledRenderUnitCapability.getMethod());
-                        }
-
-                        String extendedResourceTypeString = bundledRenderUnitCapability.getExtendedResourceType();
-                        if (StringUtils.isNotEmpty(extendedResourceTypeString)) {
-                            collectInheritanceChain(inheritanceChain, bundleWiring, extendedResourceTypeString, cache);
-                            inheritanceChain.stream().filter(typeProvider -> typeProvider.getBundledRenderUnitCapability().getResourceTypes().stream()
-                                    .anyMatch(resourceType -> resourceType.getType().equals(extendedResourceTypeString))).findFirst()
-                                    .ifPresent(typeProvider -> {
-                                        for (ResourceType type : typeProvider.getBundledRenderUnitCapability().getResourceTypes()) {
-                                            if (type.getType().equals(extendedResourceTypeString)) {
-                                                properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_SUPER_TYPE, type.toString());
-                                            }
-                                        }
-                                    });
-                        }
-                        Set<TypeProvider> aggregate =
-                                Stream.concat(inheritanceChain.stream(), requiresChain.stream()).collect(Collectors.toCollection(LinkedHashSet::new));
-                        if (properties.containsKey(ServletResolverConstants.SLING_SERVLET_RESOURCE_SUPER_TYPE) &&
-                                baseTypeProvider.getBundledRenderUnitCapability().getScriptEngineName() != null) {
-                            executable = bundledRenderUnitFinder.findUnit(bundle.getBundleContext(), new HashSet<>(Arrays.asList(baseTypeProvider)), aggregate);
-                        } else {
-                            executable = bundledRenderUnitFinder.findUnit(bundle.getBundleContext(), inheritanceChain, aggregate);
-                        }
-                    } else if (StringUtils.isNotEmpty(bundledRenderUnitCapability.getPath()) && StringUtils.isNotEmpty(
-                            bundledRenderUnitCapability.getScriptEngineName())) {
-                        Set<TypeProvider> aggregate =
-                                Stream.concat(inheritanceChain.stream(), requiresChain.stream()).collect(Collectors.toCollection(LinkedHashSet::new));
-                        executable = bundledRenderUnitFinder.findUnit(bundle.getBundleContext(), baseTypeProvider, aggregate);
-                    }
-                    List<ServiceRegistration<Servlet>> regs = new ArrayList<>();
-
-                    if (executable != null) {
-                        String executablePath = executable.getPath();
-                        final String executableParentPath = ResourceUtil.getParent(executablePath);
-                        if (executablePath.equals(bundledRenderUnitCapability.getPath())) {
-                            properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, executablePath);
-                        } else {
-                            if (!bundledRenderUnitCapability.getResourceTypes().isEmpty() && bundledRenderUnitCapability.getSelectors().isEmpty() &&
-                                StringUtils.isEmpty(bundledRenderUnitCapability.getExtension()) &&
-                                StringUtils.isEmpty(bundledRenderUnitCapability.getMethod())) {
-                                String scriptName = FilenameUtils.getName(executable.getPath());
-                                String scriptNameNoExtension = scriptName.substring(0, scriptName.lastIndexOf('.'));
-                                boolean noMatch =
-                                    bundledRenderUnitCapability.getResourceTypes().stream().noneMatch(resourceType -> {
-                                        String resourceTypePath = resourceType.toString();
-                                        String label;
-                                        int lastSlash = resourceTypePath.lastIndexOf('/');
-                                        if (lastSlash > -1) {
-                                            label = resourceTypePath.substring(lastSlash + 1);
-                                        } else {
-                                            label = resourceTypePath;
-                                        }
-                                        return label.equals(scriptNameNoExtension);
-                                    });
-                                if (noMatch) {
-                                    List<String> paths = new ArrayList<>();
-                                    paths.add(executablePath);
-                                    bundledRenderUnitCapability.getResourceTypes().forEach(resourceType -> {
-                                        String resourceTypePath = resourceType.toString();
-                                        String label;
-                                        int lastSlash = resourceTypePath.lastIndexOf('/');
-                                        if (lastSlash > -1) {
-                                            label = resourceTypePath.substring(lastSlash + 1);
-                                        } else {
-                                            label = resourceTypePath;
-                                        }
-                                        if (StringUtils.isNotEmpty(executableParentPath) && executableParentPath.equals(resourceTypePath)) {
-                                            paths.add(resourceTypePath + "/" + label + ".servlet");
-                                        }
-                                    });
-                                    properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, paths.toArray(new String[0]));
-                                }
-                                if (!properties.containsKey(ServletResolverConstants.SLING_SERVLET_PATHS)) {
-                                    String[] rts = Converters.standardConverter().convert(properties.get(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES)).to(String[].class);
-                                    for (String resourceType : rts) {
-                                        String path;
-                                        if (resourceType.startsWith("/")) {
-                                            path = resourceType + "/" + resourceType.substring(resourceType.lastIndexOf('/') + 1) + "." + FilenameUtils.getExtension(scriptName);
-                                        } else {
-                                            path = this.searchPaths.get(0) + resourceType + "/" + resourceType.substring(resourceType.lastIndexOf('/') + 1) + "." + FilenameUtils.getExtension(scriptName);
-                                        }
-                                        properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, path);
-                                    }
-                                }
-                            }
-                            if (!properties.containsKey(ServletResolverConstants.SLING_SERVLET_PATHS)) {
-                                bundledRenderUnitCapability.getResourceTypes().forEach(resourceType -> {
-                                    if (StringUtils.isNotEmpty(executableParentPath) && (executableParentPath + "/").startsWith(resourceType.toString() + "/")) {
-                                        properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, executablePath);
-                                    }
-                                });
-                            }
-                        }
-                        properties.put(ServletResolverConstants.SLING_SERVLET_NAME,
-                                String.format("%s (%s)", BundledScriptServlet.class.getSimpleName(), executablePath));
-                        properties.put(Constants.SERVICE_DESCRIPTION,
-                                BundledScriptServlet.class.getName() + "{" + bundledRenderUnitCapability + "}");
-                        regs.add(
-                            register(bundle.getBundleContext(), new BundledScriptServlet(inheritanceChain, executable), properties)
-                        );
-                    } else {
-                        LOGGER.debug(String.format("Unable to locate an executable for capability %s.", bundledRenderUnitCapability.toString()));
-                    }
-
-                    return regs.stream();
-                }).collect(Collectors.toList());
+                List<ServiceRegistration<Servlet>> serviceRegistrations = bundledRenderUnitCapabilities.stream()
+                        .flatMap(bundledRenderUnitCapability -> registerServicesWithinBundle(bundle, bundleWiring, cache, requiresChain,
+                            bundledRenderUnitCapability))
+                        .collect(Collectors.toList());
                 refreshDispatcher(serviceRegistrations);
                 return serviceRegistrations;
             } else {
@@ -327,6 +190,149 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         } else {
             return Collections.emptyList();
         }
+    }
+
+    Stream<? extends ServiceRegistration<Servlet>> registerServicesWithinBundle(Bundle bundle,
+            BundleWiring bundleWiring, Map<BundleCapability, BundledRenderUnitCapability> cache,
+            Set<TypeProvider> requiresChain, BundledRenderUnitCapability bundledRenderUnitCapability) {
+        Hashtable<String, Object> properties = new Hashtable<>();
+        BundledRenderUnit executable = null;
+        TypeProvider baseTypeProvider = new TypeProviderImpl(bundledRenderUnitCapability, bundle);
+        LinkedHashSet<TypeProvider> inheritanceChain = new LinkedHashSet<>();
+        inheritanceChain.add(baseTypeProvider);
+        if (!bundledRenderUnitCapability.getResourceTypes().isEmpty()) {
+            LinkedHashSet<String> resourceTypesRegistrationValueSet = new LinkedHashSet<>();
+            for (ResourceType resourceType : bundledRenderUnitCapability.getResourceTypes()) {
+                resourceTypesRegistrationValueSet.add(resourceType.toString());
+            }
+            String[] resourceTypesRegistrationValue = resourceTypesRegistrationValueSet.stream().filter(rt -> {
+                if (!rt.startsWith("/")) {
+                    for (String prefix : this.searchPaths) {
+                        if (resourceTypesRegistrationValueSet.contains(prefix.concat(rt))) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }).toArray(String[]::new);
+            properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES, resourceTypesRegistrationValue);
+
+            String extension = bundledRenderUnitCapability.getExtension();
+            if (!StringUtils.isEmpty(extension)) {
+                properties.put(ServletResolverConstants.SLING_SERVLET_EXTENSIONS, extension);
+            }
+
+            if (!bundledRenderUnitCapability.getSelectors().isEmpty()) {
+                properties.put(ServletResolverConstants.SLING_SERVLET_SELECTORS, bundledRenderUnitCapability.getSelectors().toArray());
+            }
+
+            if (StringUtils.isNotEmpty(bundledRenderUnitCapability.getMethod())) {
+                properties.put(ServletResolverConstants.SLING_SERVLET_METHODS, bundledRenderUnitCapability.getMethod());
+            }
+
+            String extendedResourceTypeString = bundledRenderUnitCapability.getExtendedResourceType();
+            if (StringUtils.isNotEmpty(extendedResourceTypeString)) {
+                collectInheritanceChain(inheritanceChain, bundleWiring, extendedResourceTypeString, cache);
+                inheritanceChain.stream().filter(typeProvider -> typeProvider.getBundledRenderUnitCapability().getResourceTypes().stream()
+                        .anyMatch(resourceType -> resourceType.getType().equals(extendedResourceTypeString))).findFirst()
+                        .ifPresent(typeProvider -> {
+                            for (ResourceType type : typeProvider.getBundledRenderUnitCapability().getResourceTypes()) {
+                                if (type.getType().equals(extendedResourceTypeString)) {
+                                    properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_SUPER_TYPE, type.toString());
+                                }
+                            }
+                        });
+            }
+            Set<TypeProvider> aggregate =
+                    Stream.concat(inheritanceChain.stream(), requiresChain.stream()).collect(Collectors.toCollection(LinkedHashSet::new));
+            if (properties.containsKey(ServletResolverConstants.SLING_SERVLET_RESOURCE_SUPER_TYPE) &&
+                    baseTypeProvider.getBundledRenderUnitCapability().getScriptEngineName() != null) {
+                executable = bundledRenderUnitFinder.findUnit(bundle.getBundleContext(), new HashSet<>(Arrays.asList(baseTypeProvider)), aggregate);
+            } else {
+                executable = bundledRenderUnitFinder.findUnit(bundle.getBundleContext(), inheritanceChain, aggregate);
+            }
+        } else if (StringUtils.isNotEmpty(bundledRenderUnitCapability.getPath()) && StringUtils.isNotEmpty(
+                bundledRenderUnitCapability.getScriptEngineName())) {
+            Set<TypeProvider> aggregate =
+                    Stream.concat(inheritanceChain.stream(), requiresChain.stream()).collect(Collectors.toCollection(LinkedHashSet::new));
+            executable = bundledRenderUnitFinder.findUnit(bundle.getBundleContext(), baseTypeProvider, aggregate);
+        }
+        List<ServiceRegistration<Servlet>> regs = new ArrayList<>();
+
+        if (executable != null) {
+            String executablePath = executable.getPath();
+            final String executableParentPath = ResourceUtil.getParent(executablePath);
+            if (executablePath.equals(bundledRenderUnitCapability.getPath())) {
+                properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, executablePath);
+            } else {
+                if (!bundledRenderUnitCapability.getResourceTypes().isEmpty() && bundledRenderUnitCapability.getSelectors().isEmpty() &&
+                    StringUtils.isEmpty(bundledRenderUnitCapability.getExtension()) &&
+                    StringUtils.isEmpty(bundledRenderUnitCapability.getMethod())) {
+                    String scriptName = FilenameUtils.getName(executable.getPath());
+                    String scriptNameNoExtension = scriptName.substring(0, scriptName.lastIndexOf('.'));
+                    boolean noMatch =
+                        bundledRenderUnitCapability.getResourceTypes().stream().noneMatch(resourceType -> {
+                            String resourceTypePath = resourceType.toString();
+                            String label;
+                            int lastSlash = resourceTypePath.lastIndexOf('/');
+                            if (lastSlash > -1) {
+                                label = resourceTypePath.substring(lastSlash + 1);
+                            } else {
+                                label = resourceTypePath;
+                            }
+                            return label.equals(scriptNameNoExtension);
+                        });
+                    if (noMatch) {
+                        List<String> paths = new ArrayList<>();
+                        paths.add(executablePath);
+                        bundledRenderUnitCapability.getResourceTypes().forEach(resourceType -> {
+                            String resourceTypePath = resourceType.toString();
+                            String label;
+                            int lastSlash = resourceTypePath.lastIndexOf('/');
+                            if (lastSlash > -1) {
+                                label = resourceTypePath.substring(lastSlash + 1);
+                            } else {
+                                label = resourceTypePath;
+                            }
+                            if (StringUtils.isNotEmpty(executableParentPath) && executableParentPath.equals(resourceTypePath)) {
+                                paths.add(resourceTypePath + "/" + label + ".servlet");
+                            }
+                        });
+                        properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, paths.toArray(new String[0]));
+                    }
+                    if (!properties.containsKey(ServletResolverConstants.SLING_SERVLET_PATHS)) {
+                        String[] rts = Converters.standardConverter().convert(properties.get(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES)).to(String[].class);
+                        for (String resourceType : rts) {
+                            String path;
+                            if (resourceType.startsWith("/")) {
+                                path = resourceType + "/" + resourceType.substring(resourceType.lastIndexOf('/') + 1) + "." + FilenameUtils.getExtension(scriptName);
+                            } else {
+                                path = this.searchPaths.get(0) + resourceType + "/" + resourceType.substring(resourceType.lastIndexOf('/') + 1) + "." + FilenameUtils.getExtension(scriptName);
+                            }
+                            properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, path);
+                        }
+                    }
+                }
+                if (!properties.containsKey(ServletResolverConstants.SLING_SERVLET_PATHS)) {
+                    bundledRenderUnitCapability.getResourceTypes().forEach(resourceType -> {
+                        if (StringUtils.isNotEmpty(executableParentPath) && (executableParentPath + "/").startsWith(resourceType.toString() + "/")) {
+                            properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, executablePath);
+                        }
+                    });
+                }
+            }
+            properties.put(ServletResolverConstants.SLING_SERVLET_NAME,
+                    String.format("%s (%s)", BundledScriptServlet.class.getSimpleName(), executablePath));
+            properties.put(Constants.SERVICE_DESCRIPTION,
+                    BundledScriptServlet.class.getName() + "{" + bundledRenderUnitCapability + "}");
+            regs.add(
+                register(bundle.getBundleContext(), new BundledScriptServlet(inheritanceChain, executable), properties)
+            );
+        } else {
+            LOGGER.debug(String.format("Unable to locate an executable for capability %s.", bundledRenderUnitCapability.toString()));
+        }
+
+        return regs.stream();
     }
 
     private final AtomicLong idCounter = new AtomicLong(0);
