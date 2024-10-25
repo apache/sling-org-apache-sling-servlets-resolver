@@ -183,6 +183,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                             bundledRenderUnitCapability))
                         .collect(Collectors.toList());
                 refreshDispatcher(serviceRegistrations);
+                LOGGER.info("Registered {} servlets from bundle {}.", serviceRegistrations.size(), bundle.getSymbolicName());
                 return serviceRegistrations;
             } else {
                 return Collections.emptyList();
