@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -176,6 +178,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
             });
             Set<TypeProvider> requiresChain = collectRequiresChain(bundleWiring, cache);
             if (!capabilities.isEmpty()) {
+                Instant renderStart = Instant.now();
                 Set<BundledRenderUnitCapability> bundledRenderUnitCapabilities = new HashSet<>(cache.values());
                 bundledRenderUnitCapabilities = reduce(bundledRenderUnitCapabilities);
                 List<ServiceRegistration<Servlet>> serviceRegistrations = bundledRenderUnitCapabilities.stream()
@@ -183,7 +186,8 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                             bundledRenderUnitCapability))
                         .collect(Collectors.toList());
                 refreshDispatcher(serviceRegistrations);
-                LOGGER.info("Registered {} servlets from bundle {}.", serviceRegistrations.size(), bundle.getSymbolicName());
+                long duration = Duration.between(renderStart, Instant.now()).toMillis();
+                LOGGER.info("Took {}ms to register {} servlets from bundle {}.", duration, serviceRegistrations.size(), bundle.getSymbolicName());
                 return serviceRegistrations;
             } else {
                 return Collections.emptyList();
