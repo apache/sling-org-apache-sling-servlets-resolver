@@ -48,8 +48,10 @@ public class DefaultServlet extends SlingSafeMethodsServlet {
 
         Resource resource = request.getResource();
 
-        // cannot handle the request for missing resources
+        // Also log that this servlet was invoked, as there are circumstances where setting the statuscode
+        // might not have any effect anymore (for example when the response is already committed).
         if (resource instanceof NonExistingResource) {
+            // cannot handle the request for missing resources
             String msg = String.format("Resource not found at path %s", resource.getPath());
             LOG.error(msg);
             response.sendError(HttpServletResponse.SC_NOT_FOUND,msg);
