@@ -178,7 +178,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
             });
             Set<TypeProvider> requiresChain = collectRequiresChain(bundleWiring, cache);
             if (!capabilities.isEmpty()) {
-                Instant renderStart = Instant.now();
+                Instant registerStart = Instant.now();
                 Set<BundledRenderUnitCapability> bundledRenderUnitCapabilities = new HashSet<>(cache.values());
                 bundledRenderUnitCapabilities = reduce(bundledRenderUnitCapabilities);
                 List<ServiceRegistration<Servlet>> serviceRegistrations = bundledRenderUnitCapabilities.stream()
@@ -186,7 +186,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                             bundledRenderUnitCapability))
                         .collect(Collectors.toList());
                 refreshDispatcher(serviceRegistrations);
-                long duration = Duration.between(renderStart, Instant.now()).toMillis();
+                long duration = Duration.between(registerStart, Instant.now()).toMillis();
                 LOGGER.info("Took {}ms to register {} servlets from bundle {}.", duration, serviceRegistrations.size(), bundle.getSymbolicName());
                 return serviceRegistrations;
             } else {
