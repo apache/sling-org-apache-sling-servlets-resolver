@@ -27,6 +27,8 @@ import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.resource.NonExistingResource;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The <code>DefaultServlet</code> is a very simple default resource handler.
@@ -37,6 +39,8 @@ import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
 public class DefaultServlet extends SlingSafeMethodsServlet {
 
     private static final long serialVersionUID = 3806788918045433043L;
+    
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultServlet.class);
 
     @Override
     protected void doGet(SlingHttpServletRequest request,
@@ -44,13 +48,17 @@ public class DefaultServlet extends SlingSafeMethodsServlet {
 
         Resource resource = request.getResource();
 
-        // cannot handle the request for missing resources
+        // Also log that this servlet was invoked, as there are circumstances where setting the statuscode
+        // might not have any effect anymore (for example when the response is already committed).
         if (resource instanceof NonExistingResource) {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND,
-                "Resource not found at path " + resource.getPath());
+            // cannot handle the request for missing resources
+            String msg = String.format("Resource not found at path %s", resource.getPath());
+            LOG.error(msg);
+            response.sendError(HttpServletResponse.SC_NOT_FOUND,msg);
         } else {
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                "Cannot find servlet to handle resource " + resource.getPath());
+            String msg = String.format("Cannot find servlet to handle resource %s", resource.getPath());
+            LOG.error(msg);
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,msg);
         }
     }
 
