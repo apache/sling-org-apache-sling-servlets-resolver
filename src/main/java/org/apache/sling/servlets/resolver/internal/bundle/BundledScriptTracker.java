@@ -52,6 +52,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.felix.hc.api.FormattingResultLog;
+import org.apache.felix.hc.api.HealthCheck;
+import org.apache.felix.hc.api.Result;
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
@@ -85,6 +88,9 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferencePolicy;
+import org.osgi.service.metatype.annotations.AttributeDefinition;
+import org.osgi.service.metatype.annotations.Designate;
+import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 import org.osgi.util.converter.Converter;
 import org.osgi.util.converter.Converters;
 import org.osgi.util.tracker.BundleTracker;
@@ -93,12 +99,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Component(
-        service = {}
+        service = {HealthCheck.class}
 )
 @Capability(namespace = ExtenderNamespace.EXTENDER_NAMESPACE,
             name = BundledScriptTracker.NS_SLING_SCRIPTING_EXTENDER,
             version = "1.0.0")
-public class BundledScriptTracker implements BundleTrackerCustomizer<List<ServiceRegistration<Servlet>>> {
+@Designate(ocd=BundledScriptTracker.BundledScriptTrackerConfig.class)
+public class BundledScriptTracker implements BundleTrackerCustomizer<List<ServiceRegistration<Servlet>>>, HealthCheck {
     static final String NS_SLING_SCRIPTING_EXTENDER = "sling.scripting";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BundledScriptTracker.class);
@@ -120,14 +127,25 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     private final AtomicReference<Map<Set<String>, ServiceRegistration<Servlet>>> dispatchers = new AtomicReference<>();
 
     private volatile List<String> searchPaths;
+    
+    private Set<String> registeredBundles = new HashSet<>();
+    private Set<String> expectedBundles = new HashSet<>();
+    
+    private ServiceRegistration<HealthCheck> healthCheckRegistration = null;
 
     @Activate
-    protected void activate(BundleContext context) {
+    protected void activate(BundleContext context, BundledScriptTrackerConfig config) {
         bundleContext.set(context);
         dispatchers.set(new HashMap<>());
         BundleTracker<List<ServiceRegistration<Servlet>>> bt = new BundleTracker<>(context, Bundle.ACTIVE, this);
         tracker.set(bt);
         bt.open();
+        if (config.mandatoryBundles() != null) {
+            expectedBundles.addAll(Arrays.asList(config.mandatoryBundles()));
+            healthCheckRegistration = registerHealthCheck(config.tags());
+            LOGGER.info("Healthcheck configured with mandatory bundles {} for tags {}", 
+                    Arrays.toString(config.mandatoryBundles()), Arrays.toString(config.tags()));
+        }
     }
 
     @Deactivate
@@ -136,10 +154,23 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         if (bt != null) {
             bt.close();
         }
+        if (healthCheckRegistration != null) {
+            healthCheckRegistration.unregister();
+            healthCheckRegistration = null;
+        }
         bundleContext.set(null);
         dispatchers.set(null);
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    ServiceRegistration<HealthCheck> registerHealthCheck(String[] tags) {
+        Dictionary props = new Hashtable();
+        props.put(HealthCheck.NAME, "Sightly BundledScriptTracker Healthceck");
+        props.put(HealthCheck.TAGS, tags);
+        return bundleContext.get().registerService(HealthCheck.class, this, props);
+    }
+    
+    
     @Reference(policy = ReferencePolicy.DYNAMIC, updated = "bindSearchPathProvider")
     protected void bindSearchPathProvider(final SearchPathProvider searchPathProvider) {
         final boolean reconfiguration = this.searchPaths != null;
@@ -188,6 +219,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                 refreshDispatcher(serviceRegistrations);
                 long duration = Duration.between(registerStart, Instant.now()).toMillis();
                 LOGGER.info("Took {}ms to register {} servlets from bundle {}.", duration, serviceRegistrations.size(), bundle.getSymbolicName());
+                registeredBundles.add(bundle.getSymbolicName());
                 return serviceRegistrations;
             } else {
                 return Collections.emptyList();
@@ -557,6 +589,23 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         LOGGER.debug("Bundle {} removed", bundle.getSymbolicName());
         regs.forEach(ServiceRegistration::unregister);
         refreshDispatcher(Collections.emptyList());
+        registeredBundles.remove(bundle.getSymbolicName());
+    }
+    
+    @Override
+    public Result execute() {
+        
+        if (expectedBundles == null) {
+            return new Result(Result.Status.OK,"Healthcheck not configured");
+        }
+        
+        if (registeredBundles.containsAll(expectedBundles)) {
+            return new Result(Result.Status.OK,"all expected bundles registered");
+        } else {
+            FormattingResultLog log = new FormattingResultLog();
+            log.warn("Expected bundles : {}, present bundles: {}", expectedBundles, registeredBundles);
+            return new Result(log);
+        }
     }
 
     private class DispatcherServlet extends GenericServlet {
@@ -755,5 +804,17 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         newSet.addAll(extenders);
         newSet.addAll(originalCapabilities);
         return newSet;
+    }
+
+
+    @ObjectClassDefinition
+    public @interface BundledScriptTrackerConfig {
+        
+        @AttributeDefinition(name="Mandatory Bundles", description="for all of the provided symbolic bundle names the "
+                + "registration process must have been completed successfully for the healthcheck to report ok")
+        String[] mandatoryBundles();
+        
+        @AttributeDefinition(name="healthcheck tags", description="the tags under which the healthcheck should be registered")
+        String[] tags() default "systemready";
     }
 }

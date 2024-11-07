@@ -124,6 +124,9 @@ public class ServletResolverTestSupport extends TestSupport {
                 //
                 mavenBundle().groupId("commons-codec").artifactId("commons-codec").version("1.15"),
                 //
+                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.hc.api").version("1.0.4"),
+                mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.healthcheck.api").versionAsInProject(),
+                //
                 junitBundles(),
                 newConfiguration("org.apache.felix.http")
                     .put("org.osgi.service.http.port", httpPort)
@@ -137,6 +140,9 @@ public class ServletResolverTestSupport extends TestSupport {
                 ),
                 newConfiguration("org.apache.sling.jcr.base.internal.LoginAdminWhitelist")
                     .put("whitelist.bundles.regexp", "^PAXEXAM.*$")
+                    .asOption(),
+                newConfiguration("org.apache.sling.servlets.resolver.internal.bundle.BundledScriptTracker")
+                    .put("mandatoryBundles", "testBundle")
                     .asOption()
             )
         );
