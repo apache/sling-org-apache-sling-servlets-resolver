@@ -124,7 +124,6 @@ public class ServletResolverTestSupport extends TestSupport {
                 //
                 mavenBundle().groupId("commons-codec").artifactId("commons-codec").version("1.15"),
                 //
-                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.hc.api").version("1.0.4"),
                 mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.healthcheck.api").versionAsInProject(),
                 //
                 junitBundles(),
