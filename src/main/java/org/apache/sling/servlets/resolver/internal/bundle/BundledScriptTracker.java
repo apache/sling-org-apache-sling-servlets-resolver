@@ -165,7 +165,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     @SuppressWarnings({ "rawtypes", "unchecked" })
     ServiceRegistration<HealthCheck> registerHealthCheck(String[] tags) {
         Dictionary props = new Hashtable();
-        props.put(HealthCheck.NAME, "Sightly BundledScriptTracker Healthceck");
+        props.put(HealthCheck.NAME, "Sightly BundledScriptTracker Healthcheck");
         props.put(HealthCheck.TAGS, tags);
         return bundleContext.get().registerService(HealthCheck.class, this, props);
     }
