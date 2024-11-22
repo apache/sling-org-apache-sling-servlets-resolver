@@ -596,14 +596,14 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     public Result execute() {
         
         if (expectedBundles == null) {
-            return new Result(Result.Status.OK,"Healthcheck not configured");
+            return new Result(Result.Status.OK,"Health check is not configured.");
         }
         
         if (registeredBundles.containsAll(expectedBundles)) {
-            return new Result(Result.Status.OK,"all expected bundles registered");
+            return new Result(Result.Status.OK,"All expected bundles have registered their scripts.");
         } else {
             FormattingResultLog log = new FormattingResultLog();
-            log.warn("Expected bundles : {}, present bundles: {}", expectedBundles, registeredBundles);
+            log.warn("Expected bundles : {}, registered bundles: {}", expectedBundles, registeredBundles);
             return new Result(log);
         }
     }
@@ -810,8 +810,8 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     @ObjectClassDefinition
     public @interface BundledScriptTrackerConfig {
         
-        @AttributeDefinition(name="Mandatory Bundles", description="for all of the provided symbolic bundle names the "
-                + "registration process must have been completed successfully for the healthcheck to report ok")
+        @AttributeDefinition(name="Mandatory Bundles", description="A list of symbolic bundle names the for which the "
+                + "script registration process must have been successfully completed for the health check to report ok.")
         String[] mandatoryBundles();
         
         @AttributeDefinition(name="healthcheck tags", description="the tags under which the healthcheck should be registered")
