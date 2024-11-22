@@ -165,7 +165,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     @SuppressWarnings({ "rawtypes", "unchecked" })
     ServiceRegistration<HealthCheck> registerHealthCheck(String[] tags) {
         Dictionary props = new Hashtable();
-        props.put(HealthCheck.NAME, "Sightly BundledScriptTracker Healthcheck");
+        props.put(HealthCheck.NAME, "BundledScriptTracker Healthcheck");
         props.put(HealthCheck.TAGS, tags);
         return bundleContext.get().registerService(HealthCheck.class, this, props);
     }
@@ -218,7 +218,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         .collect(Collectors.toList());
                 refreshDispatcher(serviceRegistrations);
                 long duration = Duration.between(registerStart, Instant.now()).toMillis();
-                LOGGER.info("Took {}ms to register {} servlets from bundle {}.", duration, serviceRegistrations.size(), bundle.getSymbolicName());
+                LOGGER.info("Took {}ms to register {} scripts from bundle {}.", duration, serviceRegistrations.size(), bundle.getSymbolicName());
                 registeredBundles.add(bundle.getSymbolicName());
                 return serviceRegistrations;
             } else {
