@@ -810,7 +810,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     @ObjectClassDefinition
     public @interface BundledScriptTrackerConfig {
         
-        @AttributeDefinition(name="Mandatory Bundles", description="A list of symbolic bundle names the for which the "
+        @AttributeDefinition(name="Mandatory Bundles", description="A list of symbolic bundle names for which the "
                 + "script registration process must have been successfully completed for the health check to report ok.")
         String[] mandatoryBundles();
         
