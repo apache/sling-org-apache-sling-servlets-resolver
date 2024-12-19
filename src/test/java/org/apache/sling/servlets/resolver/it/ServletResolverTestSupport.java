@@ -18,11 +18,11 @@
  */
 package org.apache.sling.servlets.resolver.it;
 
-import java.lang.reflect.Method;
-
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import java.lang.reflect.Method;
 
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
@@ -80,7 +80,8 @@ public class ServletResolverTestSupport extends TestSupport {
         final String debugPort = System.getProperty("debugPort");
         VMOption debugOption = null;
         if (debugPort != null && !debugPort.isEmpty()) {
-            debugOption = vmOption(String.format("-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=%s", debugPort));
+            debugOption =
+                    vmOption(String.format("-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=%s", debugPort));
         }
 
         final String vmOpt = System.getProperty("pax.vm.options");
@@ -103,8 +104,7 @@ public class ServletResolverTestSupport extends TestSupport {
         versionResolver.setVersionFromProject(SLING_GROUP_ID, "org.apache.sling.engine");
         versionResolver.setVersion(SLING_GROUP_ID, "org.apache.sling.auth.core", "1.6.0");
         versionResolver.setVersion("commons-fileupload", "commons-fileupload", "1.5");
-        return options(
-            composite(
+        return options(composite(
                 when(debugOption != null).useOptions(debugOption),
                 when(vmOption != null).useOptions(vmOption),
                 when(jacocoCommand != null).useOptions(jacocoCommand),
@@ -113,49 +113,66 @@ public class ServletResolverTestSupport extends TestSupport {
                 slingScripting(),
                 slingXss(),
                 factoryConfiguration("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended")
-                    .put("user.mapping", new String[]{"org.apache.sling.servlets.resolver:console=sling-readall", "org.apache.sling.servlets.resolver:scripts=sling-scripting"})
-                    .asOption(),
-
-                mavenBundle().groupId("org.osgi").artifactId("org.osgi.util.converter").version("1.0.9"), // new Sling API dependency
+                        .put("user.mapping", new String[] {
+                            "org.apache.sling.servlets.resolver:console=sling-readall",
+                            "org.apache.sling.servlets.resolver:scripts=sling-scripting"
+                        })
+                        .asOption(),
+                mavenBundle()
+                        .groupId("org.osgi")
+                        .artifactId("org.osgi.util.converter")
+                        .version("1.0.9"), // new Sling API dependency
                 testBundle(),
-                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.scripting.spi").versionAsInProject(),
-                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.servlet-helpers").versionAsInProject(),
-                mavenBundle().groupId("org.glassfish").artifactId("jakarta.json").versionAsInProject(),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.scripting.spi")
+                        .versionAsInProject(),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.servlet-helpers")
+                        .versionAsInProject(),
+                mavenBundle()
+                        .groupId("org.glassfish")
+                        .artifactId("jakarta.json")
+                        .versionAsInProject(),
                 //
-                mavenBundle().groupId("commons-codec").artifactId("commons-codec").version("1.15"),
+                mavenBundle()
+                        .groupId("commons-codec")
+                        .artifactId("commons-codec")
+                        .version("1.15"),
                 //
-                mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.healthcheck.api").versionAsInProject(),
+                mavenBundle()
+                        .groupId("org.apache.felix")
+                        .artifactId("org.apache.felix.healthcheck.api")
+                        .versionAsInProject(),
                 //
                 junitBundles(),
                 newConfiguration("org.apache.felix.http")
-                    .put("org.osgi.service.http.port", httpPort)
-                    .asOption(),
+                        .put("org.osgi.service.http.port", httpPort)
+                        .asOption(),
                 newConfiguration("org.apache.sling.jcr.resource.internal.JcrResourceResolverFactoryImpl")
-                    .put("resource.resolver.required.providernames", "")
-                    .asOption(),
-                buildBundleWithBnd(
-                    TestResourceProvider.class,
-                    TestServiceUserValidator.class
-                ),
+                        .put("resource.resolver.required.providernames", "")
+                        .asOption(),
+                buildBundleWithBnd(TestResourceProvider.class, TestServiceUserValidator.class),
                 newConfiguration("org.apache.sling.jcr.base.internal.LoginAdminWhitelist")
-                    .put("whitelist.bundles.regexp", "^PAXEXAM.*$")
-                    .asOption(),
+                        .put("whitelist.bundles.regexp", "^PAXEXAM.*$")
+                        .asOption(),
                 newConfiguration("org.apache.sling.servlets.resolver.internal.bundle.BundledScriptTracker")
-                    .put("mandatoryBundles", "testBundle")
-                    .asOption()
-            )
-        );
+                        .put("mandatoryBundles", "testBundle")
+                        .asOption()));
     }
 
     protected Option testBundle() {
         return testBundle("bundle.filename");
     }
 
-    protected MockSlingHttpServletResponse executeRequest(final String path, final int expectedStatus) throws Exception {
+    protected MockSlingHttpServletResponse executeRequest(final String path, final int expectedStatus)
+            throws Exception {
         return executeRequest("GET", path, expectedStatus);
     }
 
-    protected MockSlingHttpServletResponse executeRequest(final String method, final String path, final int expectedStatus) throws Exception {
+    protected MockSlingHttpServletResponse executeRequest(
+            final String method, final String path, final int expectedStatus) throws Exception {
         final ResourceResolver resourceResolver = resourceResolverFactory.getAdministrativeResourceResolver(null);
         assertNotNull("Expecting ResourceResolver", resourceResolver);
         final MockSlingHttpServletRequest request = new MockSlingHttpServletRequest(resourceResolver) {
@@ -177,10 +194,15 @@ public class ServletResolverTestSupport extends TestSupport {
 
         final Object processor = bundleContext.getService(ref);
         try {
-            // void processRequest(javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse resource, ResourceResolver resourceResolver)
-            final Method processMethod = processor.getClass().getMethod(
-                "processRequest",
-                HttpServletRequest.class, HttpServletResponse.class, ResourceResolver.class);
+            // void processRequest(javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse
+            // resource, ResourceResolver resourceResolver)
+            final Method processMethod = processor
+                    .getClass()
+                    .getMethod(
+                            "processRequest",
+                            HttpServletRequest.class,
+                            HttpServletResponse.class,
+                            ResourceResolver.class);
             assertNotNull("Expecting processRequest method", processMethod);
             processMethod.invoke(processor, request, response, resourceResolver);
         } finally {
@@ -188,8 +210,10 @@ public class ServletResolverTestSupport extends TestSupport {
         }
 
         if (expectedStatus > 0) {
-            assertEquals("Expected status " + expectedStatus + " for " + method
-                + " at " + path, expectedStatus, response.getStatus());
+            assertEquals(
+                    "Expected status " + expectedStatus + " for " + method + " at " + path,
+                    expectedStatus,
+                    response.getStatus());
         }
 
         return response;
@@ -211,10 +235,11 @@ public class ServletResolverTestSupport extends TestSupport {
         assertTestServlet(M_GET, path, servletName);
     }
 
-    protected void assertTestServlet(final String method, final String path, final String servletName) throws Exception {
-        final String output = executeRequest(method, path, TestServlet.IM_A_TEAPOT).getOutputAsString();
+    protected void assertTestServlet(final String method, final String path, final String servletName)
+            throws Exception {
+        final String output =
+                executeRequest(method, path, TestServlet.IM_A_TEAPOT).getOutputAsString();
         final String expected = TestServlet.SERVED_BY_PREFIX + servletName;
         assertTrue("Expecting output to contain " + expected + ", got " + output, output.contains(expected));
     }
-
 }

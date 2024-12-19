@@ -38,14 +38,14 @@ import org.osgi.service.component.annotations.Component;
  * @deprecated The API is deprecated
  */
 @Deprecated
-@Component(service = { SlingScriptResolver.class },
-           configurationPid = ResolverConfig.PID,
-           property = {
-                   Constants.SERVICE_DESCRIPTION + "=Apache Sling Script Resolver",
-                   Constants.SERVICE_VENDOR + "=The Apache Software Foundation"
-           })
-public class SlingScriptResolverImpl
-    implements SlingScriptResolver {
+@Component(
+        service = {SlingScriptResolver.class},
+        configurationPid = ResolverConfig.PID,
+        property = {
+            Constants.SERVICE_DESCRIPTION + "=Apache Sling Script Resolver",
+            Constants.SERVICE_VENDOR + "=The Apache Software Foundation"
+        })
+public class SlingScriptResolverImpl implements SlingScriptResolver {
 
     /**
      * The allowed execution paths.
@@ -61,8 +61,7 @@ public class SlingScriptResolverImpl
      * @see org.apache.sling.api.scripting.SlingScriptResolver#findScript(org.apache.sling.api.resource.ResourceResolver, java.lang.String)
      */
     @Override
-    public SlingScript findScript(final ResourceResolver resourceResolver, final String name)
-    throws SlingException {
+    public SlingScript findScript(final ResourceResolver resourceResolver, final String name) throws SlingException {
         SlingScript script = null;
         // is the path valid
         if (!SlingServletResolver.isInvalidPath(name)) {
@@ -70,9 +69,9 @@ public class SlingScriptResolverImpl
             if (name.startsWith("/")) {
 
                 final String path = ResourceUtil.normalize(name);
-                if ( SlingServletResolver.isPathAllowed(path, this.executionPaths) ) {
+                if (SlingServletResolver.isPathAllowed(path, this.executionPaths)) {
                     final Resource resource = resourceResolver.getResource(path);
-                    if ( resource != null ) {
+                    if (resource != null) {
                         script = resource.adaptTo(SlingScript.class);
                     }
                 }
@@ -82,20 +81,22 @@ public class SlingScriptResolverImpl
                 final String[] path = resourceResolver.getSearchPath();
                 for (int i = 0; script == null && i < path.length; i++) {
                     final String scriptPath = ResourceUtil.normalize(path[i] + name);
-                    if ( SlingServletResolver.isPathAllowed(scriptPath, this.executionPaths) ) {
+                    if (SlingServletResolver.isPathAllowed(scriptPath, this.executionPaths)) {
                         final Resource resource = resourceResolver.getResource(scriptPath);
                         if (resource != null) {
                             script = resource.adaptTo(SlingScript.class);
                         }
                     }
                 }
-
             }
         }
 
         // log result
         if (script != null) {
-            SlingServletResolver.LOGGER.debug("findScript: Using script {} for {}", script.getScriptResource().getPath(), name);
+            SlingServletResolver.LOGGER.debug(
+                    "findScript: Using script {} for {}",
+                    script.getScriptResource().getPath(),
+                    name);
         } else {
             SlingServletResolver.LOGGER.info("findScript: No script {} found in path", name);
         }

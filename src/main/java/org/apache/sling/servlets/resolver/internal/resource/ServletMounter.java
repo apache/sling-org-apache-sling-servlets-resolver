@@ -18,6 +18,21 @@
  */
 package org.apache.sling.servlets.resolver.internal.resource;
 
+import javax.servlet.Servlet;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Dictionary;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.sling.api.request.RequestUtil;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.servlets.ServletResolver;
@@ -39,20 +54,6 @@ import org.osgi.service.component.annotations.ReferencePolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.Servlet;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Dictionary;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_NAME;
 import static org.osgi.framework.Constants.SERVICE_ID;
 import static org.osgi.framework.Constants.SERVICE_PID;
@@ -65,7 +66,10 @@ import static org.osgi.service.component.ComponentConstants.COMPONENT_NAME;
  * The resolver uses an own session to find the scripts.
  *
  */
-@Component(configurationPid = ResolverConfig.PID, immediate = true, service = {ServletMounter.class})
+@Component(
+        configurationPid = ResolverConfig.PID,
+        immediate = true,
+        service = {ServletMounter.class})
 public class ServletMounter {
 
     /** Logger */
@@ -93,18 +97,19 @@ public class ServletMounter {
 
     private final boolean pathProviders;
 
-
     /**
      * Activate this component.
      */
     @Activate
-    public ServletMounter(final BundleContext context, @Reference final ResourceResolverFactory resourceResolverFactory,
+    public ServletMounter(
+            final BundleContext context,
+            @Reference final ResourceResolverFactory resourceResolverFactory,
             @Reference(target = "(name=org.apache.sling)") ServletContext servletContext,
             final ResolverConfig config) {
         this.servletContext = servletContext;
         this.context = context;
-        servletResourceProviderFactory = new ServletResourceProviderFactory(config.servletresolver_servletRoot(),
-                resourceResolverFactory.getSearchPath());
+        servletResourceProviderFactory = new ServletResourceProviderFactory(
+                config.servletresolver_servletRoot(), resourceResolverFactory.getSearchPath());
 
         if (config.servletresolver_mountPathProviders()) {
             provider = new MergingServletResourceProvider();
@@ -159,7 +164,7 @@ public class ServletMounter {
         }
 
         // sanity check: clear array (it should be empty now anyway)
-        synchronized ( this.servletsByReference ) {
+        synchronized (this.servletsByReference) {
             this.servletsByReference.clear();
         }
     }
@@ -169,7 +174,8 @@ public class ServletMounter {
             service = Servlet.class,
             cardinality = ReferenceCardinality.MULTIPLE,
             policy = ReferencePolicy.DYNAMIC,
-            target="(|(" + ServletResolverConstants.SLING_SERVLET_PATHS + "=*)(" + ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES + "=*))")
+            target = "(|(" + ServletResolverConstants.SLING_SERVLET_PATHS + "=*)("
+                    + ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES + "=*))")
     public void bindServlet(final Servlet servlet, final ServiceReference<Servlet> reference) {
         if (this.active) {
             createServlet(servlet, reference);
@@ -185,11 +191,10 @@ public class ServletMounter {
     }
 
     @Reference(
-        name = REF_CACHE,
-        service = ResolutionCache.class,
-        cardinality = ReferenceCardinality.MULTIPLE,
-        policy = ReferencePolicy.DYNAMIC
-    )
+            name = REF_CACHE,
+            service = ResolutionCache.class,
+            cardinality = ReferenceCardinality.MULTIPLE,
+            policy = ReferencePolicy.DYNAMIC)
     protected void bindResolutionCache(ResolutionCache cache) {
         if (this.provider != null) {
             cache.flushCache();
@@ -219,25 +224,33 @@ public class ServletMounter {
             servlet.init(new SlingServletConfig(servletContext, reference, name));
             logger.debug("bindServlet: Servlet {} initialized", name);
         } catch (final ServletException ce) {
-            logger.error("bindServlet: Servlet " + ServletResourceProviderFactory.getServiceReferenceInfo(reference) + " failed to initialize", ce);
+            logger.error(
+                    "bindServlet: Servlet " + ServletResourceProviderFactory.getServiceReferenceInfo(reference)
+                            + " failed to initialize",
+                    ce);
             return false;
         } catch (final Throwable t) { // NOSONAR
-            logger.error("bindServlet: Unexpected problem initializing servlet " + ServletResourceProviderFactory.getServiceReferenceInfo(reference), t);
+            logger.error(
+                    "bindServlet: Unexpected problem initializing servlet "
+                            + ServletResourceProviderFactory.getServiceReferenceInfo(reference),
+                    t);
             return false;
         }
 
         boolean registered = false;
         final Bundle bundle = reference.getBundle();
-        if ( bundle != null ) {
+        if (bundle != null) {
             final BundleContext bundleContext = bundle.getBundleContext();
-            if ( bundleContext != null ) {
+            if (bundleContext != null) {
                 final List<ServiceRegistration<ResourceProvider<Object>>> regs = new ArrayList<>();
                 try {
                     if (this.provider != null) {
                         this.provider.add(srProvider, reference);
                         if (pathProviders) {
-                            outer: for (final String path : srProvider.getServletPaths()) {
-                                String root = path.indexOf('/', 1) != -1 ? path.substring(0, path.indexOf('/', 1) + 1) : path;
+                            outer:
+                            for (final String path : srProvider.getServletPaths()) {
+                                String root =
+                                        path.indexOf('/', 1) != -1 ? path.substring(0, path.indexOf('/', 1) + 1) : path;
                                 for (ServiceRegistration<?> reg : providerRegs) {
                                     if (root.equals(reg.getReference().getProperty(ResourceProvider.PROPERTY_ROOT))) {
                                         continue outer;
@@ -251,22 +264,23 @@ public class ServletMounter {
                             }
                         }
                         resolutionCaches.values().forEach(ResolutionCache::flushCache);
-                    }
-                    else {
+                    } else {
                         for (final String root : srProvider.getServletPaths()) {
-                            @SuppressWarnings("unchecked") final ServiceRegistration<ResourceProvider<Object>> reg = (ServiceRegistration<ResourceProvider<Object>>) bundleContext.registerService(
-                                ResourceProvider.class.getName(),
-                                srProvider,
-                                createServiceProperties(reference, root));
+                            @SuppressWarnings("unchecked")
+                            final ServiceRegistration<ResourceProvider<Object>> reg =
+                                    (ServiceRegistration<ResourceProvider<Object>>) bundleContext.registerService(
+                                            ResourceProvider.class.getName(),
+                                            srProvider,
+                                            createServiceProperties(reference, root));
                             regs.add(reg);
                         }
                     }
                     registered = true;
-                } catch ( final IllegalStateException ise ) {
+                } catch (final IllegalStateException ise) {
                     // bundle context not valid anymore - ignore and continue without this
                 }
-                if ( registered ) {
-                    if ( logger.isDebugEnabled() ) {
+                if (registered) {
+                    if (logger.isDebugEnabled()) {
                         logger.debug("Registered {}", srProvider);
                     }
                     synchronized (this.servletsByReference) {
@@ -275,20 +289,19 @@ public class ServletMounter {
                 }
             }
         }
-        if ( !registered ) {
+        if (!registered) {
             logger.debug("bindServlet: servlet has been unregistered in the meantime. Ignoring {}", name);
         }
 
         return true;
     }
 
-    private Dictionary<String, Object> createServiceProperties(final ServiceReference<Servlet> reference,
-            final String root) {
+    private Dictionary<String, Object> createServiceProperties(
+            final ServiceReference<Servlet> reference, final String root) {
 
         final Dictionary<String, Object> params = new Hashtable<>(); // NOSONAR
         params.put(ResourceProvider.PROPERTY_ROOT, root);
-        params.put(Constants.SERVICE_DESCRIPTION,
-            "ServletResourceProvider for Servlet at " + root);
+        params.put(Constants.SERVICE_DESCRIPTION, "ServletResourceProvider for Servlet at " + root);
 
         // inherit service ranking
         Object rank = reference.getProperty(Constants.SERVICE_RANKING);
@@ -312,15 +325,14 @@ public class ServletMounter {
         }
         if (registration != null) {
 
-            for(final ServiceRegistration<ResourceProvider<Object>> reg : registration.registrations) {
+            for (final ServiceRegistration<ResourceProvider<Object>> reg : registration.registrations) {
                 try {
                     reg.unregister();
-                } catch ( final IllegalStateException ise) {
+                } catch (final IllegalStateException ise) {
                     // this might happen on shutdown
                 }
             }
-            if (registration.provider != null && provider != null &&
-                    provider.remove(registration.provider)) {
+            if (registration.provider != null && provider != null && provider.remove(registration.provider)) {
                 resolutionCaches.values().forEach(ResolutionCache::flushCache);
             }
             final String name = RequestUtil.getServletName(registration.servlet);
@@ -335,8 +347,7 @@ public class ServletMounter {
     }
 
     /** The list of property names checked by {@link #getName(ServiceReference)} */
-    private static final String[] NAME_PROPERTIES = { SLING_SERVLET_NAME,
-        COMPONENT_NAME, SERVICE_PID, SERVICE_ID };
+    private static final String[] NAME_PROPERTIES = {SLING_SERVLET_NAME, COMPONENT_NAME, SERVICE_PID, SERVICE_ID};
 
     /**
      * Looks for a name value in the service reference properties. See the
@@ -346,8 +357,7 @@ public class ServletMounter {
      */
     private static String getName(final ServiceReference<Servlet> reference) {
         String servletName = null;
-        for (int i = 0; i < NAME_PROPERTIES.length
-            && (servletName == null || servletName.length() == 0); i++) {
+        for (int i = 0; i < NAME_PROPERTIES.length && (servletName == null || servletName.length() == 0); i++) {
             Object prop = reference.getProperty(NAME_PROPERTIES[i]);
             if (prop != null) {
                 servletName = String.valueOf(prop);
@@ -361,7 +371,10 @@ public class ServletMounter {
         public final List<ServiceRegistration<ResourceProvider<Object>>> registrations;
         private final ServletResourceProvider provider;
 
-        public ServletReg(final Servlet s, final List<ServiceRegistration<ResourceProvider<Object>>> srs, final ServletResourceProvider provider) {
+        public ServletReg(
+                final Servlet s,
+                final List<ServiceRegistration<ResourceProvider<Object>>> srs,
+                final ServletResourceProvider provider) {
             this.servlet = s;
             this.registrations = srs;
             this.provider = provider;

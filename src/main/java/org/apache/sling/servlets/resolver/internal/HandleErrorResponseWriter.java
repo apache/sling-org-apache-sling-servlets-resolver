@@ -42,5 +42,4 @@ class HandleErrorResponseWriter extends PrintWriter {
     public boolean isOpen() {
         return open;
     }
-
 }

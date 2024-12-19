@@ -18,10 +18,10 @@
  */
 package org.apache.sling.servlets.resolver.internal.resource;
 
+import javax.servlet.Servlet;
+
 import java.util.Iterator;
 import java.util.Set;
-
-import javax.servlet.Servlet;
 
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.spi.resource.provider.ResolveContext;
@@ -36,8 +36,11 @@ public class ServletResourceProvider extends ResourceProvider<Object> {
     private final String resourceSuperType;
     private final Set<String> resourceSuperTypeMarkers;
 
-    ServletResourceProvider(final Servlet servlet, final Set<String> resourcePaths,
-                            final Set<String> resourceSuperTypeMarkers, final String resourceSuperType) {
+    ServletResourceProvider(
+            final Servlet servlet,
+            final Set<String> resourcePaths,
+            final Set<String> resourceSuperTypeMarkers,
+            final String resourceSuperType) {
         this.servlet = servlet;
         this.resourcePaths = resourcePaths;
         this.resourceSuperType = resourceSuperType;
@@ -46,7 +49,8 @@ public class ServletResourceProvider extends ResourceProvider<Object> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public Resource getResource(final ResolveContext<Object> ctx,
+    public Resource getResource(
+            final ResolveContext<Object> ctx,
             final String path,
             final ResourceContext resourceContext,
             final Resource parent) {
@@ -60,18 +64,18 @@ public class ServletResourceProvider extends ResourceProvider<Object> {
 
         @SuppressWarnings("rawtypes")
         final ResourceProvider parentProvider = ctx.getParentResourceProvider();
-        if ( parentProvider != null ) {
+        if (parentProvider != null) {
             final Resource useParent = (parent instanceof ServletResource ? null : parent);
             return parentProvider.getResource(ctx.getParentResolveContext(), path, resourceContext, useParent);
         }
         return null;
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     public Iterator<Resource> listChildren(final ResolveContext<Object> ctx, final Resource parent) {
         final ResourceProvider parentProvider = ctx.getParentResourceProvider();
-        if ( parentProvider != null ) {
+        if (parentProvider != null) {
             return parentProvider.listChildren(ctx.getParentResolveContext(), parent);
         }
         return null;
@@ -88,8 +92,6 @@ public class ServletResourceProvider extends ResourceProvider<Object> {
     /** Return suitable info for logging */
     @Override
     public String toString() {
-        return getClass().getSimpleName() + ": servlet="
-            + servlet.getClass().getName() + ", paths="
-            + resourcePaths;
+        return getClass().getSimpleName() + ": servlet=" + servlet.getClass().getName() + ", paths=" + resourcePaths;
     }
 }

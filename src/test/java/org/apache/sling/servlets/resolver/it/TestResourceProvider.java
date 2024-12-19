@@ -30,18 +30,18 @@ import org.jetbrains.annotations.Nullable;
 import org.osgi.service.component.annotations.Component;
 
 @Component(
-    service = ResourceProvider.class,
-    property = {
-        "provider.root=/"
-    }
-)
+        service = ResourceProvider.class,
+        property = {"provider.root=/"})
 public class TestResourceProvider extends ResourceProvider<Void> {
 
-    public TestResourceProvider() {
-    }
+    public TestResourceProvider() {}
 
     @Override
-    public @Nullable Resource getResource(@NotNull ResolveContext<Void> ctx, @NotNull String path, @NotNull ResourceContext resourceContext, @Nullable Resource parent) {
+    public @Nullable Resource getResource(
+            @NotNull ResolveContext<Void> ctx,
+            @NotNull String path,
+            @NotNull ResourceContext resourceContext,
+            @Nullable Resource parent) {
         return null;
     }
 
@@ -64,5 +64,4 @@ public class TestResourceProvider extends ResourceProvider<Void> {
     public void update(long changeSet) {
         super.update(changeSet);
     }
-
 }

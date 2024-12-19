@@ -18,12 +18,12 @@
  */
 package org.apache.sling.servlets.resolver.internal.resource;
 
+import javax.servlet.Servlet;
+
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-
-import javax.servlet.Servlet;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.AbstractResource;
@@ -56,15 +56,17 @@ public class ServletResource extends AbstractResource {
         this(resourceResolver, servlet, path, null);
     }
 
-    ServletResource(final ResourceResolver resourceResolver,
-                    final Servlet servlet,
-                    final String path,
-                    final String resourceSuperType) {
+    ServletResource(
+            final ResourceResolver resourceResolver,
+            final Servlet servlet,
+            final String path,
+            final String resourceSuperType) {
         this.resourceResolver = resourceResolver;
         this.servlet = servlet;
         this.path = path;
         this.resourceType = ServletResourceProviderFactory.ensureServletNameExtension(path);
-        this.resourceSuperType = StringUtils.isEmpty(resourceSuperType) ? DEFAULT_RESOURCE_SUPER_TYPE : resourceSuperType;
+        this.resourceSuperType =
+                StringUtils.isEmpty(resourceSuperType) ? DEFAULT_RESOURCE_SUPER_TYPE : resourceSuperType;
         this.metadata = new ResourceMetadata();
         this.metadata.put("sling.servlet.resource", "true");
     }
@@ -141,7 +143,7 @@ public class ServletResource extends AbstractResource {
             }
         }
 
-        if ( type == ValueMap.class ) {
+        if (type == ValueMap.class) {
             final Map<String, Object> props = new HashMap<>();
             props.put("sling:resourceType", this.getResourceType());
             props.put("sling:resourceSuperType", this.getResourceSuperType());
@@ -158,7 +160,6 @@ public class ServletResource extends AbstractResource {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + ", servlet=" + this.getServletName()
-            + ", path=" + getPath();
+        return getClass().getSimpleName() + ", servlet=" + this.getServletName() + ", path=" + getPath();
     }
 }

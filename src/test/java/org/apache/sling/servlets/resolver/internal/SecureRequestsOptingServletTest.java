@@ -18,15 +18,11 @@
  */
 package org.apache.sling.servlets.resolver.internal;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.fail;
+import javax.servlet.Servlet;
+import javax.servlet.http.HttpServlet;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.servlet.Servlet;
-import javax.servlet.http.HttpServlet;
 
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.resource.PersistenceException;
@@ -40,10 +36,14 @@ import org.apache.sling.servlets.resolver.internal.resource.ServletResource;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.fail;
+
 public class SecureRequestsOptingServletTest extends SlingServletResolverTestBase {
 
-    protected  static final String SERVLET_PATH = "/mock";
-    protected  static final String SERVLET_NAME = "TestServlet";
+    protected static final String SERVLET_PATH = "/mock";
+    protected static final String SERVLET_NAME = "TestServlet";
     protected static final String SERVLET_EXTENSION = "html";
     private Servlet testServlet;
 
@@ -51,10 +51,10 @@ public class SecureRequestsOptingServletTest extends SlingServletResolverTestBas
         testServlet = new SecureRequestsOptingServlet();
 
         String path = "/"
-            + MockSlingHttpServletRequest.RESOURCE_TYPE
-            + "/"
-            + ResourceUtil.getName(MockSlingHttpServletRequest.RESOURCE_TYPE)
-            + ".servlet";
+                + MockSlingHttpServletRequest.RESOURCE_TYPE
+                + "/"
+                + ResourceUtil.getName(MockSlingHttpServletRequest.RESOURCE_TYPE)
+                + ".servlet";
         Map<String, Object> props = new HashMap<>();
         props.put(ResourceResolver.PROPERTY_RESOURCE_TYPE, path);
         props.put("sling:resourceSuperType", ServletResource.DEFAULT_RESOURCE_SUPER_TYPE);
@@ -70,28 +70,29 @@ public class SecureRequestsOptingServletTest extends SlingServletResolverTestBas
         }
     }
 
-    @Test public void testAcceptsSecureRequest() {
-        MockSlingHttpServletRequest secureRequest = new MockSlingHttpServletRequest(
-            SERVLET_PATH, null, SERVLET_EXTENSION, null, null);
+    @Test
+    public void testAcceptsSecureRequest() {
+        MockSlingHttpServletRequest secureRequest =
+                new MockSlingHttpServletRequest(SERVLET_PATH, null, SERVLET_EXTENSION, null, null);
         secureRequest.setResourceResolver(mockResourceResolver);
         secureRequest.setSecure(true);
         Servlet result = servletResolver.resolveServlet(secureRequest);
         assertEquals("Expecting our test servlet", testServlet, result);
     }
 
-    @Test public void testIgnoreInsecureRequest() {
-        MockSlingHttpServletRequest insecureRequest = new MockSlingHttpServletRequest(
-            SERVLET_PATH, null, SERVLET_EXTENSION, null, null);
+    @Test
+    public void testIgnoreInsecureRequest() {
+        MockSlingHttpServletRequest insecureRequest =
+                new MockSlingHttpServletRequest(SERVLET_PATH, null, SERVLET_EXTENSION, null, null);
         insecureRequest.setResourceResolver(mockResourceResolver);
         insecureRequest.setSecure(false);
         Servlet result = servletResolver.resolveServlet(insecureRequest);
-        assertNotSame("Expecting a different servlet than our own",
-            result.getClass(), SecureRequestsOptingServlet.class);
+        assertNotSame(
+                "Expecting a different servlet than our own", result.getClass(), SecureRequestsOptingServlet.class);
     }
 
     @SuppressWarnings("serial")
-    private static class SecureRequestsOptingServlet extends HttpServlet
-            implements OptingServlet {
+    private static class SecureRequestsOptingServlet extends HttpServlet implements OptingServlet {
 
         @Override
         public boolean accepts(SlingHttpServletRequest request) {

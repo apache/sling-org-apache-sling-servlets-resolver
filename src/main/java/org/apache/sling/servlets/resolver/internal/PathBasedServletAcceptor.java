@@ -18,10 +18,10 @@
  */
 package org.apache.sling.servlets.resolver.internal;
 
-import java.util.Arrays;
-
 import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
+
+import java.util.Arrays;
 
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.request.RequestUtil;
@@ -59,21 +59,35 @@ class PathBasedServletAcceptor {
     boolean accept(SlingHttpServletRequest request, Servlet servlet) {
         // Get OSGi service properties from the SlingServletConfig
         final ServletConfig rawCfg = servlet.getServletConfig();
-        if(!(rawCfg instanceof SlingServletConfig)) {
+        if (!(rawCfg instanceof SlingServletConfig)) {
             LOGGER.debug("Did not get a SlingServletConfig for {}", RequestUtil.getServletName(servlet));
             return true;
         }
-        final SlingServletConfig config = (SlingServletConfig)rawCfg;
+        final SlingServletConfig config = (SlingServletConfig) rawCfg;
         final String servletName = RequestUtil.getServletName(servlet);
 
         // If the servlet properties have the "extpaths" option, check extension, selector etc.
         boolean accepted = true;
         final Object strictPaths = config.getServiceProperty(STRICT_PATHS_SERVICE_PROPERTY);
-        if(strictPaths != null && Boolean.valueOf(strictPaths.toString())) {
-            accepted = 
-                accept(servletName, config, ServletResolverConstants.SLING_SERVLET_EXTENSIONS, true, request.getRequestPathInfo().getExtension())
-                && accept(servletName, config, ServletResolverConstants.SLING_SERVLET_SELECTORS, true, request.getRequestPathInfo().getSelectors())
-                && accept(servletName, config, ServletResolverConstants.SLING_SERVLET_METHODS, false, request.getMethod());
+        if (strictPaths != null && Boolean.valueOf(strictPaths.toString())) {
+            accepted = accept(
+                            servletName,
+                            config,
+                            ServletResolverConstants.SLING_SERVLET_EXTENSIONS,
+                            true,
+                            request.getRequestPathInfo().getExtension())
+                    && accept(
+                            servletName,
+                            config,
+                            ServletResolverConstants.SLING_SERVLET_SELECTORS,
+                            true,
+                            request.getRequestPathInfo().getSelectors())
+                    && accept(
+                            servletName,
+                            config,
+                            ServletResolverConstants.SLING_SERVLET_METHODS,
+                            false,
+                            request.getMethod());
         }
 
         LOGGER.debug("accepted={} for {}", accepted, servletName);
@@ -81,27 +95,33 @@ class PathBasedServletAcceptor {
         return accepted;
     }
 
-    private boolean accept(String servletName, SlingServletConfig config, String servicePropertyKey, boolean emptyValueApplies, String ... requestValues) {
-        final String [] propValues = toStringArray(config.getServiceProperty(servicePropertyKey));
-        if(propValues.length == 0) {
-            LOGGER.debug("Property {} is null or empty, not checking that value for {}", servicePropertyKey, servletName);
+    private boolean accept(
+            String servletName,
+            SlingServletConfig config,
+            String servicePropertyKey,
+            boolean emptyValueApplies,
+            String... requestValues) {
+        final String[] propValues = toStringArray(config.getServiceProperty(servicePropertyKey));
+        if (propValues.length == 0) {
+            LOGGER.debug(
+                    "Property {} is null or empty, not checking that value for {}", servicePropertyKey, servletName);
             return true;
         }
 
         boolean accepted = false;
-        if(propValues.length == 1 && EMPTY_VALUE.equals(propValues[0])) {
+        if (propValues.length == 1 && EMPTY_VALUE.equals(propValues[0])) {
             // If supported for this service property, request value must be empty
-            if(!emptyValueApplies) {
-                throw new InvalidPropertyException("Special value " + EMPTY_VALUE
-                + "  is not valid for the " + servicePropertyKey + " service property");
+            if (!emptyValueApplies) {
+                throw new InvalidPropertyException("Special value " + EMPTY_VALUE + "  is not valid for the "
+                        + servicePropertyKey + " service property");
             } else {
                 accepted = requestValues.length == 0 || (requestValues.length == 1 && requestValues[0] == null);
             }
         } else {
             // requestValues must match at least one value in propValue
-            for(String rValue : requestValues) {
-                for(String pValue : propValues) {
-                    if(rValue != null && rValue.equals(pValue)) {
+            for (String rValue : requestValues) {
+                for (String pValue : propValues) {
+                    if (rValue != null && rValue.equals(pValue)) {
                         accepted = true;
                         break;
                     }
@@ -113,13 +133,13 @@ class PathBasedServletAcceptor {
         return accepted;
     }
 
-    private static @NotNull String [] toStringArray(final Object value) {
-        if(value instanceof String) {
-            return new String[] { (String)value };
-        } else if(value instanceof String []) {
+    private static @NotNull String[] toStringArray(final Object value) {
+        if (value instanceof String) {
+            return new String[] {(String) value};
+        } else if (value instanceof String[]) {
             return (String[]) value;
-        } else if(value instanceof Object []) {
-            final Object [] objArray = (Object[])value;
+        } else if (value instanceof Object[]) {
+            final Object[] objArray = (Object[]) value;
             return Arrays.copyOf(objArray, objArray.length, String[].class);
         }
         return EMPTY_STRINGS;

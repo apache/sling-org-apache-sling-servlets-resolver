@@ -24,23 +24,21 @@ import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ValueMap;
 import org.apache.sling.api.wrappers.ValueMapDecorator;
 
-public class MockServletResource extends
-        org.apache.sling.servlets.resolver.internal.resource.ServletResource {
+public class MockServletResource extends org.apache.sling.servlets.resolver.internal.resource.ServletResource {
 
     public static final String PROP_SERVLET = ":servlet";
 
     private final Servlet servlet;
 
-    public MockServletResource(ResourceResolver resourceResolver,
-            Servlet servlet, String path) {
+    public MockServletResource(ResourceResolver resourceResolver, Servlet servlet, String path) {
         super(resourceResolver, servlet, path);
         this.servlet = servlet;
     }
 
     @Override
     public <T> T adaptTo(Class<T> type) {
-        if ( type == ValueMap.class ) {
-            ValueMapDecorator vm = (ValueMapDecorator)super.adaptTo(type);
+        if (type == ValueMap.class) {
+            ValueMapDecorator vm = (ValueMapDecorator) super.adaptTo(type);
             // add the servlet to the ValueMap so we don't lose track of it
             //  when resource objects are created during traversal
             vm.put(PROP_SERVLET, servlet);
@@ -48,5 +46,4 @@ public class MockServletResource extends
         }
         return super.adaptTo(type);
     }
-
 }

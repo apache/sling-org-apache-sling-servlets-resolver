@@ -55,16 +55,15 @@ import org.slf4j.LoggerFactory;
  * <li><code>/libs/default</code></li>
  * </ol>
  */
-
 public class LocationCollector {
 
-	protected static final String CACHE_KEY = LocationCollector.class.getName() + ".CacheKey";
+    protected static final String CACHE_KEY = LocationCollector.class.getName() + ".CacheKey";
 
     // The search path of the resource resolver
     private final String[] searchPath;
 
-    private Map<String,Resource> cacheMap;
-    
+    private Map<String, Resource> cacheMap;
+
     private final ResourceResolver resolver;
     private final String baseResourceType;
     private final String resourceType;
@@ -73,13 +72,15 @@ public class LocationCollector {
 
     /** Set of used resource types to detect a circular resource type hierarchy. */
     private final Set<String> usedResourceTypes = new HashSet<>();
-    
+
     private final List<String> result = new ArrayList<>();
 
-    private LocationCollector(@NotNull String resourceType, @NotNull String resourceSuperType, 
-    		@NotNull String baseResourceType,
-            @NotNull ResourceResolver resolver, 
-            @NotNull Map<String,Resource> cacheMap,
+    private LocationCollector(
+            @NotNull String resourceType,
+            @NotNull String resourceSuperType,
+            @NotNull String baseResourceType,
+            @NotNull ResourceResolver resolver,
+            @NotNull Map<String, Resource> cacheMap,
             final boolean useResourceCaching) {
 
         this.resourceType = resourceType;
@@ -91,7 +92,7 @@ public class LocationCollector {
 
         String[] tmpPath = resolver.getSearchPath();
         if (tmpPath.length == 0) {
-            tmpPath = new String[] { "/" };
+            tmpPath = new String[] {"/"};
         }
         searchPath = tmpPath;
         this.usedResourceTypes.add(this.resourceType);
@@ -106,13 +107,13 @@ public class LocationCollector {
      * Collect all resource types
      */
     private void collectPaths() {
-        
+
         String rt = this.resourceType;
         do {
             String superType = handleResourceType(rt);
             rt = superType;
         } while (rt != null);
-        
+
         // add default resourceTypes
         final String defaultResourceTypeSuffix;
         boolean blankResourceType = StringUtils.isBlank(resourceType);
@@ -125,14 +126,14 @@ public class LocationCollector {
             result.add(spath + defaultResourceTypeSuffix);
         }
     }
-    
+
     /**
      * Add all necessary path entries to the result list, and return the resourceSuperType
      * for the given resourceType
      * @param resourceType the resourceType
      * @return the resourceSuperType or null if the given resourceType does not have a resourceSuperType
      */
-    private @Nullable String handleResourceType (@NotNull String resourceType) {
+    private @Nullable String handleResourceType(@NotNull String resourceType) {
         boolean isBlank = StringUtils.isBlank(resourceType);
         boolean isAbsoluteResourceType = resourceType.startsWith("/");
         String rst = null;
@@ -143,13 +144,11 @@ public class LocationCollector {
                 for (String spath : searchPath) {
                     result.add(spath + ResourceUtil.resourceTypeToPath(resourceType));
                 }
-                
             }
             rst = getResourceSuperType(resourceType);
         }
         return rst;
     }
-    
 
     /**
      * Returns the resource super type of the given resource type:
@@ -172,17 +171,19 @@ public class LocationCollector {
 
         // get the super type of the current resource type
         String superType;
-        if (resourceType.equals(this.resourceType)
-                && this.resourceSuperType != null ) {
+        if (resourceType.equals(this.resourceType) && this.resourceSuperType != null) {
             superType = this.resourceSuperType;
         } else {
             superType = getResourceSuperTypeInternal(resourceType);
         }
 
         // detect circular dependency
-        if ( superType != null ) {
-            if ( this.usedResourceTypes.contains(superType) ) {
-                LoggerFactory.getLogger(this.getClass()).error("Circular dependency in resource type hierarchy detected! Check super types of {}", superType);
+        if (superType != null) {
+            if (this.usedResourceTypes.contains(superType)) {
+                LoggerFactory.getLogger(this.getClass())
+                        .error(
+                                "Circular dependency in resource type hierarchy detected! Check super types of {}",
+                                superType);
                 superType = null;
             } else {
                 this.usedResourceTypes.add(superType);
@@ -216,74 +217,73 @@ public class LocationCollector {
         }
         return rst;
     }
-    
+
     /**
      * Resolve a path to a resource; the cacheMap is used for it.
      * @param path the path
      * @return the resource for it or null
      */
     private @Nullable Resource resolveResource(@NotNull String path) {
-    	if (useResourceCaching && cacheMap.containsKey(path)) {
-    		return cacheMap.get(path);
-    	} else {
-    		Resource r = resolver.getResource(path);
-    		cacheMap.put(path, r);
-    		return r;
-    	}
+        if (useResourceCaching && cacheMap.containsKey(path)) {
+            return cacheMap.get(path);
+        } else {
+            Resource r = resolver.getResource(path);
+            cacheMap.put(path, r);
+            return r;
+        }
     }
-    
-    
-    
+
     // ---- static helpers ---
-    
+
     /**
-     * Return a list of resources, which represent potential matches for the given resourceType, resourceSuperType, 
+     * Return a list of resources, which represent potential matches for the given resourceType, resourceSuperType,
      * considering the constraints of the baseResourceType.
-     * @param resourceType 
+     * @param resourceType
      * @param resourceSuperType
      * @param baseResourceType
      * @param resolver
      * @return a list of non-null resources
      */
-	static @NotNull List<Resource> getLocations(@NotNull String resourceType, 
-			@NotNull String resourceSuperType, 
-			@NotNull String baseResourceType,
-			@NotNull ResourceResolver resolver,
-			boolean useResourceCaching) {
-		
-		final Map<String,Resource> cacheMap = getCacheMap(resolver);
-		final LocationCollector collector = new LocationCollector(resourceType, resourceSuperType, baseResourceType,
-				resolver, cacheMap, useResourceCaching);
-		
-		// get the location resource, use a synthetic resource if there
-		// is no real location. There may still be children at this
-		// location
-		return collector.getResolvedLocations().stream()
-		  .map(LocationCollector::removeTrailingSlash)
-		  .map(path -> getResource(resolver,path,cacheMap))
-		  .collect(Collectors.toList());
-	}
+    static @NotNull List<Resource> getLocations(
+            @NotNull String resourceType,
+            @NotNull String resourceSuperType,
+            @NotNull String baseResourceType,
+            @NotNull ResourceResolver resolver,
+            boolean useResourceCaching) {
 
-	private static Map<String, Resource> getCacheMap(@NotNull ResourceResolver resolver) {
-		Map<String, Resource> cacheMap;
-		Object c = resolver.getPropertyMap().get(CACHE_KEY);
-		
-		if (c != null) {
-			if (c instanceof Map<?,?>) {
-				cacheMap = (Map<String,Resource>) resolver.getPropertyMap().get(CACHE_KEY);
-			} else {
-				// it's of an incorrect type, so probably somebody else is using it.
-				// Just use the map for now, but do not store it as cache to the ResourceResolver
-				cacheMap = new HashMap<>();
-			}
-		} else {
-			// this is good enough, as ResourceResolvers should be used only by a single thread anyway
-			cacheMap = Collections.synchronizedMap(new HashMap<String,Resource>());
-			resolver.getPropertyMap().put(CACHE_KEY, cacheMap);
-		}
-		return cacheMap;
-	}
-    
+        final Map<String, Resource> cacheMap = getCacheMap(resolver);
+        final LocationCollector collector = new LocationCollector(
+                resourceType, resourceSuperType, baseResourceType, resolver, cacheMap, useResourceCaching);
+
+        // get the location resource, use a synthetic resource if there
+        // is no real location. There may still be children at this
+        // location
+        return collector.getResolvedLocations().stream()
+                .map(LocationCollector::removeTrailingSlash)
+                .map(path -> getResource(resolver, path, cacheMap))
+                .collect(Collectors.toList());
+    }
+
+    private static Map<String, Resource> getCacheMap(@NotNull ResourceResolver resolver) {
+        Map<String, Resource> cacheMap;
+        Object c = resolver.getPropertyMap().get(CACHE_KEY);
+
+        if (c != null) {
+            if (c instanceof Map<?, ?>) {
+                cacheMap = (Map<String, Resource>) resolver.getPropertyMap().get(CACHE_KEY);
+            } else {
+                // it's of an incorrect type, so probably somebody else is using it.
+                // Just use the map for now, but do not store it as cache to the ResourceResolver
+                cacheMap = new HashMap<>();
+            }
+        } else {
+            // this is good enough, as ResourceResolvers should be used only by a single thread anyway
+            cacheMap = Collections.synchronizedMap(new HashMap<String, Resource>());
+            resolver.getPropertyMap().put(CACHE_KEY, cacheMap);
+        }
+        return cacheMap;
+    }
+
     /**
      * Resolve a path to a resource, either via the cache or the ResourceResolver
      * @param resolver
@@ -291,45 +291,43 @@ public class LocationCollector {
      * @param cacheMap the cache map to use
      * @return a synthetic or "real" resource
      */
-	protected static @NotNull Resource getResource(final @NotNull ResourceResolver resolver, 
-			@NotNull String path, @NotNull Map<String,Resource> cacheMap) {
-		
-		if (cacheMap.containsKey(path) && cacheMap.get(path) != null) {
-			return cacheMap.get(path);
-		} else {
-			Resource res = resolver.getResource(path);
-			if (res == null) {
-				res = new SyntheticResource(resolver, path, "$synthetic$");
-			}
-			cacheMap.put(path, res);
-			return res;
-		}
-	}
-	
-	/**
-	 * Remove the last character if it's a trailing "/"
-	 * @param input
-	 * @return if input ends with a "/", returns the input without the "/" character at its end; input otherwise
-	 */
-	private static @NotNull String removeTrailingSlash (@NotNull String input) {
-		if (input.endsWith("/")) {
-			return input.substring(0, input.length() - 1);
-		} else {
-			return input;
-		}
-	}
-	
-	
-	/**
-	 * Purge all cache entries owned by the LocationCollector 
-	 * @param resolver the resolver owning that cache
-	 */
-	public static void clearCache(ResourceResolver resolver) {
-		 Object cache = resolver.getPropertyMap().get(CACHE_KEY);
-		 if (cache instanceof Map) {
-			 Map<String,Resource> cacheMap = (Map<String,Resource>) cache;
-			 cacheMap.clear();
-		 }
-	}
-    
+    protected static @NotNull Resource getResource(
+            final @NotNull ResourceResolver resolver, @NotNull String path, @NotNull Map<String, Resource> cacheMap) {
+
+        if (cacheMap.containsKey(path) && cacheMap.get(path) != null) {
+            return cacheMap.get(path);
+        } else {
+            Resource res = resolver.getResource(path);
+            if (res == null) {
+                res = new SyntheticResource(resolver, path, "$synthetic$");
+            }
+            cacheMap.put(path, res);
+            return res;
+        }
+    }
+
+    /**
+     * Remove the last character if it's a trailing "/"
+     * @param input
+     * @return if input ends with a "/", returns the input without the "/" character at its end; input otherwise
+     */
+    private static @NotNull String removeTrailingSlash(@NotNull String input) {
+        if (input.endsWith("/")) {
+            return input.substring(0, input.length() - 1);
+        } else {
+            return input;
+        }
+    }
+
+    /**
+     * Purge all cache entries owned by the LocationCollector
+     * @param resolver the resolver owning that cache
+     */
+    public static void clearCache(ResourceResolver resolver) {
+        Object cache = resolver.getPropertyMap().get(CACHE_KEY);
+        if (cache instanceof Map) {
+            Map<String, Resource> cacheMap = (Map<String, Resource>) cache;
+            cacheMap.clear();
+        }
+    }
 }

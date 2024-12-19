@@ -69,7 +69,8 @@ public abstract class AbstractResourceCollector {
 
     protected boolean useResourceCaching;
 
-    protected AbstractResourceCollector(final String baseResourceType,
+    protected AbstractResourceCollector(
+            final String baseResourceType,
             final String resourceType,
             final String resourceSuperType,
             final String extension,
@@ -83,7 +84,8 @@ public abstract class AbstractResourceCollector {
         this.useResourceCaching = useResourceCaching;
     }
 
-    public final Collection<Resource> getServlets(final ResourceResolver resolver, final List<String> scriptExtensions) {
+    public final Collection<Resource> getServlets(
+            final ResourceResolver resolver, final List<String> scriptExtensions) {
 
         final SortedSet<WeightedResource> resources = new TreeSet<>((o1, o2) -> {
             String o1Parent = ResourceUtil.getParent(o1.getPath());
@@ -94,8 +96,10 @@ public abstract class AbstractResourceCollector {
                 String o1Extension = getScriptExtension(o1ScriptName);
                 String o2Extension = getScriptExtension(o2ScriptName);
                 if (StringUtils.isNotEmpty(o1Extension) && StringUtils.isNotEmpty(o2Extension)) {
-                    String o1ScriptWithoutExtension = o1ScriptName.substring(0, o1ScriptName.lastIndexOf("." + o1Extension));
-                    String o2ScriptWithoutExtension = o2ScriptName.substring(0, o2ScriptName.lastIndexOf("." + o2Extension));
+                    String o1ScriptWithoutExtension =
+                            o1ScriptName.substring(0, o1ScriptName.lastIndexOf("." + o1Extension));
+                    String o2ScriptWithoutExtension =
+                            o2ScriptName.substring(0, o2ScriptName.lastIndexOf("." + o2Extension));
                     if (o1ScriptWithoutExtension.equals(o2ScriptWithoutExtension)) {
                         int o1ExtensionIndex = scriptExtensions.indexOf(o1Extension);
                         int o2ExtensionIndex = scriptExtensions.indexOf(o2Extension);
@@ -112,9 +116,8 @@ public abstract class AbstractResourceCollector {
             return o1.compareTo(o2);
         });
 
-
-        List<Resource> locations = LocationCollector.getLocations(resourceType, resourceSuperType, 
-                baseResourceType, resolver, this.useResourceCaching);
+        List<Resource> locations = LocationCollector.getLocations(
+                resourceType, resourceSuperType, baseResourceType, resolver, this.useResourceCaching);
         locations.forEach(locationRes -> getWeightedResources(resources, locationRes));
 
         List<Resource> result = new ArrayList<>(resources.size());
@@ -122,8 +125,7 @@ public abstract class AbstractResourceCollector {
         return result;
     }
 
-    protected abstract void getWeightedResources(final Set<WeightedResource> resources,
-            final Resource location);
+    protected abstract void getWeightedResources(final Set<WeightedResource> resources, final Resource location);
 
     /**
      * Creates a {@link WeightedResource} and adds it to the set of resources.
@@ -139,12 +141,12 @@ public abstract class AbstractResourceCollector {
      * @param methodPrefixWeight The method/prefix weight assigned to the
      *            resource according to the resource name.
      */
-    protected final void addWeightedResource(final Set<WeightedResource> resources,
+    protected final void addWeightedResource(
+            final Set<WeightedResource> resources,
             final Resource resource,
             final int numSelectors,
             final int methodPrefixWeight) {
-        final WeightedResource lr = new WeightedResource(resources.size(), resource,
-                numSelectors, methodPrefixWeight);
+        final WeightedResource lr = new WeightedResource(resources.size(), resource, numSelectors, methodPrefixWeight);
         resources.add(lr);
     }
 
@@ -159,10 +161,9 @@ public abstract class AbstractResourceCollector {
      * @return The actual resource at the given <code>path</code> or a
      *         synthetic resource representing the path location.
      */
-    protected final @NotNull Resource getResource(@NotNull final ResourceResolver resolver,
-            @NotNull String path,
-            boolean useCaching) {
-        Resource res = getResourceOrNull(resolver,path, useCaching);
+    protected final @NotNull Resource getResource(
+            @NotNull final ResourceResolver resolver, @NotNull String path, boolean useCaching) {
+        Resource res = getResourceOrNull(resolver, path, useCaching);
 
         if (res == null) {
             res = new SyntheticResource(resolver, path, "$synthetic$");
@@ -173,13 +174,13 @@ public abstract class AbstractResourceCollector {
 
     @Override
     public boolean equals(Object obj) {
-        if ( !(obj instanceof AbstractResourceCollector) ) {
+        if (!(obj instanceof AbstractResourceCollector)) {
             return false;
         }
-        if ( obj == this ) {
+        if (obj == this) {
             return true;
         }
-        final AbstractResourceCollector o = (AbstractResourceCollector)obj;
+        final AbstractResourceCollector o = (AbstractResourceCollector) obj;
         return stringEquals(resourceType, o.resourceType)
                 && stringEquals(resourceSuperType, o.resourceSuperType)
                 && stringEquals(extension, o.extension)
@@ -195,10 +196,10 @@ public abstract class AbstractResourceCollector {
      * Helper method to compare two strings which can possibly be <code>null</code>
      */
     protected boolean stringEquals(final String s1, final String s2) {
-        if ( s1 == null && s2 == null ) {
+        if (s1 == null && s2 == null) {
             return true;
         }
-        if ( s1 == null || s2 == null ) {
+        if (s1 == null || s2 == null) {
             return false;
         }
         return s1.equals(s2);
@@ -223,11 +224,11 @@ public abstract class AbstractResourceCollector {
     static @NotNull List<Resource> getChildrenList(@NotNull Resource parent, boolean useCaching) {
 
         List<Resource> childList = new ArrayList<>();
-        Map<String,List<Resource>> childrenListMap = null;
+        Map<String, List<Resource>> childrenListMap = null;
         if (useCaching) {
 
             // init the caching structure
-            Map<String,Object> cache = parent.getResourceResolver().getPropertyMap();
+            Map<String, Object> cache = parent.getResourceResolver().getPropertyMap();
             if (!cache.containsKey(CACHE_KEY_CHILDREN_LIST)) {
                 childrenListMap = new ConcurrentHashMap<>();
                 cache.put(CACHE_KEY_CHILDREN_LIST, childrenListMap);
@@ -235,11 +236,13 @@ public abstract class AbstractResourceCollector {
             } else {
                 Object entry = cache.get(CACHE_KEY_CHILDREN_LIST);
                 if (entry instanceof Map) {
-                    childrenListMap = (Map<String,List<Resource>>) cache.get(CACHE_KEY_CHILDREN_LIST); 
+                    childrenListMap = (Map<String, List<Resource>>) cache.get(CACHE_KEY_CHILDREN_LIST);
                 } else {
                     // unexpected type
-                    LOG.debug("Found key '{}' used with the unexpected type '{}', not caching the resource children list", 
-                            CACHE_KEY_CHILDREN_LIST, entry.getClass().getName());
+                    LOG.debug(
+                            "Found key '{}' used with the unexpected type '{}', not caching the resource children list",
+                            CACHE_KEY_CHILDREN_LIST,
+                            entry.getClass().getName());
                 }
             }
 
@@ -250,50 +253,50 @@ public abstract class AbstractResourceCollector {
                 LOG.trace("getChildrenList cache-hit for {} with {} child resources", parent.getPath(), result.size());
                 return result;
             }
-
         }
-     
+
         Iterator<Resource> childrenIterator = parent.listChildren();
         while (childrenIterator.hasNext()) {
             childList.add(childrenIterator.next());
         }
         if (useCaching && childrenListMap != null) {
             // it's a cache miss, store any result in the cache
-            childrenListMap.put(parent.getPath(),childList);
-            LOG.trace("getChildrenList cache-miss for {} with {} child resources", parent.getPath(),childList.size());
+            childrenListMap.put(parent.getPath(), childList);
+            LOG.trace("getChildrenList cache-miss for {} with {} child resources", parent.getPath(), childList.size());
         }
-        return childList;   
+        return childList;
     }
 
     /* Clear all caching structures
      * @param resolver
      */
     public static void clearCache(@NotNull ResourceResolver resolver) {
-    	Object o1 = resolver.getPropertyMap().get(CACHE_KEY_CHILDREN_LIST);
-    	if (o1 instanceof Map) {
-    		Map<String,List<Resource>> childrenListMap = (Map) o1;
-    		childrenListMap.clear();
-    	}
-    	Object o2 = resolver.getPropertyMap().get(CACHE_KEY_RESOURCES);
-    	if (o2 instanceof Map) {
-    		Map<String,Resource> resourceMap = (Map<String,Resource>) o2;
-    		resourceMap.clear();
-    	}
+        Object o1 = resolver.getPropertyMap().get(CACHE_KEY_CHILDREN_LIST);
+        if (o1 instanceof Map) {
+            Map<String, List<Resource>> childrenListMap = (Map) o1;
+            childrenListMap.clear();
+        }
+        Object o2 = resolver.getPropertyMap().get(CACHE_KEY_RESOURCES);
+        if (o2 instanceof Map) {
+            Map<String, Resource> resourceMap = (Map<String, Resource>) o2;
+            resourceMap.clear();
+        }
     }
 
     /**
-     * Resolvers a resource or null if there is no resource resolved from the given path. 
+     * Resolvers a resource or null if there is no resource resolved from the given path.
      * @param resolver the resourceResolver to use
      * @param path the path to the resource
      * @param useCaching indicates if caching should be used
      * @return a resource or null if no resource can be resolved
      */
-    public static @Nullable Resource getResourceOrNull(@NotNull ResourceResolver resolver, @NotNull String path, boolean useCaching) {
+    public static @Nullable Resource getResourceOrNull(
+            @NotNull ResourceResolver resolver, @NotNull String path, boolean useCaching) {
         Object o = resolver.getPropertyMap().get(CACHE_KEY_RESOURCES);
         if (useCaching) {
             if (o instanceof Map) {
                 // cache structure already initialized
-                final Map<String,Resource> resourceMap = (Map<String,Resource>) o;
+                final Map<String, Resource> resourceMap = (Map<String, Resource>) o;
                 if (resourceMap.containsKey(path)) {
                     // cache hit
                     LOG.trace("getResourceOrNull cache-hit for path {}", path);
@@ -309,18 +312,19 @@ public abstract class AbstractResourceCollector {
             if (o == null) {
                 // cache structure not initialized yet
                 LOG.trace("getResourceOrNull cache-miss on init for path {}", path);
-                final Map<String,Resource> resourceMap = new HashMap<>();
+                final Map<String, Resource> resourceMap = new HashMap<>();
                 resolver.getPropertyMap().put(CACHE_KEY_RESOURCES, resourceMap);
                 final Resource resource = resolver.getResource(path);
                 resourceMap.put(path, resource);
                 return resource;
             }
             // key already used by someone else
-            LOG.debug("Found key '{}' used with the unexpected type '{}', not caching the resource for path {}", 
-                    CACHE_KEY_RESOURCES, o.getClass().getName(), path);
+            LOG.debug(
+                    "Found key '{}' used with the unexpected type '{}', not caching the resource for path {}",
+                    CACHE_KEY_RESOURCES,
+                    o.getClass().getName(),
+                    path);
         }
         return resolver.getResource(path);
     }
-
-
 }

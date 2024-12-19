@@ -21,6 +21,7 @@ package org.apache.sling.servlets.resolver.internal.helper;
 import java.util.Collections;
 import java.util.Map;
 
+import junit.framework.TestCase;
 import org.apache.sling.api.resource.PersistenceException;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
@@ -29,8 +30,6 @@ import org.apache.sling.commons.testing.sling.MockSlingHttpServletRequest;
 import org.apache.sling.testing.resourceresolver.MockResourceResolverFactory;
 import org.apache.sling.testing.resourceresolver.MockResourceResolverFactoryOptions;
 import org.jetbrains.annotations.Nullable;
-
-import junit.framework.TestCase;
 
 public abstract class HelperTestBase extends TestCase {
 
@@ -64,60 +63,59 @@ public abstract class HelperTestBase extends TestCase {
 
         resourcePath = "/content/page";
         Resource parent = getOrCreateParentResource(resourceResolver, resourcePath);
-        resource = resourceResolver.create(parent, "page",
-                Collections.singletonMap(ResourceResolver.PROPERTY_RESOURCE_TYPE, resourceType));
+        resource = resourceResolver.create(
+                parent, "page", Collections.singletonMap(ResourceResolver.PROPERTY_RESOURCE_TYPE, resourceType));
 
         request = makeRequest("GET", "print.a4", "html");
     }
 
     public static Resource addOrReplaceResource(ResourceResolver resolver, String path, String resourceType) {
-        return addOrReplaceResource(resolver, path, 
-                Collections.singletonMap(ResourceResolver.PROPERTY_RESOURCE_TYPE, resourceType));
+        return addOrReplaceResource(
+                resolver, path, Collections.singletonMap(ResourceResolver.PROPERTY_RESOURCE_TYPE, resourceType));
     }
 
     public static Resource addOrReplaceResource(ResourceResolver resolver, String path, Map<String, Object> props) {
         Resource res = null;
         try {
             // if the resource already exists, then remove it
-            @Nullable
-            Resource r = resolver.getResource(path);
+            @Nullable Resource r = resolver.getResource(path);
             if (r != null) {
                 resolver.delete(r);
-            } 
+            }
 
             // create the new resource
             Resource parent = getOrCreateParentResource(resolver, path);
-            res = resolver.create(parent, ResourceUtil.getName(path),
-                    props);
+            res = resolver.create(parent, ResourceUtil.getName(path), props);
         } catch (PersistenceException e) {
             fail("Did not expect a persistence exception: " + e.getMessage());
         }
         return res;
-    };
+    }
+    ;
 
-    public static Resource getOrCreateParentResource(ResourceResolver resolver, String path) throws PersistenceException {
+    public static Resource getOrCreateParentResource(ResourceResolver resolver, String path)
+            throws PersistenceException {
         Resource parent = null;
         Resource tmp = resolver.getResource("/");
         String[] segments = path.split("/");
         for (int i = 1; i < segments.length - 1; i++) {
             String name = segments[i];
-            @Nullable
-            Resource child = tmp.getChild(name);
+            @Nullable Resource child = tmp.getChild(name);
             if (child == null) {
-                tmp = resolver.create(tmp, name,
-                        Collections.singletonMap(ResourceResolver.PROPERTY_RESOURCE_TYPE, "nt:folder"));
+                tmp = resolver.create(
+                        tmp, name, Collections.singletonMap(ResourceResolver.PROPERTY_RESOURCE_TYPE, "nt:folder"));
             } else {
                 tmp = child;
             }
         }
-        parent= tmp;
+        parent = tmp;
 
         return parent;
     }
 
     protected MockSlingHttpServletRequest makeRequest(String method, String selectors, String extension) {
         final MockSlingHttpServletRequest result =
-            new MockSlingHttpServletRequest(resourcePath, selectors, extension, null, null);
+                new MockSlingHttpServletRequest(resourcePath, selectors, extension, null, null);
         result.setMethod(method);
         result.setResourceResolver(resourceResolver);
         result.setResource(resource);
@@ -132,5 +130,4 @@ public abstract class HelperTestBase extends TestCase {
         request = null;
         resource = null;
     }
-
 }

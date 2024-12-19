@@ -41,92 +41,97 @@ public class ResourceCollectorTest extends HelperTestBase {
     }
 
     public void testGetServlets0() {
-        String[] names = { "/" + label + ".esp", // 0
-                "/GET.esp", // 1
-                "/" + label + ".html.esp", // 2
-                "/html.esp", // 3
-                "/print.esp", // 4
-                "/print/a4.esp", // 5
-                "/print.html.esp", // 6
-                "/print/a4.html.esp" // 7
+        String[] names = {
+            "/" + label + ".esp", // 0
+            "/GET.esp", // 1
+            "/" + label + ".html.esp", // 2
+            "/html.esp", // 3
+            "/print.esp", // 4
+            "/print/a4.esp", // 5
+            "/print.html.esp", // 6
+            "/print/a4.html.esp" // 7
         };
 
-        int[] baseIdxs = { 0, 1, 1, 0, 0, 1, 0, 1, 0, 1 };
-        int[] indices  = { 7, 5, 6, 4, 2, 3, 0, 1 };
+        int[] baseIdxs = {0, 1, 1, 0, 0, 1, 0, 1, 0, 1};
+        int[] indices = {7, 5, 6, 4, 2, 3, 0, 1};
 
         effectiveTest(names, baseIdxs, indices);
     }
 
     public void testGetServlets1() {
-        String[] names = { "/" + label + ".esp", // 0
-                "/GET.esp", // 1
-                "/" + label + ".html.esp", // 2
-                "/print.esp", // 3
-                "/print.other.esp", // 4
-                "/print/other.esp", // 5
-                "/print.html.esp", // 6
-                "/print/a4.html.esp" // 7
+        String[] names = {
+            "/" + label + ".esp", // 0
+            "/GET.esp", // 1
+            "/" + label + ".html.esp", // 2
+            "/print.esp", // 3
+            "/print.other.esp", // 4
+            "/print/other.esp", // 5
+            "/print.html.esp", // 6
+            "/print/a4.html.esp" // 7
         };
 
-        int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
-        int[] indices = { 7, 6, 3, 2, 0, 1 };
+        int[] baseIdxs = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1};
+        int[] indices = {7, 6, 3, 2, 0, 1};
 
         effectiveTest(names, baseIdxs, indices);
     }
 
     public void testGetServlets2() {
-        String[] names = { "/" + label + ".esp", // 0
-                "/GET.esp", // 1
-                "/" + label + ".html.esp", // 2
-                "/html.esp", // 3
-                "/image.esp", // 4
-                "/print/other.esp", // 5
-                "/print.other.esp", // 6
-                "/print.html.esp", // 7
-                "/print/a4.html.esp" // 8
+        String[] names = {
+            "/" + label + ".esp", // 0
+            "/GET.esp", // 1
+            "/" + label + ".html.esp", // 2
+            "/html.esp", // 3
+            "/image.esp", // 4
+            "/print/other.esp", // 5
+            "/print.other.esp", // 6
+            "/print.html.esp", // 7
+            "/print/a4.html.esp" // 8
         };
 
-        int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
-        int[] indices = { 8, 7, 2, 3, 0, 1 };
+        int[] baseIdxs = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1};
+        int[] indices = {8, 7, 2, 3, 0, 1};
 
         effectiveTest(names, baseIdxs, indices);
     }
 
     public void testGetServlets3() {
-        String[] names = { ".servlet", // 0
-                "/" + label + ".esp", // 1
-                "/GET.esp", // 2
-                "/" + label + ".html.esp", // 3
-                "/html.esp", // 4
-                "/image.esp", // 5
-                "/print/other.esp", // 6
-                "/print.other.esp", // 7
-                "/print.html.esp", // 8
-                "/print/a4.html.esp" // 9
+        String[] names = {
+            ".servlet", // 0
+            "/" + label + ".esp", // 1
+            "/GET.esp", // 2
+            "/" + label + ".html.esp", // 3
+            "/html.esp", // 4
+            "/image.esp", // 5
+            "/print/other.esp", // 6
+            "/print.other.esp", // 7
+            "/print.html.esp", // 8
+            "/print/a4.html.esp" // 9
         };
 
-        int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
-        int[] indices = { 9, 8, 3, 4, 1, 2, 0 };
+        int[] baseIdxs = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1};
+        int[] indices = {9, 8, 3, 4, 1, 2, 0};
 
         effectiveTest(names, baseIdxs, indices);
     }
 
     public void testGetServlets4() {
-        String[] names = { ".servlet", // 0
-                "/" + label + ".esp", // 1
-                "/GET.esp", // 2
-                "/" + label + ".html.esp", // 3
-                "/html.esp", // 4
-                ".esp", // 5
-                "/image.esp", // 6
-                "/print/other.esp", // 7
-                "/print.other.esp", // 8
-                "/print.html.esp", // 9
-                "/print/a4.html.esp" // 10
+        String[] names = {
+            ".servlet", // 0
+            "/" + label + ".esp", // 1
+            "/GET.esp", // 2
+            "/" + label + ".html.esp", // 3
+            "/html.esp", // 4
+            ".esp", // 5
+            "/image.esp", // 6
+            "/print/other.esp", // 7
+            "/print.other.esp", // 8
+            "/print.html.esp", // 9
+            "/print/a4.html.esp" // 10
         };
 
-        int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1 };
-        int[] indices = { 10, 9, 3, 4, 1, 2, 0 };
+        int[] baseIdxs = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1};
+        int[] indices = {10, 9, 3, 4, 1, 2, 0};
 
         effectiveTest(names, baseIdxs, indices);
     }
@@ -137,116 +142,128 @@ public class ResourceCollectorTest extends HelperTestBase {
             "/html.GET.servlet"
         };
 
-        int[] baseIdxs = { 1, 1};
-        int[] indices = { 1, 0};
+        int[] baseIdxs = {1, 1};
+        int[] indices = {1, 0};
 
         effectiveTest(names, baseIdxs, indices);
     }
 
     public void testGetServletsScriptExtensionsPriority() {
-        String[] names = {".servlet", // 0
-                "/" + label + ".esp", // 1
-                "/GET.esp", // 2
-                "/" + label + ".html.esp", // 3
-                "/html.esp", // 4
-                ".esp", // 5
-                "/image.esp", // 6
-                "/print/other.esp", // 7
-                "/print.other.esp", // 8
-                "/print.html.esp", // 9
-                "/print/a4.html.esp", // 10    /libs/foo/bar/print/a4.html.esp
-                "/print/a4.html.js", // 11     /libs/foo/bar/print/a4.html.js
-                "/print/a4.html.html", // 12   /apps/foo/bar/print/a4.html.html
-                "/print/a4.html.jsp" // 13    /apps/foo/bar/print/a4.html.jsp
+        String[] names = {
+            ".servlet", // 0
+            "/" + label + ".esp", // 1
+            "/GET.esp", // 2
+            "/" + label + ".html.esp", // 3
+            "/html.esp", // 4
+            ".esp", // 5
+            "/image.esp", // 6
+            "/print/other.esp", // 7
+            "/print.other.esp", // 8
+            "/print.html.esp", // 9
+            "/print/a4.html.esp", // 10    /libs/foo/bar/print/a4.html.esp
+            "/print/a4.html.js", // 11     /libs/foo/bar/print/a4.html.js
+            "/print/a4.html.html", // 12   /apps/foo/bar/print/a4.html.html
+            "/print/a4.html.jsp" // 13    /apps/foo/bar/print/a4.html.jsp
         };
 
-        int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0 , 0 , 1, 0};
+        int[] baseIdxs = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0};
         int[] indices = {12, 13, 11, 10, 9, 3, 4, 1, 2, 0};
 
-        effectiveTest(names, baseIdxs, indices, new ArrayList<String>(){
+        effectiveTest(names, baseIdxs, indices, new ArrayList<String>() {
             private static final long serialVersionUID = -2278401285444759128L;
-        {
-            add("esp");
-            add("js");
-            add("jsp");
-            add("html");
-        }});
+
+            {
+                add("esp");
+                add("js");
+                add("jsp");
+                add("html");
+            }
+        });
     }
 
     public void testGetServletsScriptExtensionsPriority2() {
         // scripts with extensions not registered by script engine factories
-        String[] names = {".servlet", // 0
-                "/" + label + ".esp", // 1
-                "/GET.esp", // 2
-                "/" + label + ".html.esp", // 3
-                "/html.esp", // 4
-                ".esp", // 5
-                "/image.esp", // 6
-                "/print/other.esp", // 7
-                "/print.other.esp", // 8
-                "/print.html.esp", // 9
-                "/print/a4.html.esp", // 10    /libs/foo/bar/print/a4.html.esp
-                "/print/a4.html.js", // 11     /libs/foo/bar/print/a4.html.js
-                "/print/a4.html.html", // 12   /apps/foo/bar/print/a4.html.html will win (overlays libs, comes before jsp when iterating)
-                "/print/a4.html.jsp" // 13    /apps/foo/bar/print/a4.html.jsp
+        String[] names = {
+            ".servlet", // 0
+            "/" + label + ".esp", // 1
+            "/GET.esp", // 2
+            "/" + label + ".html.esp", // 3
+            "/html.esp", // 4
+            ".esp", // 5
+            "/image.esp", // 6
+            "/print/other.esp", // 7
+            "/print.other.esp", // 8
+            "/print.html.esp", // 9
+            "/print/a4.html.esp", // 10    /libs/foo/bar/print/a4.html.esp
+            "/print/a4.html.js", // 11     /libs/foo/bar/print/a4.html.js
+            "/print/a4.html.html", // 12   /apps/foo/bar/print/a4.html.html will win (overlays libs, comes before jsp
+            // when iterating)
+            "/print/a4.html.jsp" // 13    /apps/foo/bar/print/a4.html.jsp
         };
 
-        int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0 , 0 , 1, 0};
+        int[] baseIdxs = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0};
         int[] indices = {12, 13, 11, 10, 9, 3, 4, 1, 2, 0};
 
-        effectiveTest(names, baseIdxs, indices, new ArrayList<String>(){
+        effectiveTest(names, baseIdxs, indices, new ArrayList<String>() {
             private static final long serialVersionUID = 4918721764309621104L;
-        {
-            add("esp");
-            add("js");
-        }});
+
+            {
+                add("esp");
+                add("js");
+            }
+        });
     }
 
     public void testGetServletsScriptExtensionsPriority3() {
         // scripts with extensions not registered by script engine factories
-        String[] names = {".servlet", // 0
-                "/" + label + ".esp", // 1
-                "/GET.esp", // 2
-                "/" + label + ".html.esp", // 3
-                "/html.esp", // 4
-                ".esp", // 5
-                "/image.esp", // 6
-                "/print/other.esp", // 7
-                "/print.other.esp", // 8
-                "/print.html.esp", // 9
-                "/print/a4.html.esp", // 10    /libs/foo/bar/print/a4.html.esp
-                "/print/a4.html.js", // 11     /libs/foo/bar/print/a4.html.js
-                "/print/a4.html.jsp", // 12    /apps/foo/bar/print/a4.html.jsp will win (overlays libs, comes before html when iterating)
-                "/print/a4.html.html" // 13   /apps/foo/bar/print/a4.html.html
+        String[] names = {
+            ".servlet", // 0
+            "/" + label + ".esp", // 1
+            "/GET.esp", // 2
+            "/" + label + ".html.esp", // 3
+            "/html.esp", // 4
+            ".esp", // 5
+            "/image.esp", // 6
+            "/print/other.esp", // 7
+            "/print.other.esp", // 8
+            "/print.html.esp", // 9
+            "/print/a4.html.esp", // 10    /libs/foo/bar/print/a4.html.esp
+            "/print/a4.html.js", // 11     /libs/foo/bar/print/a4.html.js
+            "/print/a4.html.jsp", // 12    /apps/foo/bar/print/a4.html.jsp will win (overlays libs, comes before html
+            // when iterating)
+            "/print/a4.html.html" // 13   /apps/foo/bar/print/a4.html.html
         };
 
-        int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0 , 0 , 1, 0};
+        int[] baseIdxs = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0};
         int[] indices = {12, 13, 11, 10, 9, 3, 4, 1, 2, 0};
 
-        effectiveTest(names, baseIdxs, indices, new ArrayList<String>(){
+        effectiveTest(names, baseIdxs, indices, new ArrayList<String>() {
             private static final long serialVersionUID = 1527098044127506711L;
-        {
-            add("esp");
-            add("js");
-        }});
+
+            {
+                add("esp");
+                add("js");
+            }
+        });
     }
 
     public void testAnyServlets0() {
         // use a request with another request method "ANY"
         request.setMethod("ANY");
 
-        String[] names = { "/" + label + ".ANY.esp", // 0
-                "/ANY.esp", // 1
-                "/" + label + ".html.ANY.esp", // 2
-                "/html.ANY.esp", // 3
-                "/print.ANY.esp", // 4
-                "/print/a4.ANY.esp", // 5
-                "/print.html.ANY.esp", // 6
-                "/print/a4.html.ANY.esp" // 7
+        String[] names = {
+            "/" + label + ".ANY.esp", // 0
+            "/ANY.esp", // 1
+            "/" + label + ".html.ANY.esp", // 2
+            "/html.ANY.esp", // 3
+            "/print.ANY.esp", // 4
+            "/print/a4.ANY.esp", // 5
+            "/print.html.ANY.esp", // 6
+            "/print/a4.html.ANY.esp" // 7
         };
 
-        int[] baseIdxs = { 0, 1, 1, 0, 0, 1, 0, 1, 0, 1 };
-        int[] indices  = { 7, 5, 6, 4, 2, 3, 0, 1 };
+        int[] baseIdxs = {0, 1, 1, 0, 0, 1, 0, 1, 0, 1};
+        int[] indices = {7, 5, 6, 4, 2, 3, 0, 1};
 
         effectiveTest(names, baseIdxs, indices);
     }
@@ -255,18 +272,19 @@ public class ResourceCollectorTest extends HelperTestBase {
         // use a request with another request method "ANY"
         request.setMethod("ANY");
 
-        String[] names = { "/" + label + ".ANY.esp", // 0
-                "/ANY.esp", // 1
-                "/" + label + ".html.ANY.esp", // 2
-                "/print.ANY.esp", // 3
-                "/print.other.ANY.esp", // 4
-                "/print/other.ANY.esp", // 5
-                "/print.html.ANY.esp", // 6
-                "/print/a4.html.ANY.esp" // 7
+        String[] names = {
+            "/" + label + ".ANY.esp", // 0
+            "/ANY.esp", // 1
+            "/" + label + ".html.ANY.esp", // 2
+            "/print.ANY.esp", // 3
+            "/print.other.ANY.esp", // 4
+            "/print/other.ANY.esp", // 5
+            "/print.html.ANY.esp", // 6
+            "/print/a4.html.ANY.esp" // 7
         };
 
-        int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
-        int[] indices = { 7, 6, 3, 2, 0, 1 };
+        int[] baseIdxs = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1};
+        int[] indices = {7, 6, 3, 2, 0, 1};
 
         effectiveTest(names, baseIdxs, indices);
     }
@@ -275,19 +293,20 @@ public class ResourceCollectorTest extends HelperTestBase {
         // use a request with another request method "ANY"
         request.setMethod("ANY");
 
-        String[] names = { "/" + label + ".ANY.esp", // 0
-                "/ANY.esp", // 1
-                "/" + label + ".html.ANY.esp", // 2
-                "/html.ANY.esp", // 3
-                "/image.ANY.esp", // 4
-                "/print/other.ANY.esp", // 5
-                "/print.other.ANY.esp", // 6
-                "/print.html.ANY.esp", // 7
-                "/print/a4.html.ANY.esp" // 8
+        String[] names = {
+            "/" + label + ".ANY.esp", // 0
+            "/ANY.esp", // 1
+            "/" + label + ".html.ANY.esp", // 2
+            "/html.ANY.esp", // 3
+            "/image.ANY.esp", // 4
+            "/print/other.ANY.esp", // 5
+            "/print.other.ANY.esp", // 6
+            "/print.html.ANY.esp", // 7
+            "/print/a4.html.ANY.esp" // 8
         };
 
-        int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
-        int[] indices = { 8, 7, 2, 3, 0, 1 };
+        int[] baseIdxs = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1};
+        int[] indices = {8, 7, 2, 3, 0, 1};
 
         effectiveTest(names, baseIdxs, indices);
     }
@@ -296,20 +315,21 @@ public class ResourceCollectorTest extends HelperTestBase {
         // use a request with another request method "ANY"
         request.setMethod("ANY");
 
-        String[] names = { ".servlet", // 0
-                "/" + label + ".ANY.esp", // 1
-                "/ANY.esp", // 2
-                "/" + label + ".html.ANY.esp", // 3
-                "/html.ANY.esp", // 4
-                "/image.ANY.esp", // 5
-                "/print/other.ANY.esp", // 6
-                "/print.other.ANY.esp", // 7
-                "/print.html.ANY.esp", // 8
-                "/print/a4.html.ANY.esp" // 9
+        String[] names = {
+            ".servlet", // 0
+            "/" + label + ".ANY.esp", // 1
+            "/ANY.esp", // 2
+            "/" + label + ".html.ANY.esp", // 3
+            "/html.ANY.esp", // 4
+            "/image.ANY.esp", // 5
+            "/print/other.ANY.esp", // 6
+            "/print.other.ANY.esp", // 7
+            "/print.html.ANY.esp", // 8
+            "/print/a4.html.ANY.esp" // 9
         };
 
-        int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
-        int[] indices = { 9, 8, 3, 4, 1, 2, 0 };
+        int[] baseIdxs = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1};
+        int[] indices = {9, 8, 3, 4, 1, 2, 0};
 
         effectiveTest(names, baseIdxs, indices);
     }
@@ -318,21 +338,22 @@ public class ResourceCollectorTest extends HelperTestBase {
         // use a request with another request method "ANY"
         request.setMethod("ANY");
 
-        String[] names = { ".servlet", // 0
-                "/" + label + ".ANY.esp", // 1
-                "/ANY.esp", // 2
-                "/" + label + ".html.ANY.esp", // 3
-                "/html.ANY.esp", // 4
-                ".ANY.esp", // 5
-                "/image.ANY.esp", // 6
-                "/print/other.ANY.esp", // 7
-                "/print.other.ANY.esp", // 8
-                "/print.html.ANY.esp", // 9
-                "/print/a4.html.ANY.esp" // 10
+        String[] names = {
+            ".servlet", // 0
+            "/" + label + ".ANY.esp", // 1
+            "/ANY.esp", // 2
+            "/" + label + ".html.ANY.esp", // 3
+            "/html.ANY.esp", // 4
+            ".ANY.esp", // 5
+            "/image.ANY.esp", // 6
+            "/print/other.ANY.esp", // 7
+            "/print.other.ANY.esp", // 8
+            "/print.html.ANY.esp", // 9
+            "/print/a4.html.ANY.esp" // 10
         };
 
-        int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1 };
-        int[] indices = { 10, 9, 3, 4, 1, 2, 0 };
+        int[] baseIdxs = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1};
+        int[] indices = {10, 9, 3, 4, 1, 2, 0};
 
         effectiveTest(names, baseIdxs, indices);
     }
@@ -341,33 +362,36 @@ public class ResourceCollectorTest extends HelperTestBase {
         // use a request with another request method "ANY"
         request.setMethod("ANY");
 
-        String[] names = {".servlet", // 0
-                "/" + label + ".ANY.esp", // 1
-                "/ANY.esp", // 2
-                "/" + label + ".html.ANY.esp", // 3
-                "/html.ANY.esp", // 4
-                ".ANY.esp", // 5
-                "/image.ANY.esp", // 6
-                "/print/other.ANY.esp", // 7
-                "/print.other.ANY.esp", // 8
-                "/print.html.ANY.esp", // 9
-                "/print/a4.html.ANY.esp", // 10    /libs/foo/bar/print/a4.html.ANY.esp
-                "/print/a4.html.ANY.js", // 11     /libs/foo/bar/print/a4.html.ANY.js
-                "/print/a4.html.ANY.html", // 12   /apps/foo/bar/print/a4.html.ANY.html
-                "/print/a4.html.ANY.jsp" // 13    /apps/foo/bar/print/a4.html.ANY.jsp
+        String[] names = {
+            ".servlet", // 0
+            "/" + label + ".ANY.esp", // 1
+            "/ANY.esp", // 2
+            "/" + label + ".html.ANY.esp", // 3
+            "/html.ANY.esp", // 4
+            ".ANY.esp", // 5
+            "/image.ANY.esp", // 6
+            "/print/other.ANY.esp", // 7
+            "/print.other.ANY.esp", // 8
+            "/print.html.ANY.esp", // 9
+            "/print/a4.html.ANY.esp", // 10    /libs/foo/bar/print/a4.html.ANY.esp
+            "/print/a4.html.ANY.js", // 11     /libs/foo/bar/print/a4.html.ANY.js
+            "/print/a4.html.ANY.html", // 12   /apps/foo/bar/print/a4.html.ANY.html
+            "/print/a4.html.ANY.jsp" // 13    /apps/foo/bar/print/a4.html.ANY.jsp
         };
 
-        int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0 , 0 , 1, 0};
+        int[] baseIdxs = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0};
         int[] indices = {12, 13, 11, 10, 9, 3, 4, 1, 2, 0};
 
-        effectiveTest(names, baseIdxs, indices, new ArrayList<String>(){
+        effectiveTest(names, baseIdxs, indices, new ArrayList<String>() {
             private static final long serialVersionUID = 3909592432283252117L;
-        {
-            add("esp");
-            add("js");
-            add("jsp");
-            add("html");
-        }});
+
+            {
+                add("esp");
+                add("js");
+                add("jsp");
+                add("html");
+            }
+        });
     }
 
     protected void effectiveTest(String[] names, int[] baseIdxs, int[] indices) {
@@ -376,12 +400,11 @@ public class ResourceCollectorTest extends HelperTestBase {
 
     protected void effectiveTest(String[] names, int[] baseIdxs, int[] indices, List<String> scriptEngineExtensions) {
 
-        String[] base = { "/apps/" + resourceTypePath,
-            "/libs/" + resourceTypePath };
+        String[] base = {"/apps/" + resourceTypePath, "/libs/" + resourceTypePath};
 
         Map<String, String> pathMap = new HashMap<String, String>();
 
-        for (int i=0; i < names.length; i++) {
+        for (int i = 0; i < names.length; i++) {
             String name = names[i];
             int baseIdx = baseIdxs[i];
             String path = base[baseIdx] + name;
