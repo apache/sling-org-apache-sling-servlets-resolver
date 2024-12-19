@@ -25,11 +25,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.jar.JarInputStream;
 
 import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.Resource;
@@ -48,8 +49,8 @@ import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerClass;
-import org.ops4j.pax.tinybundles.core.TinyBundle;
-import org.ops4j.pax.tinybundles.core.TinyBundles;
+import org.ops4j.pax.tinybundles.TinyBundle;
+import org.ops4j.pax.tinybundles.TinyBundles;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
@@ -71,11 +72,12 @@ public class ServletResourceIT extends ServletResolverTestSupport {
 
     protected Option testBundle() {
         try {
-            TinyBundle bundle = TinyBundles.bundle().read(new FileInputStream(System.getProperty("bundle.filename")));
+            TinyBundle bundle = TinyBundles.bundle()
+                    .readIn(new JarInputStream(new FileInputStream(System.getProperty("bundle.filename"))));
             String header = bundle.getHeader("Export-Package");
-            bundle.set("Export-Package", header + ",org.apache.sling.servlets.resolver.internal.bundle");
+            bundle.setHeader("Export-Package", header + ",org.apache.sling.servlets.resolver.internal.bundle");
             return streamBundle(bundle.build()).start();
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
