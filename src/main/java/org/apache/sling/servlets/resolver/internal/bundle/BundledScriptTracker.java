@@ -618,12 +618,18 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         }
     }
 
+    /**
+     * Return the symbolic names of bundles which are provided via {{code expectedBundles}} and present
+     * @param bundleContext a bundleContext
+     * @param expectedBundles the symbolic names of bundles to check for
+     * @return the symbolic names of present bundles
+     */
     protected static Set<String> filterForExistingBundles(BundleContext bundleContext,
             Set<String> expectedBundles) {
             List<Bundle> allBundles = Arrays.asList(bundleContext.getBundles());
             return allBundles.stream()
-                .filter(b -> expectedBundles.contains(b.getSymbolicName()))
-                .map(b -> b.getSymbolicName())
+                .map(Bundle::getSymbolicName)
+                .filter(s -> expectedBundles.contains(s))
                 .collect(Collectors.toSet());
     }
 
