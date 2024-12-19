@@ -18,15 +18,21 @@
  */
 package org.apache.sling.servlets.resolver.internal.bundle;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import javax.servlet.Servlet;
 
 import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.internal.util.collections.Sets;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
@@ -44,5 +50,25 @@ public class BundledScriptTrackerTest {
         registrations.add(registration);
         tracker.removedBundle(mock(Bundle.class), mock(BundleEvent.class), registrations);
         verify(registration).unregister();
+    }
+
+    @Test
+    public void test_filterForExistingBundles() {
+        BundleContext bc = Mockito.mock(BundleContext.class);
+        Mockito.doReturn(new Bundle[] {mockBundle("a"),mockBundle("b"),
+                mockBundle("c"),mockBundle("d"),mockBundle("e")}).when(bc).getBundles();
+
+        Set<String> expectedSymbolicNames = Sets.newSet("a","b","z");
+        Set<String> res = BundledScriptTracker.filterForExistingBundles(bc,expectedSymbolicNames);
+        assertNotNull(res);
+        assertEquals(2,res.size());
+        assertTrue(res.contains("a"));
+        assertTrue(res.contains("b"));
+    }
+
+    private static Bundle mockBundle (String symbolicName) {
+        Bundle b = Mockito.mock(Bundle.class);
+        Mockito.when(b.getSymbolicName()).thenReturn(symbolicName);
+        return b;
     }
 }

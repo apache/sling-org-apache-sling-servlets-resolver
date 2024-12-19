@@ -130,6 +130,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     
     private Set<String> registeredBundles = new HashSet<>();
     private Set<String> expectedBundles = new HashSet<>();
+    private boolean ignoreNonExistingBundles = false;
     
     private ServiceRegistration<HealthCheck> healthCheckRegistration = null;
 
@@ -142,9 +143,10 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         bt.open();
         if (config.mandatoryBundles() != null) {
             expectedBundles.addAll(Arrays.asList(config.mandatoryBundles()));
+            ignoreNonExistingBundles = config.ignoreNonExistingBundles();
             healthCheckRegistration = registerHealthCheck(config.tags());
-            LOGGER.info("Healthcheck configured with mandatory bundles {} for tags {}", 
-                    Arrays.toString(config.mandatoryBundles()), Arrays.toString(config.tags()));
+            LOGGER.info("Healthcheck configured with mandatory bundles {} for tags {}, ignoreNonExistingBundles = {}",
+                    Arrays.toString(config.mandatoryBundles()), Arrays.toString(config.tags()), ignoreNonExistingBundles);
         }
     }
 
@@ -591,21 +593,44 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         refreshDispatcher(Collections.emptyList());
         registeredBundles.remove(bundle.getSymbolicName());
     }
-    
+
     @Override
     public Result execute() {
-        
+
         if (expectedBundles == null) {
             return new Result(Result.Status.OK,"Health check is not configured.");
         }
-        
-        if (registeredBundles.containsAll(expectedBundles)) {
+
+        Set<String> mandatoryAvailableBundles;
+        if (ignoreNonExistingBundles) {
+            // Filter the provided symbolic names if a bundle with that name actually exists
+            mandatoryAvailableBundles = filterForExistingBundles(bundleContext.get(), expectedBundles);
+        } else {
+            mandatoryAvailableBundles = expectedBundles;
+        }
+
+        if (registeredBundles.containsAll(mandatoryAvailableBundles)) {
             return new Result(Result.Status.OK,"All expected bundles have registered their scripts.");
         } else {
             FormattingResultLog log = new FormattingResultLog();
-            log.warn("Expected bundles : {}, registered bundles: {}", expectedBundles, registeredBundles);
+            log.warn("Expected bundles : {}, registered bundles: {}", mandatoryAvailableBundles, registeredBundles);
             return new Result(log);
         }
+    }
+
+    /**
+     * Return the symbolic names of bundles which are provided via {{code expectedBundles}} and present
+     * @param bundleContext a bundleContext
+     * @param expectedBundles the symbolic names of bundles to check for
+     * @return the symbolic names of present bundles
+     */
+    protected static Set<String> filterForExistingBundles(BundleContext bundleContext,
+            Set<String> expectedBundles) {
+            List<Bundle> allBundles = Arrays.asList(bundleContext.getBundles());
+            return allBundles.stream()
+                .map(Bundle::getSymbolicName)
+                .filter(s -> expectedBundles.contains(s))
+                .collect(Collectors.toSet());
     }
 
     private class DispatcherServlet extends GenericServlet {
@@ -806,14 +831,16 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         return newSet;
     }
 
-
     @ObjectClassDefinition
     public @interface BundledScriptTrackerConfig {
-        
+
         @AttributeDefinition(name="Mandatory Bundles", description="A list of symbolic bundle names for which the "
                 + "script registration process must have been successfully completed for the health check to report ok.")
         String[] mandatoryBundles();
-        
+
+        @AttributeDefinition(name="Check for bundle presence", description="If disabled, bundles listed as mandatory are ignored if no bundle with that symbolic name is present")
+        boolean ignoreNonExistingBundles() default false;
+
         @AttributeDefinition(name="healthcheck tags", description="the tags under which the healthcheck should be registered")
         String[] tags() default "systemready";
     }
