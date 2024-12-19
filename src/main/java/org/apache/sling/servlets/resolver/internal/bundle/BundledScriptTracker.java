@@ -604,7 +604,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         Set<String> mandatoryAvailableBundles;
         if (ignoreNonExistingBundles) {
             // Filter the provided symbolic names if a bundle with that name actually exists
-            mandatoryAvailableBundles = filterForExistingBundles (bundleContext.get(), expectedBundles);
+            mandatoryAvailableBundles = filterForExistingBundles(bundleContext.get(), expectedBundles);
         } else {
             mandatoryAvailableBundles = expectedBundles;
         }
