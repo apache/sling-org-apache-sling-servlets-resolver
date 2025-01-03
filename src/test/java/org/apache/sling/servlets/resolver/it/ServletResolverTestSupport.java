@@ -32,6 +32,7 @@ import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
 import org.apache.sling.testing.paxexam.TestSupport;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
+import org.ops4j.pax.exam.options.MavenArtifactProvisionOption;
 import org.ops4j.pax.exam.options.extra.VMOption;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -48,6 +49,7 @@ import static org.ops4j.pax.exam.CoreOptions.composite;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.CoreOptions.options;
+import static org.ops4j.pax.exam.CoreOptions.systemProperty;
 import static org.ops4j.pax.exam.CoreOptions.vmOption;
 import static org.ops4j.pax.exam.CoreOptions.when;
 import static org.ops4j.pax.exam.cm.ConfigurationAdminOptions.factoryConfiguration;
@@ -102,10 +104,11 @@ public class ServletResolverTestSupport extends TestSupport {
         versionResolver.setVersionFromProject(SLING_GROUP_ID, "org.apache.sling.commons.johnzon");
         versionResolver.setVersionFromProject(SLING_GROUP_ID, "org.apache.sling.engine");
         versionResolver.setVersion(SLING_GROUP_ID, "org.apache.sling.auth.core", "1.7.1-SNAPSHOT");
+        versionResolver.setVersion("commons-io", "commons-io", "2.17.0");
         // the following is needed until we update to Apache Felix Http Jetty12
         versionResolver.setVersion("org.apache.felix", "org.apache.felix.http.servlet-api", "3.0.0");
         versionResolver.setVersion("commons-fileupload", "commons-fileupload", "1.5");
-        return options(
+        Option[] result = options(
             composite(
                 when(debugOption != null).useOptions(debugOption),
                 when(vmOption != null).useOptions(vmOption),
@@ -125,8 +128,8 @@ public class ServletResolverTestSupport extends TestSupport {
                 mavenBundle().groupId("org.glassfish").artifactId("jakarta.json").versionAsInProject(),
                 //
                 mavenBundle().groupId("commons-codec").artifactId("commons-codec").version("1.15"),
-                // the following is needed until we update to Apache Felix Http Jetty12
-                mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.http.wrappers").versionAsInProject(),
+                mavenBundle().groupId("org.apache.commons").artifactId("commons-fileupload2-core").version("2.0.0-M2"),
+                mavenBundle().groupId("org.apache.commons").artifactId("commons-fileupload2-jakarta-servlet5").version("2.0.0-M2"),
                 //
                 mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.healthcheck.api").versionAsInProject(),
                 //
@@ -149,6 +152,16 @@ public class ServletResolverTestSupport extends TestSupport {
                     .asOption()
             )
         );
+        // find Apache Felix Http Jetty and replace with Http Jetty12
+        for(int i=0;i<result.length;i++) {
+            if (result[i] instanceof MavenArtifactProvisionOption) {
+                final MavenArtifactProvisionOption m = (MavenArtifactProvisionOption) result[i];
+                if (m.getURL().contains("org.apache.felix/org.apache.felix.http.jetty/")) {
+                    result[i] = mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.http.jetty12").version("1.0.19");
+                }
+            }
+        }
+        return result;
     }
 
     protected Option testBundle() {
