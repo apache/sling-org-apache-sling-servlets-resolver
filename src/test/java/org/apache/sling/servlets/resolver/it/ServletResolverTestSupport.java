@@ -101,7 +101,9 @@ public class ServletResolverTestSupport extends TestSupport {
         versionResolver.setVersionFromProject(SLING_GROUP_ID, "org.apache.sling.scripting.core");
         versionResolver.setVersionFromProject(SLING_GROUP_ID, "org.apache.sling.commons.johnzon");
         versionResolver.setVersionFromProject(SLING_GROUP_ID, "org.apache.sling.engine");
-        versionResolver.setVersion(SLING_GROUP_ID, "org.apache.sling.auth.core", "1.6.0");
+        versionResolver.setVersion(SLING_GROUP_ID, "org.apache.sling.auth.core", "1.7.1-SNAPSHOT");
+        // the following is needed until we update to Apache Felix Http Jetty12
+        versionResolver.setVersion("org.apache.felix", "org.apache.felix.http.servlet-api", "3.0.0");
         versionResolver.setVersion("commons-fileupload", "commons-fileupload", "1.5");
         return options(
             composite(
@@ -123,6 +125,8 @@ public class ServletResolverTestSupport extends TestSupport {
                 mavenBundle().groupId("org.glassfish").artifactId("jakarta.json").versionAsInProject(),
                 //
                 mavenBundle().groupId("commons-codec").artifactId("commons-codec").version("1.15"),
+                // the following is needed until we update to Apache Felix Http Jetty12
+                mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.http.wrappers").versionAsInProject(),
                 //
                 mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.healthcheck.api").versionAsInProject(),
                 //

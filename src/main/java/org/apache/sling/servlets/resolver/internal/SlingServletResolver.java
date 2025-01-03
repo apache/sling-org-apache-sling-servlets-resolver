@@ -36,6 +36,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.felix.http.jakartawrappers.ServletWrapper;
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
@@ -54,6 +55,7 @@ import org.apache.sling.api.servlets.ErrorHandler;
 import org.apache.sling.api.servlets.OptingServlet;
 import org.apache.sling.api.servlets.ServletResolver;
 import org.apache.sling.api.servlets.ServletResolverConstants;
+import org.apache.sling.api.wrappers.JakartaToJavaxRequestWrapper;
 import org.apache.sling.serviceusermapping.ServiceUserMapped;
 import org.apache.sling.servlets.resolver.internal.defaults.DefaultErrorHandlerServlet;
 import org.apache.sling.servlets.resolver.internal.defaults.DefaultServlet;
@@ -851,20 +853,29 @@ public class SlingServletResolver
 	}
 
     @Override
-    public jakarta.servlet.@Nullable Servlet resolve(@NotNull SlingJakartaHttpServletRequest request) {
-        // TODO Auto-generated method stub
+    public jakarta.servlet.@Nullable Servlet resolve(@NotNull final SlingJakartaHttpServletRequest request) {
+        final Servlet servlet = this.resolveServlet(new JakartaToJavaxRequestWrapper(request));
+        if (servlet != null) {
+            return new ServletWrapper(servlet);
+        }
         return null;
     }
 
     @Override
-    public jakarta.servlet.@Nullable Servlet resolve(@NotNull Resource resource, @NotNull String scriptName) {
-        // TODO Auto-generated method stub
+    public jakarta.servlet.@Nullable Servlet resolve(@NotNull final Resource resource, @NotNull final String scriptName) {
+        final Servlet servlet = this.resolveServlet(resource, scriptName);
+        if (servlet != null) {
+            return new ServletWrapper(servlet);
+        }
         return null;
     }
 
     @Override
-    public jakarta.servlet.@Nullable Servlet resolve(@NotNull ResourceResolver resolver, @NotNull String scriptName) {
-        // TODO Auto-generated method stub
+    public jakarta.servlet.@Nullable Servlet resolve(@NotNull final ResourceResolver resolver, @NotNull final String scriptName) {
+        final Servlet servlet = this.resolveServlet(resolver, scriptName);
+        if (servlet != null) {
+            return new ServletWrapper(servlet);
+        }
         return null;
     }
 }
