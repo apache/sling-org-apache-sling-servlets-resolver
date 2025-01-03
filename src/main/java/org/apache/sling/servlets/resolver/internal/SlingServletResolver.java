@@ -39,6 +39,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
+import org.apache.sling.api.SlingJakartaHttpServletRequest;
 import org.apache.sling.api.request.RequestProgressTracker;
 import org.apache.sling.api.request.RequestUtil;
 import org.apache.sling.api.request.SlingRequestEvent;
@@ -63,6 +64,8 @@ import org.apache.sling.servlets.resolver.internal.helper.ResourceCollector;
 import org.apache.sling.servlets.resolver.internal.resolution.ResolutionCache;
 import org.apache.sling.servlets.resolver.internal.resource.MergingServletResourceProvider;
 import org.apache.sling.servlets.resolver.internal.resource.SlingServletConfig;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Activate;
@@ -83,7 +86,7 @@ import org.slf4j.LoggerFactory;
  * In case the thread is handling a request, the {@link #onEvent(SlingRequestEvent)} method is called by the
  * Sling engine and a per-thread ResourceResolver is created, used and also closed when the request is
  * finished.
- * 
+ *
  * In case the thread does execute not within the context of a request, a shared ResourceResolver instance is used.
  *
  */
@@ -138,9 +141,9 @@ public class SlingServletResolver
      * The default extensions
      */
     private AtomicReference<String[]> defaultExtensions = new AtomicReference<>();
-    
+
     private boolean useResourceCaching;
-    
+
 
     private final PathBasedServletAcceptor pathBasedServletAcceptor = new PathBasedServletAcceptor();
 
@@ -841,10 +844,27 @@ public class SlingServletResolver
         }
         return executionPaths;
     }
-    
+
 	protected void invalidateCache(ResourceResolver r) {
 		LocationCollector.clearCache(r);
 		AbstractResourceCollector.clearCache(r);
 	}
-    
+
+    @Override
+    public jakarta.servlet.@Nullable Servlet resolve(@NotNull SlingJakartaHttpServletRequest request) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public jakarta.servlet.@Nullable Servlet resolve(@NotNull Resource resource, @NotNull String scriptName) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public jakarta.servlet.@Nullable Servlet resolve(@NotNull ResourceResolver resolver, @NotNull String scriptName) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }
