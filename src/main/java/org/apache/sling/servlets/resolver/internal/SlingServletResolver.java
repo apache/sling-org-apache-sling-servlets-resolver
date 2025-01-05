@@ -60,6 +60,7 @@ import org.apache.sling.api.servlets.ServletResolver;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.api.wrappers.JakartaToJavaxRequestWrapper;
 import org.apache.sling.api.wrappers.JakartaToJavaxResponseWrapper;
+import org.apache.sling.api.wrappers.JavaxToJakartaServletWrapper;
 import org.apache.sling.serviceusermapping.ServiceUserMapped;
 import org.apache.sling.servlets.resolver.internal.defaults.DefaultErrorHandlerServlet;
 import org.apache.sling.servlets.resolver.internal.defaults.DefaultServlet;
@@ -858,83 +859,16 @@ public class SlingServletResolver
 
     @Override
     public @Nullable jakarta.servlet.Servlet resolve(@NotNull final SlingJakartaHttpServletRequest request) {
-        return wrap(this.resolveServlet(new JakartaToJavaxRequestWrapper(request)));
+        return JavaxToJakartaServletWrapper.toJakartaServlet(this.resolveServlet(new JakartaToJavaxRequestWrapper(request)));
     }
 
     @Override
     public @Nullable jakarta.servlet.Servlet resolve(@NotNull final Resource resource, @NotNull final String scriptName) {
-        return wrap(this.resolveServlet(resource, scriptName));
+        return JavaxToJakartaServletWrapper.toJakartaServlet(this.resolveServlet(resource, scriptName));
     }
 
     @Override
     public @Nullable jakarta.servlet.Servlet resolve(@NotNull final ResourceResolver resolver, @NotNull final String scriptName) {
-        return wrap(this.resolveServlet(resolver, scriptName));
-    }
-
-    private static @Nullable jakarta.servlet.Servlet wrap(final @Nullable Servlet servlet) {
-        if (servlet != null) {
-            if (servlet instanceof OptingServlet) {
-                return new OptingServletWrapper((OptingServlet) servlet);
-            }
-            return new ServletWrapper(servlet);
-        }
-        return null;
-    }
-
-    public static class ServletWrapper implements jakarta.servlet.Servlet {
-
-        private final Servlet servlet;
-
-        public ServletWrapper(final Servlet servlet) {
-            this.servlet = servlet;
-        }
-
-        @Override
-        public void init(final jakarta.servlet.ServletConfig config) throws jakarta.servlet.ServletException {
-            try {
-                this.servlet.init(new ServletConfigWrapper(config));
-            } catch (final ServletException e) {
-                throw ServletExceptionUtil.getServletException(e);
-            }
-        }
-
-        @Override
-        public void service(final jakarta.servlet.ServletRequest req, final jakarta.servlet.ServletResponse res) throws jakarta.servlet.ServletException, IOException {
-            try {
-                this.servlet.service(JakartaToJavaxRequestWrapper.toJavaxRequest(req), JakartaToJavaxResponseWrapper.toJavaxResponse(res));
-            } catch (final ServletException e) {
-                throw ServletExceptionUtil.getServletException(e);
-            }
-        }
-
-        @Override
-        public void destroy() {
-            this.servlet.destroy();
-        }
-
-        @Override
-        public jakarta.servlet.ServletConfig getServletConfig() {
-            return new org.apache.felix.http.jakartawrappers.ServletConfigWrapper(this.servlet.getServletConfig());
-        }
-
-        @Override
-        public String getServletInfo() {
-            return servlet.getServletInfo();
-        }
-    }
-
-    public static class OptingServletWrapper extends ServletWrapper implements JakartaOptingServlet {
-
-        private final OptingServlet servlet;
-
-        public OptingServletWrapper(final OptingServlet servlet) {
-            super(servlet);
-            this.servlet = servlet;
-        }
-
-        @Override
-        public boolean accepts(@NotNull SlingJakartaHttpServletRequest request) {
-            return this.servlet.accepts(JakartaToJavaxRequestWrapper.toJavaxRequest(request));
-        }
+        return JavaxToJakartaServletWrapper.toJakartaServlet(this.resolveServlet(resolver, scriptName));
     }
 }
