@@ -32,14 +32,10 @@ import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
 import org.apache.sling.testing.paxexam.TestSupport;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
-import org.ops4j.pax.exam.options.MavenArtifactProvisionOption;
 import org.ops4j.pax.exam.options.extra.VMOption;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
-import static org.apache.sling.testing.paxexam.SlingOptions.sling;
-import static org.apache.sling.testing.paxexam.SlingOptions.slingScripting;
-import static org.apache.sling.testing.paxexam.SlingOptions.slingXss;
 import static org.apache.sling.testing.paxexam.SlingOptions.versionResolver;
 import static org.apache.sling.testing.paxexam.SlingVersionResolver.SLING_GROUP_ID;
 import static org.junit.Assert.assertEquals;
@@ -49,7 +45,6 @@ import static org.ops4j.pax.exam.CoreOptions.composite;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.CoreOptions.options;
-import static org.ops4j.pax.exam.CoreOptions.systemProperty;
 import static org.ops4j.pax.exam.CoreOptions.vmOption;
 import static org.ops4j.pax.exam.CoreOptions.when;
 import static org.ops4j.pax.exam.cm.ConfigurationAdminOptions.factoryConfiguration;
@@ -104,19 +99,15 @@ public class ServletResolverTestSupport extends TestSupport {
         versionResolver.setVersionFromProject(SLING_GROUP_ID, "org.apache.sling.commons.johnzon");
         versionResolver.setVersionFromProject(SLING_GROUP_ID, "org.apache.sling.engine");
         versionResolver.setVersion(SLING_GROUP_ID, "org.apache.sling.auth.core", "1.7.1-SNAPSHOT");
-        versionResolver.setVersion("commons-io", "commons-io", "2.17.0");
-        // the following is needed until we update to Apache Felix Http Jetty12
-        versionResolver.setVersion("org.apache.felix", "org.apache.felix.http.servlet-api", "3.0.0");
-        versionResolver.setVersion("commons-fileupload", "commons-fileupload", "1.5");
-        Option[] result = options(
+        return options(
             composite(
                 when(debugOption != null).useOptions(debugOption),
                 when(vmOption != null).useOptions(vmOption),
                 when(jacocoCommand != null).useOptions(jacocoCommand),
                 baseConfiguration(),
-                sling(),
-                slingScripting(),
-                slingXss(),
+                // sling(),
+                // slingScripting(),
+                // slingXss(),
                 factoryConfiguration("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended")
                     .put("user.mapping", new String[]{"org.apache.sling.servlets.resolver:console=sling-readall", "org.apache.sling.servlets.resolver:scripts=sling-scripting"})
                     .asOption(),
@@ -152,16 +143,6 @@ public class ServletResolverTestSupport extends TestSupport {
                     .asOption()
             )
         );
-        // find Apache Felix Http Jetty and replace with Http Jetty12
-        for(int i=0;i<result.length;i++) {
-            if (result[i] instanceof MavenArtifactProvisionOption) {
-                final MavenArtifactProvisionOption m = (MavenArtifactProvisionOption) result[i];
-                if (m.getURL().contains("org.apache.felix/org.apache.felix.http.jetty/")) {
-                    result[i] = mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.http.jetty12").version("1.0.19");
-                }
-            }
-        }
-        return result;
     }
 
     protected Option testBundle() {
