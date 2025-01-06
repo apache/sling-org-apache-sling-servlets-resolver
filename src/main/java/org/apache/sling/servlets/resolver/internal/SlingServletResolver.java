@@ -27,7 +27,6 @@ import static org.apache.sling.api.servlets.ServletResolverConstants.DEFAULT_ERR
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.servlet.Servlet;
@@ -37,8 +36,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.felix.http.jakartawrappers.ServletExceptionUtil;
-import org.apache.felix.http.javaxwrappers.ServletConfigWrapper;
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
@@ -54,12 +51,10 @@ import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.resource.SyntheticResource;
 import org.apache.sling.api.servlets.ErrorHandler;
-import org.apache.sling.api.servlets.JakartaOptingServlet;
 import org.apache.sling.api.servlets.OptingServlet;
 import org.apache.sling.api.servlets.ServletResolver;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.api.wrappers.JakartaToJavaxRequestWrapper;
-import org.apache.sling.api.wrappers.JakartaToJavaxResponseWrapper;
 import org.apache.sling.api.wrappers.JavaxToJakartaServletWrapper;
 import org.apache.sling.serviceusermapping.ServiceUserMapped;
 import org.apache.sling.servlets.resolver.internal.defaults.DefaultErrorHandlerServlet;
@@ -859,16 +854,16 @@ public class SlingServletResolver
 
     @Override
     public @Nullable jakarta.servlet.Servlet resolve(@NotNull final SlingJakartaHttpServletRequest request) {
-        return JavaxToJakartaServletWrapper.toJakartaServlet(this.resolveServlet(new JakartaToJavaxRequestWrapper(request)));
+        return ServletWrapperUtil.toJakartaServlet(this.resolveServlet(new JakartaToJavaxRequestWrapper(request)));
     }
 
     @Override
     public @Nullable jakarta.servlet.Servlet resolve(@NotNull final Resource resource, @NotNull final String scriptName) {
-        return JavaxToJakartaServletWrapper.toJakartaServlet(this.resolveServlet(resource, scriptName));
+        return ServletWrapperUtil.toJakartaServlet(this.resolveServlet(resource, scriptName));
     }
 
     @Override
     public @Nullable jakarta.servlet.Servlet resolve(@NotNull final ResourceResolver resolver, @NotNull final String scriptName) {
-        return JavaxToJakartaServletWrapper.toJakartaServlet(this.resolveServlet(resolver, scriptName));
+        return ServletWrapperUtil.toJakartaServlet(this.resolveServlet(resolver, scriptName));
     }
 }

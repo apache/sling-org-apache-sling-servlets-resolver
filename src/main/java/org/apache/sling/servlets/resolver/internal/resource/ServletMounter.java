@@ -23,6 +23,7 @@ import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.servlets.ServletResolver;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.servlets.resolver.internal.ResolverConfig;
+import org.apache.sling.servlets.resolver.internal.ServletWrapperUtil;
 import org.apache.sling.servlets.resolver.internal.resolution.ResolutionCache;
 import org.apache.sling.spi.resource.provider.ResourceProvider;
 import org.osgi.framework.Bundle;
@@ -178,6 +179,24 @@ public class ServletMounter {
 
     public void unbindServlet(final ServiceReference<Servlet> reference) {
         destroyServlet(reference);
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @Reference(
+            name = "JakartaServlet",
+            service = jakarta.servlet.Servlet.class,
+            cardinality = ReferenceCardinality.MULTIPLE,
+            policy = ReferencePolicy.DYNAMIC,
+            target="(|(" + ServletResolverConstants.SLING_SERVLET_PATHS + "=*)(" + ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES + "=*))")
+    public void bindJakartaServlet(final jakarta.servlet.Servlet servlet, final ServiceReference<jakarta.servlet.Servlet> reference) {
+        if (this.active) {
+            createServlet(ServletWrapperUtil.toJavaxServlet(servlet), (ServiceReference)reference);
+        }
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public void unbindJakartaServlet(final ServiceReference<jakarta.servlet.Servlet> reference) {
+        destroyServlet((ServiceReference)reference);
     }
 
     public boolean mountProviders() {
