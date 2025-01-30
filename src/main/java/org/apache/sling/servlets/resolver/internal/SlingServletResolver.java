@@ -183,7 +183,7 @@ public class SlingServletResolver
             servlet = resolveServletInternal(request, null, resourceType, scriptResolver);
         }
 
-        // last resort, use the core bundle default servlet
+        // last resort, use the default servlet
         if (servlet == null) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("No specific servlet found, trying default");

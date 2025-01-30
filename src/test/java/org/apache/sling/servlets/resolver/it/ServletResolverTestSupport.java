@@ -20,6 +20,7 @@ package org.apache.sling.servlets.resolver.it;
 
 import javax.inject.Inject;
 import org.apache.sling.api.SlingJakartaHttpServletRequest;
+import org.apache.sling.api.SlingJakartaHttpServletResponse;
 import org.apache.sling.api.request.builder.Builders;
 import org.apache.sling.api.request.builder.SlingJakartaHttpServletResponseResult;
 import org.apache.sling.api.resource.AbstractResource;
@@ -149,11 +150,15 @@ public class ServletResolverTestSupport extends TestSupport {
         return testBundle("bundle.filename");
     }
 
-    protected SlingJakartaHttpServletResponseResult executeRequest(final String path, final int expectedStatus) throws Exception {
+    protected SlingJakartaHttpServletResponse createMockSlingHttpServletResponse() {
+        return Builders.newResponseBuilder().buildJakartaResponseResult();
+    }
+
+    protected SlingJakartaHttpServletResponse executeRequest(final String path, final int expectedStatus) throws Exception {
         return executeRequest("GET", path, expectedStatus);
     }
 
-    protected SlingJakartaHttpServletResponseResult executeRequest(final String method, final String path, final int expectedStatus) throws Exception {
+    protected SlingJakartaHttpServletResponse executeRequest(final String method, final String path, final int expectedStatus) throws Exception {
         final ResourceResolver resourceResolver = resourceResolverFactory.getAdministrativeResourceResolver(null);
         assertNotNull("Expecting ResourceResolver", resourceResolver);
         final Resource resource = new AbstractResource() {
@@ -187,7 +192,7 @@ public class ServletResolverTestSupport extends TestSupport {
             .newRequestBuilder(resource)
             .withRequestMethod(method)
             .buildJakartaRequest();
-        final SlingJakartaHttpServletResponseResult response = Builders.newResponseBuilder().buildJakartaResponseResult();
+        final SlingJakartaHttpServletResponse response = createMockSlingHttpServletResponse();
 
         final ServiceReference<SlingRequestProcessor> ref = bundleContext.getServiceReference(SlingRequestProcessor.class);
         assertNotNull("Expecting service:" + SlingRequestProcessor.class, ref);
@@ -220,9 +225,9 @@ public class ServletResolverTestSupport extends TestSupport {
     }
 
     protected void assertTestServlet(final String method, final String path, final String servletName) throws Exception {
-        final String output = executeRequest(method, path, TestServlet.IM_A_TEAPOT).getOutputAsString();
+        final SlingJakartaHttpServletResponse response = executeRequest(method, path, TestServlet.IM_A_TEAPOT);
+        final String output = ((SlingJakartaHttpServletResponseResult) response).getOutputAsString();
         final String expected = TestServlet.SERVED_BY_PREFIX + servletName;
         assertTrue("Expecting output to contain " + expected + ", got " + output, output.contains(expected));
     }
-
 }
