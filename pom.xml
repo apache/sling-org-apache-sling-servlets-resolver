@@ -118,16 +118,10 @@
                 </executions>
                 <configuration>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                    <systemProperties>
-                        <property>
-                            <name>bundle.filename</name>
-                            <value>${basedir}/target/${project.build.finalName}.jar</value>
-                        </property>
-                        <property>
-                            <name>pax.vm.options</name>
-                            <value>${pax.vm.options}</value>
-                        </property>
-                    </systemProperties>
+                    <systemPropertyVariables>
+                        <bundle.filename>${basedir}/target/${project.build.finalName}.jar</bundle.filename>
+                        <pax.vm.options>${pax.vm.options}</pax.vm.options>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>
@@ -175,11 +169,10 @@
             <version>1.0.4</version>
             <scope>provided</scope>
         </dependency>
-
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.14.0</version>
+            <version>2.18.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -215,9 +208,9 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>jakarta.json</groupId>
-            <artifactId>jakarta.json-api</artifactId>
-            <version>2.0.2</version>
+            <groupId>org.apache.sling</groupId>
+            <artifactId>org.apache.sling.commons.johnzon</artifactId>
+            <version>2.0.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -230,7 +223,7 @@
         <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.serviceusermapper</artifactId>
-            <version>1.2.0</version>
+            <version>1.5.8</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -264,7 +257,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.4</version>
+            <version>3.17.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -307,6 +300,12 @@
         </dependency>
         <dependency>
             <groupId>org.apache.sling</groupId>
+            <artifactId>org.apache.sling.auth.core</artifactId>
+            <version>2.0.0-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.commons.testing</artifactId>
             <version>2.1.2</version>
             <scope>test</scope>
@@ -315,6 +314,12 @@
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.jcr.resource</artifactId>
             <version>2.9.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.sling</groupId>
+            <artifactId>org.apache.sling.resourceresolver</artifactId>
+            <version>2.0.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -354,7 +359,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>3.9.0</version>
+            <version>5.15.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -407,20 +412,8 @@
         </dependency>
         <dependency>
             <groupId>org.apache.sling</groupId>
-            <artifactId>org.apache.sling.resourceresolver</artifactId>
-            <version>2.0.0-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.scripting.core</artifactId>
             <version>3.0.0-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish</groupId>
-            <artifactId>jakarta.json</artifactId>
-            <version>2.0.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -439,6 +432,19 @@
             <groupId>com.jayway.jsonpath</groupId>
             <artifactId>json-path-assert</artifactId>
             <version>2.9.0</version>
+            <scope>test</scope>
+        </dependency>
+   <!-- bnd -->
+        <dependency>
+            <groupId>biz.aQute.bnd</groupId>
+            <artifactId>biz.aQute.bndlib</artifactId>
+            <version>6.4.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>biz.aQute.bnd</groupId>
+            <artifactId>biz.aQute.bnd.util</artifactId>
+            <version>6.4.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

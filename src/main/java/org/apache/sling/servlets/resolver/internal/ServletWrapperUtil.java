@@ -30,17 +30,21 @@ public class ServletWrapperUtil {
         if (servlet == null) {
             return null;
         }
+        final javax.servlet.Servlet s;
         if (servlet instanceof JakartaOptingServlet) {
-            return new ScriptOptingServletWrapper((JakartaOptingServlet) servlet);
+            s = new ScriptOptingServletWrapper((JakartaOptingServlet) servlet);
+        } else {
+            s = new ScriptServletWrapper(servlet);
         }
-        return new ScriptServletWrapper(servlet);
+        return s;
     }
 
     public static Servlet toJakartaServlet(final javax.servlet.Servlet servlet) {
         if (servlet instanceof ScriptServletWrapper) {
             return ((ScriptServletWrapper) servlet).servlet;
         }
-        return JavaxToJakartaServletWrapper.toJakartaServlet(servlet);
+        final Servlet s = JavaxToJakartaServletWrapper.toJakartaServlet(servlet);
+        return s;
     }
 
     public static class ScriptServletWrapper extends JakartaToJavaxServletWrapper {

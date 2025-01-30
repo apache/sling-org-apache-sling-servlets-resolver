@@ -23,8 +23,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 
 import jakarta.json.Json;
@@ -32,7 +30,6 @@ import jakarta.json.stream.JsonGenerator;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -84,7 +81,7 @@ public class SLING10478IT extends ServletResolverTestSupport {
                 resp.setContentType("text/plain");
 
                 resp.getWriter().print("hello error");
-                
+
                 // response writer remains unclosed
             }
 
@@ -94,11 +91,6 @@ public class SLING10478IT extends ServletResolverTestSupport {
         .with(P_METHODS, "default")
         .with(P_PREFIX, -1)
         .register(bundleContext);
-    }
-
-    @Override
-    protected MockSlingHttpServletResponse createMockSlingHttpServletResponse() {
-        return new HandleErrorMockSlingHttpServletResponse();
     }
 
     /**
@@ -131,52 +123,4 @@ public class SLING10478IT extends ServletResolverTestSupport {
             }
         }
     }
-
-
-    /**
-     * Subclass to simulate what the SlingHttpServletResponseImpl writer does 
-     */
-    private static final class HandleErrorMockSlingHttpServletResponse extends MockSlingHttpServletResponse {
-        private HandleErrorResponseWriter writer = null;
-
-        @Override
-        public PrintWriter getWriter() {
-            if (writer == null) {
-                writer = new HandleErrorResponseWriter(super.getWriter());
-            }
-            return writer;
-        }
-
-        @Override
-        public void flushBuffer() {
-            if (!writer.isOpen()) {
-                throw new IllegalStateException("Writer Already Closed");
-            }
-            super.flushBuffer();
-        }
-    }
-
-    /**
-     * Subclass to simulate what the SlingHttpServletResponseImpl writer does 
-     */
-    private static final class HandleErrorResponseWriter extends PrintWriter {
-
-        private boolean open = true;
-
-        HandleErrorResponseWriter(Writer out) {
-            super(out);
-        }
-
-        @Override
-        public void close() {
-            this.open = false;
-            super.close();
-        }
-
-        public boolean isOpen() {
-            return open;
-        }
-
-    }
-
 }

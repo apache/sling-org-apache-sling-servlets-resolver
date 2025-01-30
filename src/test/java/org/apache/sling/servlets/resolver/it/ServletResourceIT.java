@@ -19,7 +19,6 @@
 package org.apache.sling.servlets.resolver.it;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Dictionary;
 import java.util.Hashtable;
@@ -27,7 +26,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.jar.JarInputStream;
 
-import javax.inject.Inject;
 import javax.script.ScriptException;
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServletRequest;
@@ -36,7 +34,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
-import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.scripting.spi.bundle.BundledRenderUnit;
 import org.apache.sling.scripting.spi.bundle.TypeProvider;
@@ -64,12 +61,6 @@ import static org.ops4j.pax.exam.CoreOptions.streamBundle;
 public class ServletResourceIT extends ServletResolverTestSupport {
 
     private BundledRenderUnit bundledRenderUnit;
-
-    @Inject
-    private ResourceResolverFactory resourceResolverFactory;
-
-    @Inject
-    private BundleContext bundleContext;
 
     protected Option testBundle() {
         try {
