@@ -30,32 +30,31 @@ import java.util.regex.Pattern;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.http.HttpServletResponse;
 
-import org.apache.sling.api.SlingConstants;
-import org.apache.sling.api.SlingHttpServletRequest;
-import org.apache.sling.api.SlingHttpServletResponse;
+import org.apache.sling.api.SlingJakartaHttpServletRequest;
+import org.apache.sling.api.SlingJakartaHttpServletResponse;
 import org.apache.sling.api.request.builder.Builders;
 import org.apache.sling.api.resource.Resource;
-import org.apache.sling.api.wrappers.SlingHttpServletRequestWrapper;
-import org.apache.sling.api.wrappers.SlingHttpServletResponseWrapper;
+import org.apache.sling.api.wrappers.JakartaToJavaxRequestWrapper;
+import org.apache.sling.api.wrappers.JakartaToJavaxResponseWrapper;
+import org.apache.sling.api.wrappers.SlingJakartaHttpServletRequestWrapper;
+import org.apache.sling.api.wrappers.SlingJakartaHttpServletResponseWrapper;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 /**
  * SLING-10021 test 'Accept' content-type handling in the default error handler servlet
  */
-@SuppressWarnings("deprecation")
-public class DefaultErrorHandlerServletTest {
+public class DefaultErrorHandlerJakartaServletTest {
 
-    protected void assertJsonErrorResponse(SlingHttpServletRequest req) throws ServletException, IOException {
-        MockErrorSlingHttpServletResponse res = new MockErrorSlingHttpServletResponse(Builders.newResponseBuilder().build(), false);
+    protected void assertJsonErrorResponse(SlingJakartaHttpServletRequest req) throws javax.servlet.ServletException, IOException {
+        MockErrorSlingHttpServletResponse res = new MockErrorSlingHttpServletResponse(Builders.newResponseBuilder().buildJakartaResponseResult(), false);
 
         DefaultErrorHandlerServlet errorServlet = new DefaultErrorHandlerServlet();
         errorServlet.init(new MockServletConfig());
-        errorServlet.service(req, res);
+        errorServlet.service(JakartaToJavaxRequestWrapper.toJavaxRequest(req), JakartaToJavaxResponseWrapper.toJavaxResponse(res));
 
         // verify we got json back
         assertEquals("application/json;charset=UTF-8", res.getContentType());
@@ -75,9 +74,9 @@ public class DefaultErrorHandlerServletTest {
     }
 
     @Test
-    public void testJsonErrorResponse() throws IOException, ServletException {
+    public void testJsonErrorResponse() throws IOException, javax.servlet.ServletException {
         final Resource resource = Mockito.mock(Resource.class);
-        final SlingHttpServletRequest request = Builders.newRequestBuilder(resource).build();
+        final SlingJakartaHttpServletRequest request = Builders.newRequestBuilder(resource).buildJakartaRequest();
 
         // mock a request that accepts a json response
         MockErrorSlingHttpServletRequest req = new MockErrorSlingHttpServletRequest(request, "application/json,*/*;q=0.9");
@@ -89,16 +88,16 @@ public class DefaultErrorHandlerServletTest {
      * Class object instead of a String, it still produces a valid error response
      */
     @Test
-    public void testJsonErrorResponseWithClassExceptionTypeAttributeValue() throws IOException, ServletException {
+    public void testJsonErrorResponseWithClassExceptionTypeAttributeValue() throws IOException, javax.servlet.ServletException {
         final Resource resource = Mockito.mock(Resource.class);
-        final SlingHttpServletRequest request = Builders.newRequestBuilder(resource).build();
+        final SlingJakartaHttpServletRequest request = Builders.newRequestBuilder(resource).buildJakartaRequest();
 
         // mock a request that accepts a json response
-        SlingHttpServletRequest req = new MockErrorSlingHttpServletRequest(request, "application/json,*/*;q=0.9") {
+        SlingJakartaHttpServletRequest req = new MockErrorSlingHttpServletRequest(request, "application/json,*/*;q=0.9") {
 
             @Override
             public Object getAttribute(String name) {
-                if (SlingConstants.ERROR_EXCEPTION_TYPE.equals(name)) {
+                if (RequestDispatcher.ERROR_EXCEPTION_TYPE.equals(name)) {
                     return Exception.class;
                 }
                 return super.getAttribute(name);
@@ -109,17 +108,17 @@ public class DefaultErrorHandlerServletTest {
     }
 
     @Test
-    public void testHtmlErrorResponse() throws IOException, ServletException {
+    public void testHtmlErrorResponse() throws IOException, javax.servlet.ServletException {
         final Resource resource = Mockito.mock(Resource.class);
-        final SlingHttpServletRequest request = Builders.newRequestBuilder(resource).build();
+        final SlingJakartaHttpServletRequest request = Builders.newRequestBuilder(resource).buildJakartaRequest();
 
         // mock a request that accepts an html response
-        SlingHttpServletRequest req = new MockErrorSlingHttpServletRequest(request, "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        MockErrorSlingHttpServletResponse res = new MockErrorSlingHttpServletResponse(Builders.newResponseBuilder().build(), false);
+        SlingJakartaHttpServletRequest req = new MockErrorSlingHttpServletRequest(request, "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        MockErrorSlingHttpServletResponse res = new MockErrorSlingHttpServletResponse(Builders.newResponseBuilder().buildJakartaResponseResult(), false);
 
         DefaultErrorHandlerServlet errorServlet = new DefaultErrorHandlerServlet();
         errorServlet.init(new MockServletConfig());
-        errorServlet.service(req, res);
+        errorServlet.service(JakartaToJavaxRequestWrapper.toJavaxRequest(req), JakartaToJavaxResponseWrapper.toJavaxResponse(res));
 
         // verify we got html back
         assertEquals("text/html;charset=UTF-8", res.getContentType());
@@ -143,13 +142,10 @@ public class DefaultErrorHandlerServletTest {
         }
 
         @Override
-        public ServletContext getServletContext() {
-            return new org.apache.sling.servlethelpers.MockServletContext() {
-                @Override
-                public String getServerInfo() {
-                    return "Test Server Info";
-                }
-            };
+        public javax.servlet.ServletContext getServletContext() {
+            final javax.servlet.ServletContext ctx = Mockito.mock(javax.servlet.ServletContext.class);
+            Mockito.when(ctx.getServerInfo()).thenReturn("Test Server Info");
+            return ctx;
         }
 
         @Override
@@ -167,13 +163,13 @@ public class DefaultErrorHandlerServletTest {
     /**
      * Mock impl to simulate an error response
      */
-    private static final class MockErrorSlingHttpServletResponse extends SlingHttpServletResponseWrapper {
+    private static final class MockErrorSlingHttpServletResponse extends SlingJakartaHttpServletResponseWrapper {
 
         private PrintWriter writer;
         private StringWriter strWriter;
         private boolean committed;
 
-        public MockErrorSlingHttpServletResponse(final SlingHttpServletResponse response, final boolean committed) {
+        public MockErrorSlingHttpServletResponse(final SlingJakartaHttpServletResponse response, final boolean committed) {
             super(response);
             this.committed = committed;
         }
@@ -209,10 +205,10 @@ public class DefaultErrorHandlerServletTest {
     /**
      * Mock impl to simulate an error request
      */
-    private static class MockErrorSlingHttpServletRequest extends SlingHttpServletRequestWrapper {
+    private static class MockErrorSlingHttpServletRequest extends SlingJakartaHttpServletRequestWrapper {
         private String accept;
 
-        private MockErrorSlingHttpServletRequest(final SlingHttpServletRequest request, final String accept) {
+        private MockErrorSlingHttpServletRequest(final SlingJakartaHttpServletRequest request, final String accept) {
             super(request);
             this.accept = accept;
         }
@@ -227,17 +223,17 @@ public class DefaultErrorHandlerServletTest {
 
         @Override
         public Object getAttribute(String name) {
-            if (SlingConstants.ERROR_STATUS.equals(name)) {
+            if (RequestDispatcher.ERROR_STATUS_CODE.equals(name)) {
                 return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-            } else if (SlingConstants.ERROR_MESSAGE.equals(name)) {
+            } else if (RequestDispatcher.ERROR_MESSAGE.equals(name)) {
                 return "Test Error Message";
-            } else if (SlingConstants.ERROR_REQUEST_URI.equals(name)) {
+            } else if (RequestDispatcher.ERROR_REQUEST_URI.equals(name)) {
                 return "/testuri";
-            } else if (SlingConstants.ERROR_SERVLET_NAME.equals(name)) {
+            } else if (RequestDispatcher.ERROR_SERVLET_NAME.equals(name)) {
                 return "org.apache.sling.test.ServletName";
-            } else if (SlingConstants.ERROR_EXCEPTION.equals(name)) {
+            } else if (RequestDispatcher.ERROR_EXCEPTION.equals(name)) {
                 return new Exception("Test Exception");
-            } else if (SlingConstants.ERROR_EXCEPTION_TYPE.equals(name)) {
+            } else if (RequestDispatcher.ERROR_EXCEPTION_TYPE.equals(name)) {
                 return Exception.class.getName();
             }
             return super.getAttribute(name);

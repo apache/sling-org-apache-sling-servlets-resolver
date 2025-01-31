@@ -42,6 +42,8 @@ public class ServletWrapperUtil {
     public static Servlet toJakartaServlet(final javax.servlet.Servlet servlet) {
         if (servlet instanceof ScriptServletWrapper) {
             return ((ScriptServletWrapper) servlet).servlet;
+        } else if (servlet instanceof ScriptOptingServletWrapper) {
+            return ((ScriptOptingServletWrapper) servlet).servlet;
         }
         final Servlet s = JavaxToJakartaServletWrapper.toJakartaServlet(servlet);
         return s;
@@ -56,8 +58,10 @@ public class ServletWrapperUtil {
     }
 
     public static class ScriptOptingServletWrapper extends JakartaToJavaxServletWrapper.JakartaToJavaxOptingServletWrapper {
+        public final Servlet servlet;
         public ScriptOptingServletWrapper(final JakartaOptingServlet servlet) {
             super(servlet);
+            this.servlet = servlet;
         }
     }
 }
