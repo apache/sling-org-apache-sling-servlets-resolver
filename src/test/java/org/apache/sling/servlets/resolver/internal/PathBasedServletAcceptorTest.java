@@ -64,7 +64,7 @@ public class PathBasedServletAcceptorTest {
             return this;
         }
 
-        TestCase withServiceProperty(String key, Object ... values) {
+        TestCase withServiceProperty(String key, Object... values) {
             serviceProperties.put(key, values);
             return this;
         }
@@ -79,7 +79,7 @@ public class PathBasedServletAcceptorTest {
             return this;
         }
 
-        TestCase withSelectors(String ... sels) {
+        TestCase withSelectors(String... sels) {
             selectors.addAll(Arrays.asList(sels));
             return this;
         }
@@ -89,15 +89,21 @@ public class PathBasedServletAcceptorTest {
             return this;
         }
 
-        void assertAccept(boolean expected) {
-
+        /**
+         * Consolidated method to handle assertion logic while allowing specific properties to be null.
+         */
+        private void assertAcceptInternal(boolean expected, String... mismtachStubbingArgs) {
             // Stub the ServiceReference with our service properties
-            @SuppressWarnings("unchecked")
-            final ServiceReference<Servlet> reference = mock(ServiceReference.class);
-            final String [] keys = Collections.list(serviceProperties.keys()).toArray(STRING_ARRAY);
+            @SuppressWarnings("unchecked") final ServiceReference<Servlet> reference = mock(ServiceReference.class);
+            final String[] keys = Collections.list(serviceProperties.keys()).toArray(STRING_ARRAY);
             when(reference.getPropertyKeys()).thenReturn(keys);
-            for(String key: keys) {
+            for (String key : keys) {
                 when(reference.getProperty(key)).thenReturn(serviceProperties.get(key));
+            }
+
+            // Explicitly set requested properties to null
+            for (String msArgsKey : mismtachStubbingArgs) {
+                when(reference.getProperty(msArgsKey)).thenReturn(null);
             }
 
             // Wire the Servlet to our ServiceReference
@@ -120,191 +126,218 @@ public class PathBasedServletAcceptorTest {
             assertEquals(expected, actual);
         }
 
+        void assertAccept(boolean expected) {
+            assertAcceptInternal(expected, new String[]{});
+        }
+
+        void assertAcceptWithEmptyExtensionAndSelector(boolean expected) {
+            assertAcceptInternal(expected, "sling.servlet.methods");
+        }
+
+        void assertAcceptWithNoServiceProperty(boolean expected) {
+            assertAcceptInternal(expected, "sling.servlet.extensions", "sling.servlet.selectors", "sling.servlet.methods");
+        }
+
+        void assertAcceptWithSelectorMatch(boolean expected) {
+            assertAcceptInternal(expected, "sling.servlet.extensions", "sling.servlet.methods");
+        }
+
+        void assertAcceptWithMethodMismatch(boolean expected) {
+            assertAcceptInternal(expected, "sling.servlet.extensions", "sling.servlet.selectors");
+        }
+
+        void assertAcceptWithExtensionMatch(boolean expected) {
+            assertAcceptInternal(expected, "sling.servlet.selectors", "sling.servlet.methods");
+        }
+
+        void assertAcceptWithExtensionUnset(boolean expected) {
+            assertAcceptInternal(expected, "sling.servlet.extensions");
+        }
     }
 
     @Test
     public void extensionNoMatch() {
         new TestCase()
-        .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, "sp")
-        .withExtension("somethingElse")
-        .assertAccept(false);
+                .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, "sp")
+                .withExtension("somethingElse")
+                .assertAccept(false);
     }
 
     @Test
     public void extensionNone() {
         new TestCase()
-        .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, "sp")
-        .assertAccept(false);
+                .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, "sp")
+                .assertAccept(false);
     }
 
     @Test
     public void extensionNoMatchInN() {
         new TestCase()
-        .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, "one", "two")
-        .withExtension("somethingElse")
-        .assertAccept(false);
+                .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, "one", "two")
+                .withExtension("somethingElse")
+                .assertAccept(false);
     }
 
     @Test
     public void extensionMatchOneInN() {
         new TestCase()
-        // test various ways of setting multiple properties
-        .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, (Object)new String[] { "one", "two" })
-        .withExtension("one")
-        .assertAccept(true);
+                // test various ways of setting multiple properties
+                .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, (Object) new String[]{"one", "two"})
+                .withExtension("one")
+                .assertAcceptWithExtensionMatch(true);
     }
 
     @Test
     public void extensionPropertyNotSet() {
         new TestCase()
-        .withExtension("somethingElse")
-        .assertAccept(true);
+                .withExtension("somethingElse")
+                .assertAcceptWithNoServiceProperty(true);
     }
 
     @Test
     public void selectorNoMatch() {
         new TestCase()
-        .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, "sel")
-        .withSelector("somethingElse")
-        .assertAccept(false);
+                .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, "sel")
+                .withSelector("somethingElse")
+                .assertAccept(false);
     }
 
     @Test
     public void selectorOneMatchesOne() {
         new TestCase()
-        .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, "sel")
-        .withSelector("sel")
-        .assertAccept(true);
+                .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, "sel")
+                .withSelector("sel")
+                .assertAcceptWithSelectorMatch(true);
     }
 
     @Test
     public void selectorOneFromNInN() {
         new TestCase()
-        .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, "one", "two", "three")
-        .withSelectors("three", "and", "somethingElse")
-        .assertAccept(true);
+                .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, "one", "two", "three")
+                .withSelectors("three", "and", "somethingElse")
+                .assertAcceptWithSelectorMatch(true);
     }
 
     @Test
     public void selectorZeroInN() {
         new TestCase()
-        .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, "one", "two", "three")
-        .withExtension("three")
-        .assertAccept(false);
+                .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, "one", "two", "three")
+                .withExtension("three")
+                .assertAcceptWithExtensionUnset(false);
     }
 
     @Test
     public void selectorOneInN() {
         new TestCase()
-        .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, "one", "two", "42")
-        .withSelectors("42")
-        .assertAccept(true);
+                .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, "one", "two", "42")
+                .withSelectors("42")
+                .assertAcceptWithSelectorMatch(true);
     }
 
     @Test
     public void selectorPropertyNotSet() {
         new TestCase()
-        .withSelector("somethingElse")
-        .assertAccept(true);
+                .withSelector("somethingElse")
+                .assertAcceptWithNoServiceProperty(true);
     }
 
     @Test
     public void methodNoMatch() {
         new TestCase()
-        .withServiceProperty(ServletResolverTestSupport.P_METHODS, "meth")
-        .withMethod("somethingElse")
-        .assertAccept(false);
+                .withServiceProperty(ServletResolverTestSupport.P_METHODS, "meth")
+                .withMethod("somethingElse")
+                .assertAcceptWithMethodMismatch(false);
     }
 
     @Test
     public void methodPropertyNotSet() {
         new TestCase()
-        .withMethod("somethingElse")
-        .assertAccept(true);
+                .withMethod("somethingElse")
+                .assertAcceptWithNoServiceProperty(true);
     }
 
     @Test
     public void testStringStrict() {
         new TestCase()
-        .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, "true")
-        .withServiceProperty(ServletResolverTestSupport.P_METHODS, "meth")
-        .withMethod("somethingElse")
-        .assertAccept(false);
+                .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, "true")
+                .withServiceProperty(ServletResolverTestSupport.P_METHODS, "meth")
+                .withMethod("somethingElse")
+                .assertAcceptWithMethodMismatch(false);
     }
 
     @Test
     public void testStringFalseStrict() {
         new TestCase()
-        .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, "false")
-        .withServiceProperty(ServletResolverTestSupport.P_METHODS, "meth")
-        .withMethod("somethingElse")
-        .assertAccept(true);
+                .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, "false")
+                .withServiceProperty(ServletResolverTestSupport.P_METHODS, "meth")
+                .withMethod("somethingElse")
+                .assertAccept(true);
     }
 
     @Test
     public void testBooleanFalseStrict() {
         new TestCase()
-        .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, false)
-        .withServiceProperty(ServletResolverTestSupport.P_METHODS, "meth")
-        .withMethod("somethingElse")
-        .assertAccept(true);
+                .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, false)
+                .withServiceProperty(ServletResolverTestSupport.P_METHODS, "meth")
+                .withMethod("somethingElse")
+                .assertAccept(true);
     }
 
     @Test
     public void testEmptyExtensionAndSelectorWithEmpty() {
         new TestCase()
-        .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, true)
-        .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, V_EMPTY)
-        .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, V_EMPTY)
-        .assertAccept(true);
+                .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, true)
+                .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, V_EMPTY)
+                .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, V_EMPTY)
+                .assertAcceptWithEmptyExtensionAndSelector(true);
     }
 
     @Test
     public void testEmptyExtensionAndSelectorWithSelector() {
         new TestCase()
-        .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, true)
-        .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, V_EMPTY)
-        .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, V_EMPTY)
-        .withSelector("someSel")
-        .assertAccept(false);
+                .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, true)
+                .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, V_EMPTY)
+                .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, V_EMPTY)
+                .withSelector("someSel")
+                .assertAccept(false);
     }
 
     @Test
     public void testEmptyExtensionAndSelectorWithExtension() {
         new TestCase()
-        .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, true)
-        .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, V_EMPTY)
-        .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, V_EMPTY)
-        .withExtension("someExt")
-        .assertAccept(false);
+                .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, true)
+                .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, V_EMPTY)
+                .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, V_EMPTY)
+                .withExtension("someExt")
+                .assertAccept(false);
     }
 
     @Test
     public void testEmptyExtensionSpecificSelector() {
         new TestCase()
-        .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, true)
-        .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, V_EMPTY)
-        .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, "someSel")
-        .withSelector("someSel")
-        .assertAccept(true);
+                .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, true)
+                .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, V_EMPTY)
+                .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, "someSel")
+                .withSelector("someSel")
+                .assertAcceptWithEmptyExtensionAndSelector(true);
     }
 
     @Test
     public void testEmptySelectorSpecificExtension() {
         new TestCase()
-        .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, true)
-        .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, "someExt")
-        .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, V_EMPTY)
-        .withExtension("someExt")
-        .assertAccept(true);
+                .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, true)
+                .withServiceProperty(ServletResolverTestSupport.P_EXTENSIONS, "someExt")
+                .withServiceProperty(ServletResolverTestSupport.P_SELECTORS, V_EMPTY)
+                .withExtension("someExt")
+                .assertAcceptWithEmptyExtensionAndSelector(true);
     }
 
     @Test(expected = PathBasedServletAcceptor.InvalidPropertyException.class)
     public void testEmptyMethodException() {
         new TestCase()
-        .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, true)
-        .withServiceProperty(ServletResolverTestSupport.P_METHODS, V_EMPTY)
-        .assertAccept(true);
+                .withServiceProperty(ServletResolverTestSupport.P_STRICT_PATHS, true)
+                .withServiceProperty(ServletResolverTestSupport.P_METHODS, V_EMPTY)
+                .assertAcceptWithMethodMismatch(true);
     }
 
     @Test
@@ -312,5 +345,7 @@ public class PathBasedServletAcceptorTest {
         final Servlet s = mock(Servlet.class);
         when(s.getServletConfig()).thenReturn(mock(ServletConfig.class));
         assertTrue(acceptor.accept(null, s));
+
     }
 }
+
