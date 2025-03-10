@@ -73,8 +73,8 @@ public class ServletMounterTest {
         final ServiceReference<Servlet> msr = Mockito.mock(ServiceReference.class);
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES))
             .thenReturn("sample");
-        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_METHODS))
-            .thenReturn("GET");
+        Mockito.when(msr.getProperty("service.ranking"))
+            .thenReturn(null);
 
         Method createServiceProperties = ServletMounter.class.getDeclaredMethod("createServiceProperties",
                 ServiceReference.class, String.class);
