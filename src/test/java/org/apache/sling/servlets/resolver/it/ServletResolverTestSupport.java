@@ -39,7 +39,6 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
 import static org.apache.sling.testing.paxexam.SlingOptions.eventadmin;
-import static org.apache.sling.testing.paxexam.SlingOptions.http;
 import static org.apache.sling.testing.paxexam.SlingOptions.scr;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -97,7 +96,8 @@ public class ServletResolverTestSupport extends TestSupport {
                 when(vmOption != null).useOptions(vmOption),
                 when(jacocoCommand != null).useOptions(jacocoCommand),
                 baseConfiguration(),
-                http(),
+                mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.http.servlet-api").version("3.0.0"),
+                mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.http.jetty12").version("1.0.26"),
                 scr(),
                 eventadmin(),
                 mavenBundle().groupId("org.osgi").artifactId("org.osgi.util.converter").version("1.0.9"),
