@@ -18,21 +18,11 @@
  */
 package org.apache.sling.servlets.resolver.internal.resource;
 
-import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_EXTENSIONS;
-import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_METHODS;
-import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_NAME;
-import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_PATHS;
-import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_PREFIX;
-import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_RESOURCE_SUPER_TYPE;
-import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES;
-import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_SELECTORS;
-import static org.osgi.service.component.ComponentConstants.COMPONENT_NAME;
+import javax.servlet.Servlet;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import javax.servlet.Servlet;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -45,6 +35,16 @@ import org.osgi.util.converter.Converters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_EXTENSIONS;
+import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_METHODS;
+import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_NAME;
+import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_PATHS;
+import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_PREFIX;
+import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_RESOURCE_SUPER_TYPE;
+import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES;
+import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_SELECTORS;
+import static org.osgi.service.component.ComponentConstants.COMPONENT_NAME;
+
 public class ServletResourceProviderFactory {
 
     /**
@@ -53,8 +53,7 @@ public class ServletResourceProviderFactory {
      */
     public static final String SERVLET_PATH_EXTENSION = ".servlet";
 
-    private static final String[] DEFAULT_SERVLET_METHODS = {
-        HttpConstants.METHOD_GET, HttpConstants.METHOD_HEAD };
+    private static final String[] DEFAULT_SERVLET_METHODS = {HttpConstants.METHOD_GET, HttpConstants.METHOD_HEAD};
 
     private static final String ALL_METHODS = "*";
 
@@ -93,7 +92,7 @@ public class ServletResourceProviderFactory {
         // check if servletRoot specifies a number
         boolean isNumber = false;
         int index = -1;
-        if (!servletRoot.startsWith("/") ) {
+        if (!servletRoot.startsWith("/")) {
             try {
                 index = Integer.valueOf(servletRoot);
                 isNumber = true;
@@ -101,7 +100,7 @@ public class ServletResourceProviderFactory {
                 // ignore
             }
         }
-        if ( !isNumber ) {
+        if (!isNumber) {
             // ensure the root starts and ends with a slash
             if (!servletRoot.startsWith("/")) {
                 servletRoot = "/".concat(servletRoot);
@@ -137,20 +136,24 @@ public class ServletResourceProviderFactory {
         if (pathSet.isEmpty()) {
             if (log.isDebugEnabled()) {
                 log.debug(
-                    "create({}): ServiceReference has no registration settings, ignoring",
-                    getServiceReferenceInfo(ref));
+                        "create({}): ServiceReference has no registration settings, ignoring",
+                        getServiceReferenceInfo(ref));
             }
             return null;
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("create({}): Registering servlet for paths {}",
-                    getServiceReferenceInfo(ref), pathSet);
+            log.debug("create({}): Registering servlet for paths {}", getServiceReferenceInfo(ref), pathSet);
         }
-        String resourceSuperType = Converters.standardConverter().convert(ref.getProperty(SLING_SERVLET_RESOURCE_SUPER_TYPE)).to(String.class);
+        String resourceSuperType = Converters.standardConverter()
+                .convert(ref.getProperty(SLING_SERVLET_RESOURCE_SUPER_TYPE))
+                .to(String.class);
         Set<String> resourceSuperTypeMarkers = new HashSet<>();
-        if (StringUtils.isNotEmpty(resourceSuperType) && !ServletResource.DEFAULT_RESOURCE_SUPER_TYPE.equals(resourceSuperType)) {
-            for (String rt : Converters.standardConverter().convert(ref.getProperty(SLING_SERVLET_RESOURCE_TYPES)).to(String[].class)) {
+        if (StringUtils.isNotEmpty(resourceSuperType)
+                && !ServletResource.DEFAULT_RESOURCE_SUPER_TYPE.equals(resourceSuperType)) {
+            for (String rt : Converters.standardConverter()
+                    .convert(ref.getProperty(SLING_SERVLET_RESOURCE_TYPES))
+                    .to(String[].class)) {
                 if (!rt.startsWith("/")) {
                     rt = getPrefix(ref).concat(ResourceUtil.resourceTypeToPath(rt));
                 }
@@ -166,18 +169,18 @@ public class ServletResourceProviderFactory {
      */
     private String getPrefix(final ServiceReference<Servlet> ref) {
         Object value = ref.getProperty(SLING_SERVLET_PREFIX);
-        if ( value == null ) {
-            if ( this.servletRoot != null ) {
+        if (value == null) {
+            if (this.servletRoot != null) {
                 return this.servletRoot;
             }
             value = this.servletRootIndex;
         }
         int index = -1;
-        if ( value instanceof Number ) {
-            index = ((Number)value).intValue();
+        if (value instanceof Number) {
+            index = ((Number) value).intValue();
         } else {
             String s = value.toString();
-            if ( !s.startsWith("/") ) {
+            if (!s.startsWith("/")) {
                 boolean isNumber = false;
                 try {
                     index = Integer.valueOf(s);
@@ -185,12 +188,14 @@ public class ServletResourceProviderFactory {
                 } catch (NumberFormatException nfe) {
                     // ignore
                 }
-                if ( !isNumber ) {
+                if (!isNumber) {
                     if (log.isDebugEnabled()) {
-                        log.debug("getPrefix({}): Configuration property is ignored {}",
-                                getServiceReferenceInfo(ref), value);
+                        log.debug(
+                                "getPrefix({}): Configuration property is ignored {}",
+                                getServiceReferenceInfo(ref),
+                                value);
                     }
-                    if ( this.servletRoot != null ) {
+                    if (this.servletRoot != null) {
                         return this.servletRoot;
                     }
                     index = this.servletRootIndex;
@@ -199,7 +204,7 @@ public class ServletResourceProviderFactory {
                 return s;
             }
         }
-        if ( index == -1 || index >= this.searchPath.size() ) {
+        if (index == -1 || index >= this.searchPath.size()) {
             index = this.searchPath.size() - 1;
         }
         return this.searchPath.get(index);
@@ -211,7 +216,9 @@ public class ServletResourceProviderFactory {
      * @param ref
      */
     private void addByPath(Set<String> pathSet, ServiceReference<Servlet> ref) {
-        String[] paths = Converters.standardConverter().convert(ref.getProperty(SLING_SERVLET_PATHS)).to(String[].class);
+        String[] paths = Converters.standardConverter()
+                .convert(ref.getProperty(SLING_SERVLET_PATHS))
+                .to(String[].class);
         for (String path : paths) {
             if (!path.startsWith("/")) {
                 path = getPrefix(ref).concat(path);
@@ -220,7 +227,9 @@ public class ServletResourceProviderFactory {
             // add the unmodified path
             pathSet.add(path);
 
-            String[] types = Converters.standardConverter().convert(ref.getProperty(SLING_SERVLET_RESOURCE_TYPES)).to(String[].class);
+            String[] types = Converters.standardConverter()
+                    .convert(ref.getProperty(SLING_SERVLET_RESOURCE_TYPES))
+                    .to(String[].class);
 
             if ((types.length == 0) || StringUtils.isEmpty(FilenameUtils.getExtension(path))) {
                 // ensure we have another entry which has the .servlet ext. if there wasn't one to begin with
@@ -236,47 +245,53 @@ public class ServletResourceProviderFactory {
      * @param ref
      */
     private void addByType(Set<String> pathSet, ServiceReference<Servlet> ref) {
-        String[] types = Converters.standardConverter().convert(ref.getProperty(SLING_SERVLET_RESOURCE_TYPES)).to(String[].class);
-        String[] paths = Converters.standardConverter().convert(ref.getProperty(SLING_SERVLET_PATHS)).to(String[].class);
+        String[] types = Converters.standardConverter()
+                .convert(ref.getProperty(SLING_SERVLET_RESOURCE_TYPES))
+                .to(String[].class);
+        String[] paths = Converters.standardConverter()
+                .convert(ref.getProperty(SLING_SERVLET_PATHS))
+                .to(String[].class);
         boolean hasPathRegistration = true;
         if (paths.length == 0) {
             hasPathRegistration = false;
         }
         if (types.length == 0) {
             if (log.isDebugEnabled()) {
-                log.debug("addByType({}): no resource types declared",
-                        getServiceReferenceInfo(ref));
+                log.debug("addByType({}): no resource types declared", getServiceReferenceInfo(ref));
             }
             return;
         }
 
         // check for selectors
-        String[] selectors = Converters.standardConverter().convert(ref.getProperty(SLING_SERVLET_SELECTORS)).to(String[].class);
+        String[] selectors = Converters.standardConverter()
+                .convert(ref.getProperty(SLING_SERVLET_SELECTORS))
+                .to(String[].class);
         if (selectors.length == 0) {
-            selectors = new String[] { null };
+            selectors = new String[] {null};
         }
 
         // we have types and expect extensions and/or methods
-        String[] extensions = Converters.standardConverter().convert(ref.getProperty(SLING_SERVLET_EXTENSIONS)).to(String[].class);
+        String[] extensions = Converters.standardConverter()
+                .convert(ref.getProperty(SLING_SERVLET_EXTENSIONS))
+                .to(String[].class);
 
         // handle the methods property specially (SLING-430)
-        String[] methods = Converters.standardConverter().convert(ref.getProperty(SLING_SERVLET_METHODS)).to(String[].class);
+        String[] methods = Converters.standardConverter()
+                .convert(ref.getProperty(SLING_SERVLET_METHODS))
+                .to(String[].class);
         if (methods.length == 0) {
 
             // SLING-512 only, set default methods if no extensions are declared
             if (extensions.length == 0 && !hasPathRegistration) {
                 if (log.isDebugEnabled()) {
-                    log.debug(
-                        "addByType({}): No methods declared, assuming GET/HEAD",
-                        getServiceReferenceInfo(ref));
+                    log.debug("addByType({}): No methods declared, assuming GET/HEAD", getServiceReferenceInfo(ref));
                 }
                 methods = DEFAULT_SERVLET_METHODS;
             }
 
         } else if (methods.length == 1 && ALL_METHODS.equals(methods[0])) {
             if (log.isDebugEnabled()) {
-                log.debug("addByType({}): Assuming all methods for '*'",
-                        getServiceReferenceInfo(ref));
+                log.debug("addByType({}): Assuming all methods for '*'", getServiceReferenceInfo(ref));
             }
             methods = null;
         }
@@ -310,8 +325,7 @@ public class ServletResourceProviderFactory {
                         // both methods and extensions declared
                         for (String ext : extensions) {
                             for (String method : methods) {
-                                pathSet.add(selPath + ext + "." + method
-                                    + SERVLET_PATH_EXTENSION);
+                                pathSet.add(selPath + ext + "." + method + SERVLET_PATH_EXTENSION);
                                 pathAdded = true;
                             }
                         }
@@ -332,8 +346,7 @@ public class ServletResourceProviderFactory {
 
                 // if neither methods nor extensions were added
                 if (!pathAdded && !hasPathRegistration) {
-                    pathSet.add(selPath.substring(0, selPath.length() - 1)
-                        + SERVLET_PATH_EXTENSION);
+                    pathSet.add(selPath.substring(0, selPath.length() - 1) + SERVLET_PATH_EXTENSION);
                 }
             }
         }
@@ -345,27 +358,27 @@ public class ServletResourceProviderFactory {
         final Object servletName = reference.getProperty(SLING_SERVLET_NAME);
         final Object pid = reference.getProperty(Constants.SERVICE_PID);
         Object componentName = reference.getProperty(COMPONENT_NAME);
-        if ( pid != null && pid.equals(componentName) ) {
+        if (pid != null && pid.equals(componentName)) {
             componentName = null;
         }
-        if ( servletName != null || pid != null || componentName != null ) {
+        if (servletName != null || pid != null || componentName != null) {
             sb.append(" (");
             boolean needsComma = false;
-            if ( servletName != null ) {
+            if (servletName != null) {
                 sb.append("name=");
                 sb.append(servletName);
                 needsComma = true;
             }
-            if ( pid != null ) {
-                if ( needsComma ) {
+            if (pid != null) {
+                if (needsComma) {
                     sb.append(", ");
                 }
                 sb.append("pid=");
                 sb.append(pid);
                 needsComma = true;
             }
-            if ( componentName != null ) {
-                if ( needsComma ) {
+            if (componentName != null) {
+                if (needsComma) {
                     sb.append(", ");
                 }
                 sb.append("component=");
@@ -375,11 +388,11 @@ public class ServletResourceProviderFactory {
         }
         sb.append(" from ");
         final Bundle bundle = reference.getBundle();
-        if ( bundle == null ) {
+        if (bundle == null) {
             sb.append("uninstalled bundle");
         } else {
             sb.append("bundle ");
-            if ( bundle.getSymbolicName() == null ) {
+            if (bundle.getSymbolicName() == null) {
                 sb.append(String.valueOf(bundle.getBundleId()));
             } else {
                 sb.append(bundle.getSymbolicName());
@@ -391,9 +404,9 @@ public class ServletResourceProviderFactory {
             }
         }
         final String[] ocs = (String[]) reference.getProperty("objectClass");
-        if ( ocs != null ) {
+        if (ocs != null) {
             sb.append("[");
-            for(int i = 0; i < ocs.length; i++) {
+            for (int i = 0; i < ocs.length; i++) {
                 sb.append(ocs[i]);
                 if (i < ocs.length - 1) {
                     sb.append(", ");

@@ -31,20 +31,19 @@ import org.apache.sling.api.resource.Resource;
 public class ScriptSelectionTest extends HelperTestBase {
 
     /** Test set of available scripts */
-    protected final String [] SET_A = {
-            "/apps/foo/bar/html.esp",
-            "/apps/foo/bar/POST.esp",
-            "/apps/foo/bar/print.esp",
-            "/apps/foo/bar/print",
-            "/apps/foo/bar/print/POST.esp",
-            "/apps/foo/bar/mail.POST.esp",
-            "/apps/foo/bar/xml.esp",
-            "/apps/foo/bar/print.xml.esp",
-            "/apps/foo/bar/print/DELETE.esp",
-            "/apps/foo/bar/DELETE.esp",
-            "/apps/foo/bar/SPURIOUS.esp",
-            "/apps/foo/bar/UNKNOWN.esp"
-
+    protected final String[] SET_A = {
+        "/apps/foo/bar/html.esp",
+        "/apps/foo/bar/POST.esp",
+        "/apps/foo/bar/print.esp",
+        "/apps/foo/bar/print",
+        "/apps/foo/bar/print/POST.esp",
+        "/apps/foo/bar/mail.POST.esp",
+        "/apps/foo/bar/xml.esp",
+        "/apps/foo/bar/print.xml.esp",
+        "/apps/foo/bar/print/DELETE.esp",
+        "/apps/foo/bar/DELETE.esp",
+        "/apps/foo/bar/SPURIOUS.esp",
+        "/apps/foo/bar/UNKNOWN.esp"
     };
 
     /** Given a list of available scripts and the request method, selectors
@@ -57,11 +56,10 @@ public class ScriptSelectionTest extends HelperTestBase {
      *  @param scripts the list of scripts that would be available in the repository
      *  @param expectedScript the script that we expect to be selected
      */
-    protected void assertScript(String method, String selectors, String extension,
-            String [] scripts, String expectedScript)
-    {
+    protected void assertScript(
+            String method, String selectors, String extension, String[] scripts, String expectedScript) {
         // Add given scripts to our mock resource resolver
-        for(String script : scripts) {
+        for (String script : scripts) {
             addOrReplaceResource(resourceResolver, script, "nt:file");
         }
 
@@ -70,7 +68,7 @@ public class ScriptSelectionTest extends HelperTestBase {
         final ResourceCollector u = ResourceCollector.create(req, null, new String[] {"html"}, true);
         final Collection<Resource> s = u.getServlets(req.getResourceResolver(), Collections.emptyList());
 
-        if(expectedScript == null) {
+        if (expectedScript == null) {
             assertFalse("No script must be found", s.iterator().hasNext());
         } else {
             // Verify that the expected script is the first in the list of candidates
@@ -89,10 +87,7 @@ public class ScriptSelectionTest extends HelperTestBase {
     }
 
     public void testHtmlGetSelectorsAndResourceLabel() {
-        final String [] scripts = {
-                "/apps/foo/bar/bar.esp",
-                "/apps/foo/bar/bar.print.esp"
-            };
+        final String[] scripts = {"/apps/foo/bar/bar.esp", "/apps/foo/bar/bar.print.esp"};
         // the bar.print.esp script is not used, it must be named print.esp
         // to be selector-specific
         assertScript("GET", "print.a4", "html", scripts, "/apps/foo/bar/bar.esp");
@@ -103,26 +98,17 @@ public class ScriptSelectionTest extends HelperTestBase {
     }
 
     public void testHtmlGetHtmlHasPriorityA() {
-        final String [] scripts = {
-            "/apps/foo/bar/html.esp",
-            "/apps/foo/bar/bar.esp"
-        };
+        final String[] scripts = {"/apps/foo/bar/html.esp", "/apps/foo/bar/bar.esp"};
         assertScript("GET", null, "html", scripts, "/apps/foo/bar/html.esp");
     }
 
     public void testHtmlGetHtmlHasPriorityB() {
-        final String [] scripts = {
-            "/apps/foo/bar/bar.esp",
-            "/apps/foo/bar/html.esp"
-        };
+        final String[] scripts = {"/apps/foo/bar/bar.esp", "/apps/foo/bar/html.esp"};
         assertScript("GET", null, "html", scripts, "/apps/foo/bar/html.esp");
     }
 
     public void testHtmlGetBarUsedIfFound() {
-        final String [] scripts = {
-                "/apps/foo/bar/bar.esp",
-                "/apps/foo/bar/pdf.esp"
-            };
+        final String[] scripts = {"/apps/foo/bar/bar.esp", "/apps/foo/bar/pdf.esp"};
         assertScript("GET", null, "html", scripts, "/apps/foo/bar/bar.esp");
     }
 
@@ -135,64 +121,55 @@ public class ScriptSelectionTest extends HelperTestBase {
     }
 
     public void testMultipleSelectorsA() {
-        final String [] scripts = {
-                "/apps/foo/bar/print",
-                "/apps/foo/bar/print/a4.esp",
-                "/apps/foo/bar/print.a4.esp",
-                "/apps/foo/bar/html.print.a4.esp",
-                "/apps/foo/bar/html.print.esp",
-                "/apps/foo/bar/print.esp",
-                "/apps/foo/bar/print.html.esp",
-                "/apps/foo/bar/a4.esp",
-                "/apps/foo/bar/a4.html.esp",
-                "/apps/foo/bar/html.esp"
-            };
-            assertScript("GET", "print.a4", "html", scripts, "/apps/foo/bar/print/a4.esp");
+        final String[] scripts = {
+            "/apps/foo/bar/print",
+            "/apps/foo/bar/print/a4.esp",
+            "/apps/foo/bar/print.a4.esp",
+            "/apps/foo/bar/html.print.a4.esp",
+            "/apps/foo/bar/html.print.esp",
+            "/apps/foo/bar/print.esp",
+            "/apps/foo/bar/print.html.esp",
+            "/apps/foo/bar/a4.esp",
+            "/apps/foo/bar/a4.html.esp",
+            "/apps/foo/bar/html.esp"
+        };
+        assertScript("GET", "print.a4", "html", scripts, "/apps/foo/bar/print/a4.esp");
     }
 
     public void testMultipleSelectorsB() {
-        final String [] scripts = {
-                "/apps/foo/bar/print.a4.esp",
-                "/apps/foo/bar/print.esp",
-                "/apps/foo/bar/a4.esp",
-                "/apps/foo/bar/html.esp"
-            };
-            assertScript("GET", "print.a4", "html", scripts, "/apps/foo/bar/print.esp");
-            assertScript("GET", "a4.print", "html", scripts, "/apps/foo/bar/a4.esp");
-            assertScript("GET", null, "html", scripts, "/apps/foo/bar/html.esp");
+        final String[] scripts = {
+            "/apps/foo/bar/print.a4.esp", "/apps/foo/bar/print.esp", "/apps/foo/bar/a4.esp", "/apps/foo/bar/html.esp"
+        };
+        assertScript("GET", "print.a4", "html", scripts, "/apps/foo/bar/print.esp");
+        assertScript("GET", "a4.print", "html", scripts, "/apps/foo/bar/a4.esp");
+        assertScript("GET", null, "html", scripts, "/apps/foo/bar/html.esp");
     }
 
     public void testMultipleSelectorsC() {
-        final String [] scripts = {
-                "/apps/foo/bar/print.esp",
-                "/apps/foo/bar/html.esp"
-            };
-            assertScript("GET", "print.a4", "html", scripts, "/apps/foo/bar/print.esp");
+        final String[] scripts = {"/apps/foo/bar/print.esp", "/apps/foo/bar/html.esp"};
+        assertScript("GET", "print.a4", "html", scripts, "/apps/foo/bar/print.esp");
     }
 
     public void testMultipleSelectorsD() {
-        final String [] scripts = {
-                "/apps/foo/bar/a4.esp",
-                "/apps/foo/bar/html.esp"
-            };
-            assertScript("GET", "print.a4", "html", scripts, "/apps/foo/bar/html.esp");
-            assertScript("GET", "a4.print", "html", scripts, "/apps/foo/bar/a4.esp");
+        final String[] scripts = {"/apps/foo/bar/a4.esp", "/apps/foo/bar/html.esp"};
+        assertScript("GET", "print.a4", "html", scripts, "/apps/foo/bar/html.esp");
+        assertScript("GET", "a4.print", "html", scripts, "/apps/foo/bar/a4.esp");
     }
 
     public void testMultipleSelectorsE() {
-        final String [] scripts = {
-                "/apps/foo/bar/bar.print.a4.esp",
-                "/apps/foo/bar/bar.print.esp",
-                "/apps/foo/bar/print.esp",
-                "/apps/foo/bar/a4.esp",
-                "/apps/foo/bar/bar.a4.esp",
-                "/apps/foo/bar/print",
-                "/apps/foo/bar/print/a4.esp",
-                "/apps/foo/bar/html.esp"
-            };
-            assertScript("GET", "print.a4", "html", scripts, "/apps/foo/bar/print/a4.esp");
-            assertScript("GET", "a4.print", "html", scripts, "/apps/foo/bar/a4.esp");
-            assertScript("GET", null, "html", scripts, "/apps/foo/bar/html.esp");
+        final String[] scripts = {
+            "/apps/foo/bar/bar.print.a4.esp",
+            "/apps/foo/bar/bar.print.esp",
+            "/apps/foo/bar/print.esp",
+            "/apps/foo/bar/a4.esp",
+            "/apps/foo/bar/bar.a4.esp",
+            "/apps/foo/bar/print",
+            "/apps/foo/bar/print/a4.esp",
+            "/apps/foo/bar/html.esp"
+        };
+        assertScript("GET", "print.a4", "html", scripts, "/apps/foo/bar/print/a4.esp");
+        assertScript("GET", "a4.print", "html", scripts, "/apps/foo/bar/a4.esp");
+        assertScript("GET", null, "html", scripts, "/apps/foo/bar/html.esp");
     }
 
     public void testXmlGetSingleSelector() {
@@ -200,25 +177,17 @@ public class ScriptSelectionTest extends HelperTestBase {
     }
 
     public void testHtmlGetAppsOverridesLibsA() {
-        final String [] scripts = {
-                "/apps/foo/bar/bar.esp",
-                "/libs/foo/bar/bar.esp"
-            };
+        final String[] scripts = {"/apps/foo/bar/bar.esp", "/libs/foo/bar/bar.esp"};
         assertScript("GET", null, "html", scripts, "/apps/foo/bar/bar.esp");
     }
 
     public void testHtmlGetAppsOverridesLibsB() {
-        final String [] scripts = {
-                "/libs/foo/bar/bar.esp",
-                "/apps/foo/bar/bar.esp"
-            };
+        final String[] scripts = {"/libs/foo/bar/bar.esp", "/apps/foo/bar/bar.esp"};
         assertScript("GET", null, "html", scripts, "/apps/foo/bar/bar.esp");
     }
 
     public void testHtmlGetLibUsedIfFound() {
-        final String [] scripts = {
-                "/libs/foo/bar/bar.esp"
-            };
+        final String[] scripts = {"/libs/foo/bar/bar.esp"};
         assertScript("GET", null, "html", scripts, "/libs/foo/bar/bar.esp");
     }
 
@@ -227,10 +196,7 @@ public class ScriptSelectionTest extends HelperTestBase {
     }
 
     public void testHtmlPostBadCaseFindsNoScript() {
-        final String [] scripts = {
-                "/apps/foo/bar/html.esp",
-                "/apps/foo/bar/POst.esp"
-        };
+        final String[] scripts = {"/apps/foo/bar/html.esp", "/apps/foo/bar/POst.esp"};
         assertScript("POST", null, "html", scripts, null);
     }
 
@@ -250,24 +216,17 @@ public class ScriptSelectionTest extends HelperTestBase {
     }
 
     public void testHtmlPostMethodSelectors() {
-        final String [] scripts = {
-                "/apps/foo/bar/print",
-                "/apps/foo/bar/print/POST.esp"
-        };
+        final String[] scripts = {"/apps/foo/bar/print", "/apps/foo/bar/print/POST.esp"};
         assertScript("POST", "print.a4", "html", scripts, "/apps/foo/bar/print/POST.esp");
     }
 
     public void testHtmlPostMethodExtension() {
-        final String [] scripts = {
-                "/apps/foo/bar/html.POST.esp"
-        };
+        final String[] scripts = {"/apps/foo/bar/html.POST.esp"};
         assertScript("POST", "print.a4", "html", scripts, "/apps/foo/bar/html.POST.esp");
     }
 
     public void testHtmlPostMethodResourceType() {
-        final String [] scripts = {
-                "/apps/foo/bar/bar.POST.esp"
-        };
+        final String[] scripts = {"/apps/foo/bar/bar.POST.esp"};
         assertScript("POST", "print.a4", "html", scripts, "/apps/foo/bar/bar.POST.esp");
     }
 }

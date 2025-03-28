@@ -18,11 +18,11 @@
  */
 package org.apache.sling.servlets.resolver.internal;
 
+import javax.servlet.Servlet;
+
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-
-import javax.servlet.Servlet;
 
 import org.apache.sling.api.resource.AbstractResource;
 import org.apache.sling.api.resource.Resource;
@@ -53,7 +53,8 @@ public class ScriptResource extends AbstractResource {
 
     private final String path;
 
-    public ScriptResource(final Resource resource,
+    public ScriptResource(
+            final Resource resource,
             final Supplier<ResourceResolver> perThreadScriptResolver,
             final ResourceResolver sharedResourceResolver) {
         this.path = resource.getPath();
@@ -63,11 +64,11 @@ public class ScriptResource extends AbstractResource {
 
     private Resource getActiveResource() {
         ResourceResolver perThreadResolver = this.perThreadResourceResolver.get();
-        if ( perThreadResolver != null && perThreadResolver.isLive() ) {
+        if (perThreadResolver != null && perThreadResolver.isLive()) {
             return perThreadResolver.getResource(this.path);
         }
         Resource resource = this.sharedResource.get();
-        if ( resource == null ) {
+        if (resource == null) {
             resource = this.sharedResourceResolver.getResource(this.path);
             this.sharedResource.set(resource);
         }
@@ -104,21 +105,21 @@ public class ScriptResource extends AbstractResource {
     @SuppressWarnings("unchecked")
     @Override
     public <T> T adaptTo(final Class<T> type) {
-        if ( type == Servlet.class ) {
+        if (type == Servlet.class) {
             Resource activeResource = this.getActiveResource();
             while (activeResource instanceof ResourceWrapper) {
                 activeResource = ((ResourceWrapper) activeResource).getResource();
             }
-            if (! (activeResource instanceof ServletResource)) {
+            if (!(activeResource instanceof ServletResource)) {
                 final Servlet s = (Servlet) super.adaptTo(type);
-                if ( s != null ) {
-                    return (T)s;
+                if (s != null) {
+                    return (T) s;
                 }
             }
-        } else if ( type == SlingScript.class ) {
-            final SlingScript s = (SlingScript)super.adaptTo(type);
-            if ( s != null ) {
-                return (T)s;
+        } else if (type == SlingScript.class) {
+            final SlingScript s = (SlingScript) super.adaptTo(type);
+            if (s != null) {
+                return (T) s;
             }
         }
         return this.getActiveResource().adaptTo(type);
@@ -191,8 +192,8 @@ public class ScriptResource extends AbstractResource {
     @Override
     public String toString() {
         return getClass().getSimpleName()
-            + ", type=" + getResourceType()
-            + ", superType=" + getResourceSuperType()
-            + ", path=" + getPath();
+                + ", type=" + getResourceType()
+                + ", superType=" + getResourceSuperType()
+                + ", path=" + getPath();
     }
 }

@@ -1,22 +1,27 @@
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- ~ Licensed to the Apache Software Foundation (ASF) under one
- ~ or more contributor license agreements.  See the NOTICE file
- ~ distributed with this work for additional information
- ~ regarding copyright ownership.  The ASF licenses this file
- ~ to you under the Apache License, Version 2.0 (the
- ~ "License"); you may not use this file except in compliance
- ~ with the License.  You may obtain a copy of the License at
- ~
- ~   http://www.apache.org/licenses/LICENSE-2.0
- ~
- ~ Unless required by applicable law or agreed to in writing,
- ~ software distributed under the License is distributed on an
- ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- ~ KIND, either express or implied.  See the License for the
- ~ specific language governing permissions and limitations
- ~ under the License.
- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.apache.sling.servlets.resolver.it;
+
+import javax.script.ScriptException;
+import javax.servlet.Servlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -25,11 +30,6 @@ import java.util.Hashtable;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.jar.JarInputStream;
-
-import javax.script.ScriptException;
-import javax.servlet.Servlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.Resource;
@@ -64,7 +64,8 @@ public class ServletResourceIT extends ServletResolverTestSupport {
 
     protected Option testBundle() {
         try {
-            TinyBundle bundle = TinyBundles.bundle().readIn(new JarInputStream(new FileInputStream(System.getProperty("bundle.filename"))));
+            TinyBundle bundle = TinyBundles.bundle()
+                    .readIn(new JarInputStream(new FileInputStream(System.getProperty("bundle.filename"))));
             String header = bundle.getHeader("Export-Package");
             bundle.setHeader("Export-Package", header + ",org.apache.sling.servlets.resolver.internal.bundle");
             return streamBundle(bundle.build()).start();
@@ -78,7 +79,8 @@ public class ServletResourceIT extends ServletResolverTestSupport {
         Dictionary<String, String> properties = new Hashtable<>();
         properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES, "sling/bundled/test");
         bundledRenderUnit = new TestBundledRenderUnit();
-        bundleContext.registerService(Servlet.class, new BundledScriptServlet(new LinkedHashSet<>(), bundledRenderUnit), properties);
+        bundleContext.registerService(
+                Servlet.class, new BundledScriptServlet(new LinkedHashSet<>(), bundledRenderUnit), properties);
     }
 
     @Test
@@ -131,10 +133,8 @@ public class ServletResourceIT extends ServletResolverTestSupport {
         }
 
         @Override
-        public void eval(@NotNull HttpServletRequest httpServletRequest, @NotNull HttpServletResponse httpServletResponse)
-                throws ScriptException {
-
-        }
+        public void eval(
+                @NotNull HttpServletRequest httpServletRequest, @NotNull HttpServletResponse httpServletResponse)
+                throws ScriptException {}
     }
-
 }

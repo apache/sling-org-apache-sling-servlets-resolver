@@ -44,7 +44,8 @@ public class ScriptResourceResolver extends ResourceResolverWrapper {
         this.providerSupplier = provider;
     }
 
-    public static ScriptResourceResolver wrap(ResourceResolver scriptResourceResolver, Supplier<MergingServletResourceProvider> provider) {
+    public static ScriptResourceResolver wrap(
+            ResourceResolver scriptResourceResolver, Supplier<MergingServletResourceProvider> provider) {
         return new ScriptResourceResolver(scriptResourceResolver, provider);
     }
 
@@ -59,39 +60,44 @@ public class ScriptResourceResolver extends ResourceResolverWrapper {
 
         if (provider == null) {
             return super.getResource(scriptPath);
-        }
-        else {
-            return wrap(provider.getResource(new ResolveContext<Object>() {
-                @Override
-                public ResourceResolver getResourceResolver() {
-                    return ScriptResourceResolver.this;
-                }
-
-                @Override
-                public Object getProviderState() {
-                    return null;
-                }
-
-                @Override
-                public ResolveContext<?> getParentResolveContext() {
-                    return null;
-                }
-
-                @Override
-                public ResourceProvider<?> getParentResourceProvider() {
-                    return new ResourceProvider<Object>() {
+        } else {
+            return wrap(provider.getResource(
+                    new ResolveContext<Object>() {
                         @Override
-                        public Resource getResource(ResolveContext<Object> ctx, String path, ResourceContext resourceContext, Resource parent) {
-                            return resolver.getResource(path);
+                        public ResourceResolver getResourceResolver() {
+                            return ScriptResourceResolver.this;
                         }
 
                         @Override
-                        public Iterator<Resource> listChildren(ResolveContext<Object> ctx, Resource parent) {
-                            return resolver.listChildren(parent);
+                        public Object getProviderState() {
+                            return null;
                         }
-                    };
-                }
-            }, scriptPath));
+
+                        @Override
+                        public ResolveContext<?> getParentResolveContext() {
+                            return null;
+                        }
+
+                        @Override
+                        public ResourceProvider<?> getParentResourceProvider() {
+                            return new ResourceProvider<Object>() {
+                                @Override
+                                public Resource getResource(
+                                        ResolveContext<Object> ctx,
+                                        String path,
+                                        ResourceContext resourceContext,
+                                        Resource parent) {
+                                    return resolver.getResource(path);
+                                }
+
+                                @Override
+                                public Iterator<Resource> listChildren(ResolveContext<Object> ctx, Resource parent) {
+                                    return resolver.listChildren(parent);
+                                }
+                            };
+                        }
+                    },
+                    scriptPath));
         }
     }
 
@@ -108,37 +114,42 @@ public class ScriptResourceResolver extends ResourceResolverWrapper {
         MergingServletResourceProvider provider = this.providerSupplier.get();
         if (provider == null) {
             return super.listChildren(parent);
-        }
-        else {
-            return wrap(provider.listChildren(new ResolveContext<Object>() {
-                @Override
-                public ResourceResolver getResourceResolver() {
-                    return ScriptResourceResolver.this;
-                }
-
-                @Override
-                public Object getProviderState() {
-                    return null;
-                }
-
-                public ResolveContext<?> getParentResolveContext() {
-                    return null;
-                }
-
-                public ResourceProvider<?> getParentResourceProvider() {
-                    return new ResourceProvider<Object>() {
+        } else {
+            return wrap(provider.listChildren(
+                    new ResolveContext<Object>() {
                         @Override
-                        public Resource getResource(ResolveContext<Object> ctx, String path, ResourceContext resourceContext, Resource parent) {
-                            return resolver.getResource(path);
+                        public ResourceResolver getResourceResolver() {
+                            return ScriptResourceResolver.this;
                         }
 
                         @Override
-                        public Iterator<Resource> listChildren(ResolveContext<Object> ctx, Resource parent) {
-                            return resolver.listChildren(parent);
+                        public Object getProviderState() {
+                            return null;
                         }
-                    };
-                }
-            }, unwrap(parent)));
+
+                        public ResolveContext<?> getParentResolveContext() {
+                            return null;
+                        }
+
+                        public ResourceProvider<?> getParentResourceProvider() {
+                            return new ResourceProvider<Object>() {
+                                @Override
+                                public Resource getResource(
+                                        ResolveContext<Object> ctx,
+                                        String path,
+                                        ResourceContext resourceContext,
+                                        Resource parent) {
+                                    return resolver.getResource(path);
+                                }
+
+                                @Override
+                                public Iterator<Resource> listChildren(ResolveContext<Object> ctx, Resource parent) {
+                                    return resolver.listChildren(parent);
+                                }
+                            };
+                        }
+                    },
+                    unwrap(parent)));
         }
     }
 
@@ -151,7 +162,7 @@ public class ScriptResourceResolver extends ResourceResolverWrapper {
 
     private Iterator<Resource> wrap(Iterator<Resource> iter) {
         if (iter != null) {
-            iter = new IteratorWrapper<Resource>(iter){
+            iter = new IteratorWrapper<Resource>(iter) {
                 @Override
                 public Resource next() {
                     return wrap(super.next());

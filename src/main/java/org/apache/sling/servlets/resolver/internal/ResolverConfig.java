@@ -21,13 +21,14 @@ package org.apache.sling.servlets.resolver.internal;
 import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 
-@ObjectClassDefinition(name = "Apache Sling Servlet/Script Resolver and Error Handler",
-    description = "The Sling Servlet and Script Resolver has "
-        + "multiple tasks: One it is used as the ServletResolver to select the Servlet "
-        + "or Script to call to handle the request. Second it acts as the "
-        + "SlingScriptResolver and finally it manages error handling by implementing "
-        + "the ErrorHandler interface using the same algorithm to select error handling "
-        + "servlets and scripts as is used to resolve request processing servlets and " + "scripts.")
+@ObjectClassDefinition(
+        name = "Apache Sling Servlet/Script Resolver and Error Handler",
+        description = "The Sling Servlet and Script Resolver has "
+                + "multiple tasks: One it is used as the ServletResolver to select the Servlet "
+                + "or Script to call to handle the request. Second it acts as the "
+                + "SlingScriptResolver and finally it manages error handling by implementing "
+                + "the ErrorHandler interface using the same algorithm to select error handling "
+                + "servlets and scripts as is used to resolve request processing servlets and " + "scripts.")
 public @interface ResolverConfig {
 
     String PID = "org.apache.sling.servlets.resolver.SlingServletResolver";
@@ -36,44 +37,57 @@ public @interface ResolverConfig {
      * The default servlet root is the first search path (which is usually
      * /apps)
      */
-    @AttributeDefinition(name = "Servlet Registration Root Path", description = "The default root path assumed when "
-            + "registering a servlet whose servlet registration properties define a relative "
-            + "resource type/path. It can either be a string starting with \"/\" (specifying a path prefix to be used) "
-            + "or a number which specifies the resource resolver's search path entry index. The default value "
-            + "is 0 (usually stands for \"/apps\" in the search paths). The number can be -1 which always "
-            + "points to the last search path entry.")
+    @AttributeDefinition(
+            name = "Servlet Registration Root Path",
+            description = "The default root path assumed when "
+                    + "registering a servlet whose servlet registration properties define a relative "
+                    + "resource type/path. It can either be a string starting with \"/\" (specifying a path prefix to be used) "
+                    + "or a number which specifies the resource resolver's search path entry index. The default value "
+                    + "is 0 (usually stands for \"/apps\" in the search paths). The number can be -1 which always "
+                    + "points to the last search path entry.")
     String servletresolver_servletRoot() default "0"; // NOSONAR
 
     /** The default cache size for the script resolution. */
-    @AttributeDefinition(name = "Cache Size", description = "This property configures the size of the "
-            + "cache used for script resolution. A value lower than 5 disables the cache.")
+    @AttributeDefinition(
+            name = "Cache Size",
+            description = "This property configures the size of the "
+                    + "cache used for script resolution. A value lower than 5 disables the cache.")
     int servletresolver_cacheSize() default 200; // NOSONAR
 
-    @AttributeDefinition(name = "Execution Paths", description = "The paths to search for executable scripts. If no path is configured "
-            + "this is treated like the default (/ = root) which allows to execute all scripts. By configuring some "
-            + "paths the execution of scripts can be limited. If a configured value ends with a slash, the whole sub tree "
-            + "is allowed. Without a slash an exact matching script is allowed.")
+    @AttributeDefinition(
+            name = "Execution Paths",
+            description = "The paths to search for executable scripts. If no path is configured "
+                    + "this is treated like the default (/ = root) which allows to execute all scripts. By configuring some "
+                    + "paths the execution of scripts can be limited. If a configured value ends with a slash, the whole sub tree "
+                    + "is allowed. Without a slash an exact matching script is allowed.")
     String[] servletresolver_paths() default "/"; // NOSONAR
 
-    @AttributeDefinition(name = "Default Extensions", description = "The list of extensions for which the default behavior "
-            + "will be used. This means that the last path segment of the resource type can be used as the script name.")
+    @AttributeDefinition(
+            name = "Default Extensions",
+            description =
+                    "The list of extensions for which the default behavior "
+                            + "will be used. This means that the last path segment of the resource type can be used as the script name.")
     String[] servletresolver_defaultExtensions() default "html"; // NOSONAR
 
-    @AttributeDefinition(name = "Mount Providers", description = "Should servlets be mounted as resource providers?" +
-        " If true (the default), servlets will be represented in the content tree using resource providers -" +
-        " otherwise, servlets will be decorated back into the content tree using a decorator unless mount path providers is true.")
+    @AttributeDefinition(
+            name = "Mount Providers",
+            description =
+                    "Should servlets be mounted as resource providers?"
+                            + " If true (the default), servlets will be represented in the content tree using resource providers -"
+                            + " otherwise, servlets will be decorated back into the content tree using a decorator unless mount path providers is true.")
     boolean servletresolver_mountProviders() default true; // NOSONAR
 
-    @AttributeDefinition(name = "Mount Path Providers", description = "Should servlets be mounted via a single resource provider per search path entry?" +
-            " If false (the default), servlets will be represented in the content tree using individual resource providers -" +
-            " otherwise, servlets will be mounted into the content tree using one resource provider per search path entry. This effectively overrides mount providers.")
+    @AttributeDefinition(
+            name = "Mount Path Providers",
+            description =
+                    "Should servlets be mounted via a single resource provider per search path entry?"
+                            + " If false (the default), servlets will be represented in the content tree using individual resource providers -"
+                            + " otherwise, servlets will be mounted into the content tree using one resource provider per search path entry. This effectively overrides mount providers.")
     boolean servletresolver_mountPathProviders() default false; // NOSONAR
-    
-    
-    @AttributeDefinition(name="use resource caching", description = "Use an optimized version of the servlet resolution which "
-    		+ "uses caching within the ResourceResolver.")
+
+    @AttributeDefinition(
+            name = "use resource caching",
+            description = "Use an optimized version of the servlet resolution which "
+                    + "uses caching within the ResourceResolver.")
     boolean enable_resource_caching() default true;
-    
-    
-    
 }
