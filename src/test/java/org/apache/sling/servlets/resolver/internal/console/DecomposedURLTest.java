@@ -18,8 +18,6 @@
  */
 package org.apache.sling.servlets.resolver.internal.console;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,6 +27,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import static org.junit.Assert.assertEquals;
+
 @RunWith(Parameterized.class)
 public class DecomposedURLTest {
     private final RequestPathInfo rpi;
@@ -37,40 +37,28 @@ public class DecomposedURLTest {
     private final String selectors;
     private String suffix;
 
-    @Parameters(name="{0}")
+    @Parameters(name = "{0}")
     public static List<Object[]> data() {
-            final List<Object[]> result = new ArrayList<>();
-            result.add(new Object[] {
-                    "http://localhost:8080/libs/foo/content/something/formitems.truc.who.json/image/vnd/xnd/knd.xml",
-                    "/libs/foo/content/something/formitems",
-                    "json",
-                    "truc.who",
-                    "/image/vnd/xnd/knd.xml"
-            });
-            result.add(new Object[] {
-                    "/libs/foo.a4.print.html",
-                    "/libs/foo",
-                    "html",
-                    "a4.print",
-                    null
-            });
-            result.add(new Object[] {
-                    "/libs/bar.html",
-                    "/libs/bar",
-                    "html",
-                    null,
-                    null
-            });
+        final List<Object[]> result = new ArrayList<>();
+        result.add(new Object[] {
+            "http://localhost:8080/libs/foo/content/something/formitems.truc.who.json/image/vnd/xnd/knd.xml",
+            "/libs/foo/content/something/formitems",
+            "json",
+            "truc.who",
+            "/image/vnd/xnd/knd.xml"
+        });
+        result.add(new Object[] {"/libs/foo.a4.print.html", "/libs/foo", "html", "a4.print", null});
+        result.add(new Object[] {"/libs/bar.html", "/libs/bar", "html", null, null});
 
-            result.add(new Object[] {
-                    "/home/users/geometrixx-outdoors/emily.andrews@mailinator.com/profile.form.html/content/geometrixx-outdoors/en/user/profile",
-                    "/home/users/geometrixx-outdoors/emily",
-                    "com",
-                    "andrews@mailinator",
-                    "/profile.form.html/content/geometrixx-outdoors/en/user/profile"
-            });
+        result.add(new Object[] {
+            "/home/users/geometrixx-outdoors/emily.andrews@mailinator.com/profile.form.html/content/geometrixx-outdoors/en/user/profile",
+            "/home/users/geometrixx-outdoors/emily",
+            "com",
+            "andrews@mailinator",
+            "/profile.form.html/content/geometrixx-outdoors/en/user/profile"
+        });
 
-            return result;
+        return result;
     }
 
     public DecomposedURLTest(String input, String path, String extension, String selectors, String suffix) {

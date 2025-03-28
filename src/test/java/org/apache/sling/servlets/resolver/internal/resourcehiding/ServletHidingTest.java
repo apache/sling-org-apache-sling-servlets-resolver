@@ -18,18 +18,13 @@
  */
 package org.apache.sling.servlets.resolver.internal.resourcehiding;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import javax.servlet.Servlet;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.servlet.Servlet;
 
 import org.apache.sling.api.resource.PersistenceException;
 import org.apache.sling.api.resource.ResourceUtil;
@@ -41,6 +36,11 @@ import org.apache.sling.servlets.resolver.internal.helper.HelperTestBase;
 import org.apache.sling.servlets.resolver.internal.resource.MockServletResource;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 public class ServletHidingTest extends SlingServletResolverTestBase {
 
@@ -77,8 +77,8 @@ public class ServletHidingTest extends SlingServletResolverTestBase {
     }
 
     private Servlet resolveServlet() {
-        MockSlingHttpServletRequest req = new MockSlingHttpServletRequest(
-                MockSlingHttpServletRequest.RESOURCE_TYPE, null, "html", null, null);
+        MockSlingHttpServletRequest req =
+                new MockSlingHttpServletRequest(MockSlingHttpServletRequest.RESOURCE_TYPE, null, "html", null, null);
         req.setResourceResolver(mockResourceResolver);
         return servletResolver.resolveServlet(req);
     }
@@ -91,7 +91,7 @@ public class ServletHidingTest extends SlingServletResolverTestBase {
     private void assertResolvesToTestServletId(String info, boolean expectMatch) {
         final Servlet s = resolveServlet();
         assertNotNull("Expecting non-null Servlet", s);
-        if(expectMatch) {
+        if (expectMatch) {
             assertEquals("Expecting our test servlet (" + info + ")", TEST_ID, s.toString());
         } else {
             assertNotEquals("NOT expecting our test servlet (" + info + ")", TEST_ID, s.toString());
@@ -121,5 +121,4 @@ public class ServletHidingTest extends SlingServletResolverTestBase {
         hide.set(true);
         assertResolvesToTestServletId("No Predicate set, hide=true", true);
     }
-
 }

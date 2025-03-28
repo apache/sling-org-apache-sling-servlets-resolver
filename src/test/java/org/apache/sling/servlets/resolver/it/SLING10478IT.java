@@ -18,9 +18,8 @@
  */
 package org.apache.sling.servlets.resolver.it;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -29,9 +28,6 @@ import java.lang.reflect.InvocationTargetException;
 
 import jakarta.json.Json;
 import jakarta.json.stream.JsonGenerator;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,6 +35,10 @@ import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerClass;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests for SLING-10478 - SlingServletResolver#handleError should not attempt to flush/close
@@ -66,13 +66,11 @@ public class SLING10478IT extends ServletResolverTestSupport {
                     generator.writeEnd();
                 }
             }
-
-        }
-        .with(P_RESOURCE_TYPES, "sling/servlet/errorhandler")
-        .with(P_EXTENSIONS, "close")
-        .with(P_METHODS, "default")
-        .with(P_PREFIX, -1)
-        .register(bundleContext);
+        }.with(P_RESOURCE_TYPES, "sling/servlet/errorhandler")
+                .with(P_EXTENSIONS, "close")
+                .with(P_METHODS, "default")
+                .with(P_PREFIX, -1)
+                .register(bundleContext);
 
         new TestServlet("NoCloseWriterErrorHandler") {
             private static final long serialVersionUID = 5467958588168607027L;
@@ -84,16 +82,14 @@ public class SLING10478IT extends ServletResolverTestSupport {
                 resp.setContentType("text/plain");
 
                 resp.getWriter().print("hello error");
-                
+
                 // response writer remains unclosed
             }
-
-        }
-        .with(P_RESOURCE_TYPES, "sling/servlet/errorhandler")
-        .with(P_EXTENSIONS, "noclose")
-        .with(P_METHODS, "default")
-        .with(P_PREFIX, -1)
-        .register(bundleContext);
+        }.with(P_RESOURCE_TYPES, "sling/servlet/errorhandler")
+                .with(P_EXTENSIONS, "noclose")
+                .with(P_METHODS, "default")
+                .with(P_PREFIX, -1)
+                .register(bundleContext);
     }
 
     @Override
@@ -119,7 +115,8 @@ public class SLING10478IT extends ServletResolverTestSupport {
 
     void checkErrorHandlerServlet(String path) throws Exception, InvocationTargetException {
         try {
-            final String output = executeRequest(M_GET, path, HttpServletResponse.SC_NOT_FOUND).getOutputAsString();
+            final String output = executeRequest(M_GET, path, HttpServletResponse.SC_NOT_FOUND)
+                    .getOutputAsString();
             assertNotNull(output);
             assertTrue(output, output.contains("hello"));
         } catch (InvocationTargetException t) {
@@ -132,9 +129,8 @@ public class SLING10478IT extends ServletResolverTestSupport {
         }
     }
 
-
     /**
-     * Subclass to simulate what the SlingHttpServletResponseImpl writer does 
+     * Subclass to simulate what the SlingHttpServletResponseImpl writer does
      */
     private static final class HandleErrorMockSlingHttpServletResponse extends MockSlingHttpServletResponse {
         private HandleErrorResponseWriter writer = null;
@@ -157,7 +153,7 @@ public class SLING10478IT extends ServletResolverTestSupport {
     }
 
     /**
-     * Subclass to simulate what the SlingHttpServletResponseImpl writer does 
+     * Subclass to simulate what the SlingHttpServletResponseImpl writer does
      */
     private static final class HandleErrorResponseWriter extends PrintWriter {
 
@@ -176,7 +172,5 @@ public class SLING10478IT extends ServletResolverTestSupport {
         public boolean isOpen() {
             return open;
         }
-
     }
-
 }

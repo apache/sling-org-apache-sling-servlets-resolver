@@ -21,14 +21,11 @@ package org.apache.sling.servlets.resolver.it;
 import org.apache.sling.serviceusermapping.ServiceUserValidator;
 import org.osgi.service.component.annotations.Component;
 
-@Component(
-    service = ServiceUserValidator.class
-)
+@Component(service = ServiceUserValidator.class)
 public class TestServiceUserValidator implements ServiceUserValidator {
 
     @Override
     public boolean isValid(String s, String s1, String s2) {
         return true;
     }
-
 }

@@ -44,5 +44,4 @@ public interface SlingServletResolverCacheMBean {
      * Flush the servlet resolver cache.
      */
     void flushCache();
-
 }

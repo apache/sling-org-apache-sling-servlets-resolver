@@ -18,15 +18,11 @@
  */
 package org.apache.sling.servlets.resolver.internal.resource;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import javax.servlet.Servlet;
 
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Dictionary;
-
-import javax.servlet.Servlet;
 
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.servlets.ServletResolverConstants;
@@ -40,14 +36,19 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
 public class ServletMounterTest {
 
     private ServletMounter mounter;
 
-    @Before public void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         final ResolverConfig config = Mockito.mock(ResolverConfig.class);
         Mockito.when(config.servletresolver_servletRoot()).thenReturn("0");
-        Mockito.when(config.servletresolver_paths()).thenReturn(new String[] { "/"});
+        Mockito.when(config.servletresolver_paths()).thenReturn(new String[] {"/"});
         Mockito.when(config.servletresolver_defaultExtensions()).thenReturn(new String[] {"html"});
         Mockito.when(config.servletresolver_cacheSize()).thenReturn(200);
 
@@ -67,23 +68,24 @@ public class ServletMounterTest {
         this.mounter = new ServletMounter(bundleContext, factory, null, config);
     }
 
-
-    @Test public void testCreateServiceProperties() throws Throwable {
+    @Test
+    public void testCreateServiceProperties() throws Throwable {
         @SuppressWarnings("unchecked")
         final ServiceReference<Servlet> msr = Mockito.mock(ServiceReference.class);
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES))
-            .thenReturn("sample");
+                .thenReturn("sample");
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_METHODS))
-            .thenReturn("GET");
+                .thenReturn("GET");
 
-        Method createServiceProperties = ServletMounter.class.getDeclaredMethod("createServiceProperties",
-                ServiceReference.class, String.class);
+        Method createServiceProperties =
+                ServletMounter.class.getDeclaredMethod("createServiceProperties", ServiceReference.class, String.class);
         createServiceProperties.setAccessible(true);
 
         // no ranking
         assertNull(msr.getProperty(Constants.SERVICE_RANKING));
         @SuppressWarnings("unchecked")
-        final Dictionary<String, Object> p1 = (Dictionary<String, Object>) createServiceProperties.invoke(mounter, msr, "/a");
+        final Dictionary<String, Object> p1 =
+                (Dictionary<String, Object>) createServiceProperties.invoke(mounter, msr, "/a");
         assertEquals(2, p1.size());
         assertNull(p1.get(Constants.SERVICE_RANKING));
         assertEquals("/a", p1.get(ResourceProvider.PROPERTY_ROOT));
@@ -91,11 +93,11 @@ public class ServletMounterTest {
 
         // illegal type of ranking
         Object nonIntValue = "Some Non Integer Value";
-        Mockito.when(msr.getProperty(Constants.SERVICE_RANKING))
-            .thenReturn(nonIntValue);
+        Mockito.when(msr.getProperty(Constants.SERVICE_RANKING)).thenReturn(nonIntValue);
         assertEquals(nonIntValue, msr.getProperty(Constants.SERVICE_RANKING));
         @SuppressWarnings("unchecked")
-        final Dictionary<String, Object> p2 = (Dictionary<String, Object>) createServiceProperties.invoke(mounter, msr, "/b");
+        final Dictionary<String, Object> p2 =
+                (Dictionary<String, Object>) createServiceProperties.invoke(mounter, msr, "/b");
         assertEquals(2, p2.size());
         assertNull(p2.get(Constants.SERVICE_RANKING));
         assertEquals("/b", p2.get(ResourceProvider.PROPERTY_ROOT));
@@ -103,11 +105,11 @@ public class ServletMounterTest {
 
         // illegal type of ranking
         Object intValue = Integer.valueOf(123);
-        Mockito.when(msr.getProperty(Constants.SERVICE_RANKING))
-            .thenReturn(intValue);
+        Mockito.when(msr.getProperty(Constants.SERVICE_RANKING)).thenReturn(intValue);
         assertEquals(intValue, msr.getProperty(Constants.SERVICE_RANKING));
         @SuppressWarnings("unchecked")
-        final Dictionary<String, Object> p3 = (Dictionary<String, Object>) createServiceProperties.invoke(mounter, msr, "/c");
+        final Dictionary<String, Object> p3 =
+                (Dictionary<String, Object>) createServiceProperties.invoke(mounter, msr, "/c");
         assertEquals(3, p3.size());
         assertEquals(intValue, p3.get(Constants.SERVICE_RANKING));
         assertEquals("/c", p3.get(ResourceProvider.PROPERTY_ROOT));
