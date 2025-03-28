@@ -33,8 +33,11 @@ import javax.servlet.Servlet;
 
 import org.apache.sling.api.resource.PersistenceException;
 import org.apache.sling.api.resource.ResourceUtil;
+import org.apache.sling.api.resource.SyntheticResource;
 import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
-import org.apache.sling.commons.testing.sling.MockSlingHttpServletRequest;
+import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.request.builder.Builders;
+import org.apache.sling.api.resource.Resource;
 import org.apache.sling.servlets.resolver.api.IgnoredServletResourcePredicate;
 import org.apache.sling.servlets.resolver.internal.SlingServletResolverTestBase;
 import org.apache.sling.servlets.resolver.internal.helper.HelperTestBase;
@@ -45,6 +48,8 @@ import org.osgi.framework.Bundle;
 public class ServletHidingTest extends SlingServletResolverTestBase {
 
     private static final String TEST_ID = UUID.randomUUID().toString();
+
+    private static final String TEST_RESOURCE_TYPE = "foo/bar";
 
     protected static class TestServlet extends SlingSafeMethodsServlet {
         private final String id;
@@ -77,15 +82,16 @@ public class ServletHidingTest extends SlingServletResolverTestBase {
     }
 
     private Servlet resolveServlet() {
-        MockSlingHttpServletRequest req = new MockSlingHttpServletRequest(
-                MockSlingHttpServletRequest.RESOURCE_TYPE, null, "html", null, null);
-        req.setResourceResolver(mockResourceResolver);
+        final Resource resource = new SyntheticResource(mockResourceResolver, "/content/foobar", TEST_RESOURCE_TYPE);
+        SlingHttpServletRequest req = Builders.newRequestBuilder(resource)
+                .withExtension("html")
+                .build();
         return servletResolver.resolveServlet(req);
     }
 
     @Override
     protected void defineTestServlets(Bundle bundle) {
-        registerServlet(TEST_ID, MockSlingHttpServletRequest.RESOURCE_TYPE);
+        registerServlet(TEST_ID, TEST_RESOURCE_TYPE);
     }
 
     private void assertResolvesToTestServletId(String info, boolean expectMatch) {

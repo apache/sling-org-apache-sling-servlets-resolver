@@ -25,6 +25,7 @@ import java.io.StringWriter;
 import jakarta.json.Json;
 import jakarta.json.stream.JsonGenerator;
 import javax.servlet.GenericServlet;
+import javax.servlet.RequestDispatcher;
 import javax.servlet.Servlet;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -32,7 +33,6 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.request.header.MediaRangeList;
 import org.apache.sling.api.request.RequestProgressTracker;
@@ -67,10 +67,10 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
             throws IOException {
 
         // get settings
-        Integer scObject = (Integer) req.getAttribute(SlingConstants.ERROR_STATUS);
-        String statusMessage = (String) req.getAttribute(SlingConstants.ERROR_MESSAGE);
-        String requestUri = (String) req.getAttribute(SlingConstants.ERROR_REQUEST_URI);
-        String servletName = (String) req.getAttribute(SlingConstants.ERROR_SERVLET_NAME);
+        Integer scObject = (Integer) req.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
+        String statusMessage = (String) req.getAttribute(RequestDispatcher.ERROR_MESSAGE);
+        String requestUri = (String) req.getAttribute(RequestDispatcher.ERROR_REQUEST_URI);
+        String servletName = (String) req.getAttribute(RequestDispatcher.ERROR_SERVLET_NAME);
 
         // ensure values
         int statusCode = (scObject != null)
@@ -104,8 +104,8 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
             ResponseUtil.getXmlEscapingWriter(pw));
 
         // dump the stack trace
-        if (req.getAttribute(SlingConstants.ERROR_EXCEPTION) instanceof Throwable) {
-            final Throwable throwable = (Throwable) req.getAttribute(SlingConstants.ERROR_EXCEPTION);
+        if (req.getAttribute(RequestDispatcher.ERROR_EXCEPTION) instanceof Throwable) {
+            final Throwable throwable = (Throwable) req.getAttribute(RequestDispatcher.ERROR_EXCEPTION);
             pw.println("<h3>Exception:</h3>");
             pw.println("<pre>");
             pw.flush();
@@ -144,7 +144,7 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
             jsonGenerator.writeStartObject();
             jsonGenerator.write("status", statusCode);
 
-            String msg = (String)req.getAttribute(SlingConstants.ERROR_MESSAGE);
+            String msg = (String)req.getAttribute(RequestDispatcher.ERROR_MESSAGE);
             if (msg != null && !msg.isEmpty()) {
                 jsonGenerator.write("message", statusMessage);
             }
@@ -159,7 +159,7 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
 
             // SLING-10615 - for backward compatibility check for either a
             // String or Class value
-            Object exceptionTypeObj = req.getAttribute(SlingConstants.ERROR_EXCEPTION_TYPE);
+            Object exceptionTypeObj = req.getAttribute(RequestDispatcher.ERROR_EXCEPTION_TYPE);
             String exceptionType = null;
             if (exceptionTypeObj instanceof String) {
                 exceptionType = (String)exceptionTypeObj;
@@ -171,8 +171,8 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
             }
 
             // dump the stack trace
-            if (req.getAttribute(SlingConstants.ERROR_EXCEPTION) instanceof Throwable) {
-                final Throwable throwable = (Throwable) req.getAttribute(SlingConstants.ERROR_EXCEPTION);
+            if (req.getAttribute(RequestDispatcher.ERROR_EXCEPTION) instanceof Throwable) {
+                final Throwable throwable = (Throwable) req.getAttribute(RequestDispatcher.ERROR_EXCEPTION);
                 try (StringWriter sw = new StringWriter();
                         PrintWriter pw = new PrintWriter(sw)) {
                     printStackTrace(pw, throwable);

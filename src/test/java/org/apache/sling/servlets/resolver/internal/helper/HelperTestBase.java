@@ -21,14 +21,18 @@ package org.apache.sling.servlets.resolver.internal.helper;
 import java.util.Collections;
 import java.util.Map;
 
+import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.request.builder.Builders;
+import org.apache.sling.api.request.builder.SlingHttpServletRequestBuilder;
 import org.apache.sling.api.resource.PersistenceException;
 import org.apache.sling.api.resource.Resource;
+import org.apache.sling.api.resource.ResourceMetadata;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceUtil;
-import org.apache.sling.commons.testing.sling.MockSlingHttpServletRequest;
 import org.apache.sling.testing.resourceresolver.MockResourceResolverFactory;
 import org.apache.sling.testing.resourceresolver.MockResourceResolverFactoryOptions;
 import org.jetbrains.annotations.Nullable;
+import org.mockito.Mockito;
 
 import junit.framework.TestCase;
 
@@ -36,8 +40,6 @@ public abstract class HelperTestBase extends TestCase {
 
     protected MockResourceResolverFactoryOptions resourceResolverOptions;
     protected ResourceResolver resourceResolver;
-
-    protected MockSlingHttpServletRequest request;
 
     protected Resource resource;
 
@@ -66,12 +68,10 @@ public abstract class HelperTestBase extends TestCase {
         Resource parent = getOrCreateParentResource(resourceResolver, resourcePath);
         resource = resourceResolver.create(parent, "page",
                 Collections.singletonMap(ResourceResolver.PROPERTY_RESOURCE_TYPE, resourceType));
-
-        request = makeRequest("GET", "print.a4", "html");
     }
 
     public static Resource addOrReplaceResource(ResourceResolver resolver, String path, String resourceType) {
-        return addOrReplaceResource(resolver, path, 
+        return addOrReplaceResource(resolver, path,
                 Collections.singletonMap(ResourceResolver.PROPERTY_RESOURCE_TYPE, resourceType));
     }
 
@@ -83,7 +83,7 @@ public abstract class HelperTestBase extends TestCase {
             Resource r = resolver.getResource(path);
             if (r != null) {
                 resolver.delete(r);
-            } 
+            }
 
             // create the new resource
             Resource parent = getOrCreateParentResource(resolver, path);
@@ -115,13 +115,29 @@ public abstract class HelperTestBase extends TestCase {
         return parent;
     }
 
-    protected MockSlingHttpServletRequest makeRequest(String method, String selectors, String extension) {
-        final MockSlingHttpServletRequest result =
-            new MockSlingHttpServletRequest(resourcePath, selectors, extension, null, null);
-        result.setMethod(method);
-        result.setResourceResolver(resourceResolver);
-        result.setResource(resource);
-        return result;
+    protected SlingHttpServletRequest makeRequest(String method, String selectors, String extension) {
+        final Resource rsrc = Mockito.mock(Resource.class);
+        final ResourceMetadata md = new ResourceMetadata();
+        Mockito.when(rsrc.getResourceResolver()).thenReturn(resourceResolver);
+        Mockito.when(rsrc.getPath()).thenReturn(this.resource.getPath());
+        Mockito.when(rsrc.getName()).thenReturn(this.resource.getName());
+        Mockito.when(rsrc.getResourceType()).thenReturn(this.resource.getResourceType());
+        md.setResolutionPath(rsrc.getPath());
+        StringBuilder sb = new StringBuilder();
+        sb.append(".");
+        if ( selectors != null ) {
+            sb.append(selectors);
+            sb.append(".");
+        }
+        sb.append(extension);
+        md.setResolutionPathInfo(sb.toString());
+        SlingHttpServletRequestBuilder builder = Builders.newRequestBuilder(rsrc);
+        builder.withExtension(extension);
+        if (selectors != null) {
+            builder.withSelectors(selectors.split("\\."));
+        }
+        builder.withRequestMethod(method);
+        return builder.build();
     }
 
     @Override
@@ -129,8 +145,6 @@ public abstract class HelperTestBase extends TestCase {
         super.tearDown();
 
         resourceResolver = null;
-        request = null;
         resource = null;
     }
-
 }

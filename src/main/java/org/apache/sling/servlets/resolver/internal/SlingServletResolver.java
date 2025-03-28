@@ -87,7 +87,7 @@ import org.slf4j.LoggerFactory;
  * In case the thread is handling a request, the {@link #onEvent(SlingRequestEvent)} method is called by the
  * Sling engine and a per-thread ResourceResolver is created, used and also closed when the request is
  * finished.
- * 
+ *
  * In case the thread does execute not within the context of a request, a shared ResourceResolver instance is used.
  *
  */
@@ -148,9 +148,9 @@ public class SlingServletResolver
      * The default extensions
      */
     private AtomicReference<String[]> defaultExtensions = new AtomicReference<>();
-    
+
     private boolean useResourceCaching;
-    
+
 
     private final PathBasedServletAcceptor pathBasedServletAcceptor = new PathBasedServletAcceptor();
 
@@ -189,7 +189,7 @@ public class SlingServletResolver
             servlet = resolveServletInternal(request, null, resourceType, scriptResolver);
         }
 
-        // last resort, use the core bundle default servlet
+        // last resort, use the default servlet
         if (servlet == null) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("No specific servlet found, trying default");
@@ -861,7 +861,7 @@ public class SlingServletResolver
         }
         return executionPaths;
     }
-    
+
 	protected void invalidateCache(ResourceResolver r) {
 		LocationCollector.clearCache(r);
 		AbstractResourceCollector.clearCache(r);

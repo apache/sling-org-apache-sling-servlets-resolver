@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceUtil;
 
@@ -41,6 +42,7 @@ public class ResourceCollectorTest extends HelperTestBase {
     }
 
     public void testGetServlets0() {
+        SlingHttpServletRequest req = makeRequest("GET", "print.a4", "html");
         String[] names = { "/" + label + ".esp", // 0
                 "/GET.esp", // 1
                 "/" + label + ".html.esp", // 2
@@ -54,10 +56,11 @@ public class ResourceCollectorTest extends HelperTestBase {
         int[] baseIdxs = { 0, 1, 1, 0, 0, 1, 0, 1, 0, 1 };
         int[] indices  = { 7, 5, 6, 4, 2, 3, 0, 1 };
 
-        effectiveTest(names, baseIdxs, indices);
+        effectiveTest(req, names, baseIdxs, indices);
     }
 
     public void testGetServlets1() {
+        SlingHttpServletRequest req = makeRequest("GET", "print.a4", "html");
         String[] names = { "/" + label + ".esp", // 0
                 "/GET.esp", // 1
                 "/" + label + ".html.esp", // 2
@@ -71,10 +74,11 @@ public class ResourceCollectorTest extends HelperTestBase {
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
         int[] indices = { 7, 6, 3, 2, 0, 1 };
 
-        effectiveTest(names, baseIdxs, indices);
+        effectiveTest(req, names, baseIdxs, indices);
     }
 
     public void testGetServlets2() {
+        SlingHttpServletRequest req = makeRequest("GET", "print.a4", "html");
         String[] names = { "/" + label + ".esp", // 0
                 "/GET.esp", // 1
                 "/" + label + ".html.esp", // 2
@@ -89,10 +93,11 @@ public class ResourceCollectorTest extends HelperTestBase {
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
         int[] indices = { 8, 7, 2, 3, 0, 1 };
 
-        effectiveTest(names, baseIdxs, indices);
+        effectiveTest(req, names, baseIdxs, indices);
     }
 
     public void testGetServlets3() {
+        SlingHttpServletRequest req = makeRequest("GET", "print.a4", "html");
         String[] names = { ".servlet", // 0
                 "/" + label + ".esp", // 1
                 "/GET.esp", // 2
@@ -108,10 +113,11 @@ public class ResourceCollectorTest extends HelperTestBase {
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
         int[] indices = { 9, 8, 3, 4, 1, 2, 0 };
 
-        effectiveTest(names, baseIdxs, indices);
+        effectiveTest(req, names, baseIdxs, indices);
     }
 
     public void testGetServlets4() {
+        SlingHttpServletRequest req = makeRequest("GET", "print.a4", "html");
         String[] names = { ".servlet", // 0
                 "/" + label + ".esp", // 1
                 "/GET.esp", // 2
@@ -128,10 +134,11 @@ public class ResourceCollectorTest extends HelperTestBase {
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1 };
         int[] indices = { 10, 9, 3, 4, 1, 2, 0 };
 
-        effectiveTest(names, baseIdxs, indices);
+        effectiveTest(req, names, baseIdxs, indices);
     }
 
     public void testGetServletsWithMethod() {
+        SlingHttpServletRequest req = makeRequest("GET", "print.a4", "html");
         String[] names = {
             "/html.servlet", // 7
             "/html.GET.servlet"
@@ -140,10 +147,11 @@ public class ResourceCollectorTest extends HelperTestBase {
         int[] baseIdxs = { 1, 1};
         int[] indices = { 1, 0};
 
-        effectiveTest(names, baseIdxs, indices);
+        effectiveTest(req, names, baseIdxs, indices);
     }
 
     public void testGetServletsScriptExtensionsPriority() {
+        SlingHttpServletRequest req = makeRequest("GET", "print.a4", "html");
         String[] names = {".servlet", // 0
                 "/" + label + ".esp", // 1
                 "/GET.esp", // 2
@@ -163,7 +171,7 @@ public class ResourceCollectorTest extends HelperTestBase {
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0 , 0 , 1, 0};
         int[] indices = {12, 13, 11, 10, 9, 3, 4, 1, 2, 0};
 
-        effectiveTest(names, baseIdxs, indices, new ArrayList<String>(){
+        effectiveTest(req, names, baseIdxs, indices, new ArrayList<String>(){
             private static final long serialVersionUID = -2278401285444759128L;
         {
             add("esp");
@@ -174,6 +182,7 @@ public class ResourceCollectorTest extends HelperTestBase {
     }
 
     public void testGetServletsScriptExtensionsPriority2() {
+        SlingHttpServletRequest req = makeRequest("GET", "print.a4", "html");
         // scripts with extensions not registered by script engine factories
         String[] names = {".servlet", // 0
                 "/" + label + ".esp", // 1
@@ -194,7 +203,7 @@ public class ResourceCollectorTest extends HelperTestBase {
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0 , 0 , 1, 0};
         int[] indices = {12, 13, 11, 10, 9, 3, 4, 1, 2, 0};
 
-        effectiveTest(names, baseIdxs, indices, new ArrayList<String>(){
+        effectiveTest(req, names, baseIdxs, indices, new ArrayList<String>(){
             private static final long serialVersionUID = 4918721764309621104L;
         {
             add("esp");
@@ -203,6 +212,7 @@ public class ResourceCollectorTest extends HelperTestBase {
     }
 
     public void testGetServletsScriptExtensionsPriority3() {
+        SlingHttpServletRequest req = makeRequest("GET", "print.a4", "html");
         // scripts with extensions not registered by script engine factories
         String[] names = {".servlet", // 0
                 "/" + label + ".esp", // 1
@@ -223,7 +233,7 @@ public class ResourceCollectorTest extends HelperTestBase {
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0 , 0 , 1, 0};
         int[] indices = {12, 13, 11, 10, 9, 3, 4, 1, 2, 0};
 
-        effectiveTest(names, baseIdxs, indices, new ArrayList<String>(){
+        effectiveTest(req, names, baseIdxs, indices, new ArrayList<String>(){
             private static final long serialVersionUID = 1527098044127506711L;
         {
             add("esp");
@@ -233,7 +243,7 @@ public class ResourceCollectorTest extends HelperTestBase {
 
     public void testAnyServlets0() {
         // use a request with another request method "ANY"
-        request.setMethod("ANY");
+        SlingHttpServletRequest req = makeRequest("ANY", "print.a4", "html");
 
         String[] names = { "/" + label + ".ANY.esp", // 0
                 "/ANY.esp", // 1
@@ -248,12 +258,12 @@ public class ResourceCollectorTest extends HelperTestBase {
         int[] baseIdxs = { 0, 1, 1, 0, 0, 1, 0, 1, 0, 1 };
         int[] indices  = { 7, 5, 6, 4, 2, 3, 0, 1 };
 
-        effectiveTest(names, baseIdxs, indices);
+        effectiveTest(req, names, baseIdxs, indices);
     }
 
     public void testAnyServlets1() {
         // use a request with another request method "ANY"
-        request.setMethod("ANY");
+        SlingHttpServletRequest req = makeRequest("ANY", "print.a4", "html");
 
         String[] names = { "/" + label + ".ANY.esp", // 0
                 "/ANY.esp", // 1
@@ -268,12 +278,12 @@ public class ResourceCollectorTest extends HelperTestBase {
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
         int[] indices = { 7, 6, 3, 2, 0, 1 };
 
-        effectiveTest(names, baseIdxs, indices);
+        effectiveTest(req, names, baseIdxs, indices);
     }
 
     public void testAnyServlets2() {
         // use a request with another request method "ANY"
-        request.setMethod("ANY");
+        SlingHttpServletRequest req = makeRequest("ANY", "print.a4", "html");
 
         String[] names = { "/" + label + ".ANY.esp", // 0
                 "/ANY.esp", // 1
@@ -289,12 +299,12 @@ public class ResourceCollectorTest extends HelperTestBase {
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
         int[] indices = { 8, 7, 2, 3, 0, 1 };
 
-        effectiveTest(names, baseIdxs, indices);
+        effectiveTest(req, names, baseIdxs, indices);
     }
 
     public void testAnyServlets3() {
         // use a request with another request method "ANY"
-        request.setMethod("ANY");
+        SlingHttpServletRequest req = makeRequest("ANY", "print.a4", "html");
 
         String[] names = { ".servlet", // 0
                 "/" + label + ".ANY.esp", // 1
@@ -311,12 +321,12 @@ public class ResourceCollectorTest extends HelperTestBase {
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
         int[] indices = { 9, 8, 3, 4, 1, 2, 0 };
 
-        effectiveTest(names, baseIdxs, indices);
+        effectiveTest(req, names, baseIdxs, indices);
     }
 
     public void testAnyServlets4() {
         // use a request with another request method "ANY"
-        request.setMethod("ANY");
+        SlingHttpServletRequest req = makeRequest("ANY", "print.a4", "html");
 
         String[] names = { ".servlet", // 0
                 "/" + label + ".ANY.esp", // 1
@@ -334,12 +344,12 @@ public class ResourceCollectorTest extends HelperTestBase {
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1 };
         int[] indices = { 10, 9, 3, 4, 1, 2, 0 };
 
-        effectiveTest(names, baseIdxs, indices);
+        effectiveTest(req, names, baseIdxs, indices);
     }
 
     public void testAnyServletsScriptExtensionsPriority() {
         // use a request with another request method "ANY"
-        request.setMethod("ANY");
+        SlingHttpServletRequest req = makeRequest("ANY", "print.a4", "html");
 
         String[] names = {".servlet", // 0
                 "/" + label + ".ANY.esp", // 1
@@ -360,7 +370,7 @@ public class ResourceCollectorTest extends HelperTestBase {
         int[] baseIdxs = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0 , 0 , 1, 0};
         int[] indices = {12, 13, 11, 10, 9, 3, 4, 1, 2, 0};
 
-        effectiveTest(names, baseIdxs, indices, new ArrayList<String>(){
+        effectiveTest(req, names, baseIdxs, indices, new ArrayList<String>(){
             private static final long serialVersionUID = 3909592432283252117L;
         {
             add("esp");
@@ -370,11 +380,11 @@ public class ResourceCollectorTest extends HelperTestBase {
         }});
     }
 
-    protected void effectiveTest(String[] names, int[] baseIdxs, int[] indices) {
-        effectiveTest(names, baseIdxs, indices, null);
+    protected void effectiveTest(SlingHttpServletRequest r, String[] names, int[] baseIdxs, int[] indices) {
+        effectiveTest(r, names, baseIdxs, indices, null);
     }
 
-    protected void effectiveTest(String[] names, int[] baseIdxs, int[] indices, List<String> scriptEngineExtensions) {
+    protected void effectiveTest(SlingHttpServletRequest r, String[] names, int[] baseIdxs, int[] indices, List<String> scriptEngineExtensions) {
 
         String[] base = { "/apps/" + resourceTypePath,
             "/libs/" + resourceTypePath };
@@ -389,12 +399,12 @@ public class ResourceCollectorTest extends HelperTestBase {
             pathMap.put(name, path);
         }
 
-        ResourceCollector lu = ResourceCollector.create(request, null, new String[] {"html"}, true);
+        ResourceCollector lu = ResourceCollector.create(r, null, new String[] {"html"}, true);
         Collection<Resource> res;
         if (scriptEngineExtensions != null) {
-            res = lu.getServlets(request.getResourceResolver(), scriptEngineExtensions);
+            res = lu.getServlets(r.getResourceResolver(), scriptEngineExtensions);
         } else {
-            res = lu.getServlets(request.getResourceResolver(), Collections.emptyList());
+            res = lu.getServlets(r.getResourceResolver(), Collections.emptyList());
         }
         Iterator<Resource> rIter = res.iterator();
 
