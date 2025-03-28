@@ -199,7 +199,7 @@
         <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.testing.paxexam</artifactId>
-            <version>4.1.0</version>
+            <version>4.1.1-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
