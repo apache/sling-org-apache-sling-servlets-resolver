@@ -18,14 +18,15 @@
  */
 package org.apache.sling.servlets.resolver.internal;
 
+import org.junit.Test;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import org.junit.Test;
-
 public class SlingServletResolverTest {
 
-    @Test public void testIsInvalidPath() {
+    @Test
+    public void testIsInvalidPath() {
         assertFalse(SlingServletResolver.isInvalidPath("/../"));
         assertTrue(SlingServletResolver.isInvalidPath("/.../"));
         assertTrue(SlingServletResolver.isInvalidPath("/..../"));
@@ -72,6 +73,5 @@ public class SlingServletResolverTest {
 
         assertFalse(SlingServletResolver.isInvalidPath("aa/b.c.d.e.f/"));
         assertFalse(SlingServletResolver.isInvalidPath("aa/b.c.d...e.f/"));
-
     }
 }

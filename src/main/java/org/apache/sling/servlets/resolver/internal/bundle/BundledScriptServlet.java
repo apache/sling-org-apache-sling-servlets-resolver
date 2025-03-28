@@ -1,33 +1,33 @@
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- ~ Licensed to the Apache Software Foundation (ASF) under one
- ~ or more contributor license agreements.  See the NOTICE file
- ~ distributed with this work for additional information
- ~ regarding copyright ownership.  The ASF licenses this file
- ~ to you under the Apache License, Version 2.0 (the
- ~ "License"); you may not use this file except in compliance
- ~ with the License.  You may obtain a copy of the License at
- ~
- ~   http://www.apache.org/licenses/LICENSE-2.0
- ~
- ~ Unless required by applicable law or agreed to in writing,
- ~ software distributed under the License is distributed on an
- ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- ~ KIND, either express or implied.  See the License for the
- ~ specific language governing permissions and limitations
- ~ under the License.
- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.apache.sling.servlets.resolver.internal.bundle;
+
+import javax.servlet.GenericServlet;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import javax.servlet.GenericServlet;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
 
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingException;
@@ -44,13 +44,14 @@ public class BundledScriptServlet extends GenericServlet {
     private final String servletInfo;
     private final Set<ResourceType> types; // NOSONAR
 
-
-    public BundledScriptServlet(@NotNull Set<TypeProvider> wiredTypeProviders,
-                         @NotNull BundledRenderUnit executable) {
+    public BundledScriptServlet(@NotNull Set<TypeProvider> wiredTypeProviders, @NotNull BundledRenderUnit executable) {
         this.executable = executable;
         this.servletInfo = "Script " + executable.getPath();
-        this.types = wiredTypeProviders.stream().map(typeProvider -> typeProvider.getBundledRenderUnitCapability().getResourceTypes()
-        ).flatMap(Collection::stream).collect(Collectors.toSet());
+        this.types = wiredTypeProviders.stream()
+                .map(typeProvider ->
+                        typeProvider.getBundledRenderUnitCapability().getResourceTypes())
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
     }
 
     @Override
@@ -81,16 +82,15 @@ public class BundledScriptServlet extends GenericServlet {
 
                 // log in the request progress tracker
                 logScriptError(request, see);
-    
+
                 throw see;
-                
+
             } catch (Exception e) {
-    
+
                 // log in the request progress tracker
                 logScriptError(request, e);
-    
-                throw new SlingException("Cannot get DefaultSlingScript: "
-                    + e.getMessage(), e);
+
+                throw new SlingException("Cannot get DefaultSlingScript: " + e.getMessage(), e);
             }
         } else {
             throw new ServletException("Not a Sling HTTP request/response");
@@ -101,8 +101,7 @@ public class BundledScriptServlet extends GenericServlet {
      * Logs the error caused by executing the script in the request progress
      * tracker.
      */
-    private void logScriptError(SlingHttpServletRequest request,
-            Throwable throwable) {
+    private void logScriptError(SlingHttpServletRequest request, Throwable throwable) {
         String message = throwable.getMessage();
         if (message != null) {
             message = throwable.getMessage().replace('\n', '/');

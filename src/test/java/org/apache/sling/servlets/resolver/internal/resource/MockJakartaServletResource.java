@@ -19,29 +19,26 @@
 package org.apache.sling.servlets.resolver.internal.resource;
 
 import jakarta.servlet.Servlet;
-
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ValueMap;
 import org.apache.sling.api.wrappers.ValueMapDecorator;
 import org.apache.sling.servlets.resolver.internal.ServletWrapperUtil;
 
-public class MockJakartaServletResource extends
-        org.apache.sling.servlets.resolver.internal.resource.ServletResource {
+public class MockJakartaServletResource extends org.apache.sling.servlets.resolver.internal.resource.ServletResource {
 
     public static final String PROP_SERVLET = ":servlet";
 
     private final Servlet servlet;
 
-    public MockJakartaServletResource(ResourceResolver resourceResolver,
-            Servlet servlet, String path) {
+    public MockJakartaServletResource(ResourceResolver resourceResolver, Servlet servlet, String path) {
         super(resourceResolver, ServletWrapperUtil.toJavaxServlet(servlet), path);
         this.servlet = servlet;
     }
 
     @Override
     public <T> T adaptTo(Class<T> type) {
-        if ( type == ValueMap.class ) {
-            ValueMapDecorator vm = (ValueMapDecorator)super.adaptTo(type);
+        if (type == ValueMap.class) {
+            ValueMapDecorator vm = (ValueMapDecorator) super.adaptTo(type);
             // add the servlet to the ValueMap so we don't lose track of it
             //  when resource objects are created during traversal
             vm.put(PROP_SERVLET, servlet);
@@ -49,5 +46,4 @@ public class MockJakartaServletResource extends
         }
         return super.adaptTo(type);
     }
-
 }

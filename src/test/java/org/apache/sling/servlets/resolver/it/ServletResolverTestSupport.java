@@ -19,6 +19,7 @@
 package org.apache.sling.servlets.resolver.it;
 
 import javax.inject.Inject;
+
 import org.apache.sling.api.SlingJakartaHttpServletRequest;
 import org.apache.sling.api.SlingJakartaHttpServletResponse;
 import org.apache.sling.api.request.builder.Builders;
@@ -74,7 +75,8 @@ public class ServletResolverTestSupport extends TestSupport {
         final String debugPort = System.getProperty("debugPort");
         VMOption debugOption = null;
         if (debugPort != null && !debugPort.isEmpty()) {
-            debugOption = vmOption(String.format("-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=%s", debugPort));
+            debugOption =
+                    vmOption(String.format("-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=%s", debugPort));
         }
 
         final String vmOpt = System.getProperty("pax.vm.options");
@@ -90,60 +92,111 @@ public class ServletResolverTestSupport extends TestSupport {
         }
 
         final int httpPort = findFreePort();
-        return options(
-            composite(
+        return options(composite(
                 when(debugOption != null).useOptions(debugOption),
                 when(vmOption != null).useOptions(vmOption),
                 when(jacocoCommand != null).useOptions(jacocoCommand),
                 baseConfiguration(),
-                mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.http.servlet-api").version("3.0.0"),
-                mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.http.jetty12").version("1.0.26"),
+                mavenBundle()
+                        .groupId("org.apache.felix")
+                        .artifactId("org.apache.felix.http.servlet-api")
+                        .version("3.0.0"),
+                mavenBundle()
+                        .groupId("org.apache.felix")
+                        .artifactId("org.apache.felix.http.jetty12")
+                        .version("1.0.26"),
                 scr(),
                 eventadmin(),
-                mavenBundle().groupId("org.osgi").artifactId("org.osgi.util.converter").version("1.0.9"),
-                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.commons.johnzon").versionAsInProject(),
+                mavenBundle()
+                        .groupId("org.osgi")
+                        .artifactId("org.osgi.util.converter")
+                        .version("1.0.9"),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.commons.johnzon")
+                        .versionAsInProject(),
                 mavenBundle().groupId("commons-io").artifactId("commons-io").versionAsInProject(),
-                mavenBundle().groupId("commons-codec").artifactId("commons-codec").version("1.15"),
-                mavenBundle().groupId("org.apache.commons").artifactId("commons-lang3").versionAsInProject(),
-                mavenBundle().groupId("org.apache.commons").artifactId("commons-collections4").version("4.4"),
-                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.commons.mime").versionAsInProject(),
-                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.commons.osgi").version("2.4.2"),
-                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.api").versionAsInProject(),
-                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.scripting.spi").versionAsInProject(),
-                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.serviceusermapper").versionAsInProject(),
-                mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.healthcheck.api").versionAsInProject(),
-                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.auth.core").versionAsInProject(),
-                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.resourceresolver").versionAsInProject(),
-                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.settings").version("1.4.2"),
-                mavenBundle().groupId("org.apache.commons").artifactId("commons-fileupload2-core").version("2.0.0-M2"),
-                mavenBundle().groupId("org.apache.commons").artifactId("commons-fileupload2-jakarta-servlet5").version("2.0.0-M2"),
-                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.engine").versionAsInProject(),
-
+                mavenBundle()
+                        .groupId("commons-codec")
+                        .artifactId("commons-codec")
+                        .version("1.15"),
+                mavenBundle()
+                        .groupId("org.apache.commons")
+                        .artifactId("commons-lang3")
+                        .versionAsInProject(),
+                mavenBundle()
+                        .groupId("org.apache.commons")
+                        .artifactId("commons-collections4")
+                        .version("4.4"),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.commons.mime")
+                        .versionAsInProject(),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.commons.osgi")
+                        .version("2.4.2"),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.api")
+                        .versionAsInProject(),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.scripting.spi")
+                        .versionAsInProject(),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.serviceusermapper")
+                        .versionAsInProject(),
+                mavenBundle()
+                        .groupId("org.apache.felix")
+                        .artifactId("org.apache.felix.healthcheck.api")
+                        .versionAsInProject(),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.auth.core")
+                        .versionAsInProject(),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.resourceresolver")
+                        .versionAsInProject(),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.settings")
+                        .version("1.4.2"),
+                mavenBundle()
+                        .groupId("org.apache.commons")
+                        .artifactId("commons-fileupload2-core")
+                        .version("2.0.0-M2"),
+                mavenBundle()
+                        .groupId("org.apache.commons")
+                        .artifactId("commons-fileupload2-jakarta-servlet5")
+                        .version("2.0.0-M2"),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.engine")
+                        .versionAsInProject(),
                 factoryConfiguration("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended")
-                    .put("user.mapping", new String[]{"org.apache.sling.servlets.resolver:console=sling-readall", "org.apache.sling.servlets.resolver:scripts=sling-scripting"})
-                    .asOption(),
+                        .put("user.mapping", new String[] {
+                            "org.apache.sling.servlets.resolver:console=sling-readall",
+                            "org.apache.sling.servlets.resolver:scripts=sling-scripting"
+                        })
+                        .asOption(),
                 newConfiguration("org.apache.felix.http")
-                    .put("org.osgi.service.http.port", httpPort)
-                    .asOption(),
+                        .put("org.osgi.service.http.port", httpPort)
+                        .asOption(),
                 newConfiguration("org.apache.sling.jcr.resource.internal.JcrResourceResolverFactoryImpl")
-                    .put("resource.resolver.required.providernames", "")
-                    .asOption(),
+                        .put("resource.resolver.required.providernames", "")
+                        .asOption(),
                 buildBundleWithBnd(
-                    TestResourceProvider.class,
-                    TestServiceUserValidator.class,
-                    ScriptEngineManagerMock.class
-                ),
-
+                        TestResourceProvider.class, TestServiceUserValidator.class, ScriptEngineManagerMock.class),
                 testBundle(),
-
                 newConfiguration("org.apache.sling.jcr.base.internal.LoginAdminWhitelist")
-                    .put("whitelist.bundles.regexp", "^PAXEXAM.*$")
-                    .asOption(),
+                        .put("whitelist.bundles.regexp", "^PAXEXAM.*$")
+                        .asOption(),
                 newConfiguration("org.apache.sling.servlets.resolver.internal.bundle.BundledScriptTracker")
-                    .put("mandatoryBundles", "testBundle")
-                    .asOption()
-            )
-        );
+                        .put("mandatoryBundles", "testBundle")
+                        .asOption()));
     }
 
     protected Option testBundle() {
@@ -154,11 +207,13 @@ public class ServletResolverTestSupport extends TestSupport {
         return Builders.newResponseBuilder().buildJakartaResponseResult();
     }
 
-    protected SlingJakartaHttpServletResponse executeRequest(final String path, final int expectedStatus) throws Exception {
+    protected SlingJakartaHttpServletResponse executeRequest(final String path, final int expectedStatus)
+            throws Exception {
         return executeRequest("GET", path, expectedStatus);
     }
 
-    protected SlingJakartaHttpServletResponse executeRequest(final String method, final String path, final int expectedStatus) throws Exception {
+    protected SlingJakartaHttpServletResponse executeRequest(
+            final String method, final String path, final int expectedStatus) throws Exception {
         final ResourceResolver resourceResolver = resourceResolverFactory.getAdministrativeResourceResolver(null);
         assertNotNull("Expecting ResourceResolver", resourceResolver);
         final Resource resource = new AbstractResource() {
@@ -188,13 +243,12 @@ public class ServletResolverTestSupport extends TestSupport {
             }
         };
 
-        final SlingJakartaHttpServletRequest request = Builders
-            .newRequestBuilder(resource)
-            .withRequestMethod(method)
-            .buildJakartaRequest();
+        final SlingJakartaHttpServletRequest request =
+                Builders.newRequestBuilder(resource).withRequestMethod(method).buildJakartaRequest();
         final SlingJakartaHttpServletResponse response = createMockSlingHttpServletResponse();
 
-        final ServiceReference<SlingRequestProcessor> ref = bundleContext.getServiceReference(SlingRequestProcessor.class);
+        final ServiceReference<SlingRequestProcessor> ref =
+                bundleContext.getServiceReference(SlingRequestProcessor.class);
         assertNotNull("Expecting service:" + SlingRequestProcessor.class, ref);
 
         final SlingRequestProcessor processor = bundleContext.getService(ref);
@@ -205,8 +259,10 @@ public class ServletResolverTestSupport extends TestSupport {
         }
 
         if (expectedStatus > 0) {
-            assertEquals("Expected status " + expectedStatus + " for " + method
-                + " at " + path, expectedStatus, response.getStatus());
+            assertEquals(
+                    "Expected status " + expectedStatus + " for " + method + " at " + path,
+                    expectedStatus,
+                    response.getStatus());
         }
 
         return response;
@@ -224,7 +280,8 @@ public class ServletResolverTestSupport extends TestSupport {
         assertTestServlet(M_GET, path, servletName);
     }
 
-    protected void assertTestServlet(final String method, final String path, final String servletName) throws Exception {
+    protected void assertTestServlet(final String method, final String path, final String servletName)
+            throws Exception {
         final SlingJakartaHttpServletResponse response = executeRequest(method, path, TestServlet.IM_A_TEAPOT);
         final String output = ((SlingJakartaHttpServletResponseResult) response).getOutputAsString();
         final String expected = TestServlet.SERVED_BY_PREFIX + servletName;

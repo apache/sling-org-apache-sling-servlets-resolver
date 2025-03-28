@@ -30,42 +30,38 @@ import org.hamcrest.TypeSafeMatcher;
  * of the resource is considered.
  *
  */
-public class IsSameResourceList extends TypeSafeMatcher<List<Resource>>{
-	
-	List<Resource> baseLine;
-	
-	private IsSameResourceList(List<Resource> baseline) {
-		this.baseLine = baseline;
-	}
-	
-	@Override
-	public boolean matchesSafely (List<Resource> item) {
-		
-		if (item.size() != baseLine.size()) {
-			return false;
-		}
-		for (int i=0; i < item.size(); i++) {
-			if (!sameResourcePath(item.get(i),baseLine.get(i))) {
-				return false;
-			}
-		}
-		return true;
-	}
-	
-	@Override
-	public void describeTo(Description description) {
-		description.appendText("isSameListOfResources for " + baseLine);
-		
-	}
-	
-	
-	private boolean sameResourcePath (Resource a, Resource b) {
-		return a.getPath().equals(b.getPath());
-	}
-	
-	
-	public static Matcher<List<Resource>> isSameResourceList(List<Resource> baseline) {
-		return new IsSameResourceList(baseline);
-	}
+public class IsSameResourceList extends TypeSafeMatcher<List<Resource>> {
 
+    List<Resource> baseLine;
+
+    private IsSameResourceList(List<Resource> baseline) {
+        this.baseLine = baseline;
+    }
+
+    @Override
+    public boolean matchesSafely(List<Resource> item) {
+
+        if (item.size() != baseLine.size()) {
+            return false;
+        }
+        for (int i = 0; i < item.size(); i++) {
+            if (!sameResourcePath(item.get(i), baseLine.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public void describeTo(Description description) {
+        description.appendText("isSameListOfResources for " + baseLine);
+    }
+
+    private boolean sameResourcePath(Resource a, Resource b) {
+        return a.getPath().equals(b.getPath());
+    }
+
+    public static Matcher<List<Resource>> isSameResourceList(List<Resource> baseline) {
+        return new IsSameResourceList(baseline);
+    }
 }

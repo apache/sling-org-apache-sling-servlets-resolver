@@ -18,58 +18,58 @@
  */
 package org.apache.sling.servlets.resolver.internal.helper;
 
-import static org.junit.Assert.assertNotEquals;
-
 import junit.framework.TestCase;
+
+import static org.junit.Assert.assertNotEquals;
 
 public class WeightedResourceTest extends TestCase {
 
     public void testEquality() {
         WeightedResource lr1 = new WeightedResource(0, null, 0, WeightedResource.WEIGHT_NONE);
         WeightedResource lr2 = new WeightedResource(0, null, 0, WeightedResource.WEIGHT_NONE);
-        
+
         // expect same objects to be equal
         assertEquals(lr1, lr1);
-        
+
         // expect different instances to not be equal
         assertNotEquals(lr1, lr2);
         assertNotEquals(lr2, lr1);
         assertNotNull(lr1);
         assertNotNull(lr2);
     }
-    
+
     public void testCompareToSelectors() {
         WeightedResource lr1 = new WeightedResource(0, null, 1, WeightedResource.WEIGHT_NONE);
         WeightedResource lr2 = new WeightedResource(1, null, 0, WeightedResource.WEIGHT_NONE);
-        
+
         // expect the same objects to compare equal
         assertEquals(0, lr1.compareTo(lr1));
         assertEquals(0, lr2.compareTo(lr2));
-        
+
         assertTrue(lr1.compareTo(lr2) < 0);
         assertTrue(lr2.compareTo(lr1) > 0);
     }
-    
+
     public void testCompareToPrefix() {
         WeightedResource lr1 = new WeightedResource(0, null, 2, WeightedResource.WEIGHT_PREFIX);
         WeightedResource lr2 = new WeightedResource(1, null, 2, WeightedResource.WEIGHT_NONE);
-        
+
         // expect the same objects to compare equal
         assertEquals(0, lr1.compareTo(lr1));
         assertEquals(0, lr2.compareTo(lr2));
-        
+
         assertTrue(lr1.compareTo(lr2) < 0);
         assertTrue(lr2.compareTo(lr1) > 0);
     }
-    
+
     public void testCompareToExtension() {
         WeightedResource lr1 = new WeightedResource(0, null, 2, WeightedResource.WEIGHT_EXTENSION);
         WeightedResource lr2 = new WeightedResource(1, null, 2, WeightedResource.WEIGHT_NONE);
-        
+
         // expect the same objects to compare equal
         assertEquals(0, lr1.compareTo(lr1));
         assertEquals(0, lr2.compareTo(lr2));
-        
+
         assertTrue(lr1.compareTo(lr2) < 0);
         assertTrue(lr2.compareTo(lr1) > 0);
     }
@@ -85,5 +85,4 @@ public class WeightedResourceTest extends TestCase {
         assertTrue(lr1.compareTo(lr2) < 0);
         assertTrue(lr2.compareTo(lr1) > 0);
     }
- 
 }

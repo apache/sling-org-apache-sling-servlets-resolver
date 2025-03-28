@@ -18,8 +18,9 @@
  */
 package org.apache.sling.servlets.resolver.internal;
 
-import java.util.Iterator;
 import javax.servlet.http.HttpServletRequest;
+
+import java.util.Iterator;
 
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceDecorator;
@@ -62,8 +63,7 @@ public class ScriptResourceDecorator implements ResourceDecorator {
             }
 
             return script;
-        }
-        else {
+        } else {
             return resource;
         }
     }
@@ -74,36 +74,42 @@ public class ScriptResourceDecorator implements ResourceDecorator {
     }
 
     private Resource getResource(Resource resource, String path) {
-        return provider.getResource(new ResolveContext<Void>() {
-            @Override
-            public ResourceResolver getResourceResolver() {
-                return new ScriptResourceResolver(resource.getResourceResolver(), () -> provider);
-            }
-
-            @Override
-            public Void getProviderState() {
-                return null;
-            }
-
-            @Override
-            public ResolveContext<?> getParentResolveContext() {
-                return null;
-            }
-
-            @Override
-            public ResourceProvider<?> getParentResourceProvider() {
-                return new ResourceProvider<Object>() {
+        return provider.getResource(
+                new ResolveContext<Void>() {
                     @Override
-                    public Resource getResource(ResolveContext<Object> ctx, String path, ResourceContext resourceContext, Resource parent) {
-                        return resource;
+                    public ResourceResolver getResourceResolver() {
+                        return new ScriptResourceResolver(resource.getResourceResolver(), () -> provider);
                     }
 
                     @Override
-                    public Iterator<Resource> listChildren(ResolveContext<Object> ctx, Resource parent) {
+                    public Void getProviderState() {
                         return null;
                     }
-                };
-            }
-        }, path);
+
+                    @Override
+                    public ResolveContext<?> getParentResolveContext() {
+                        return null;
+                    }
+
+                    @Override
+                    public ResourceProvider<?> getParentResourceProvider() {
+                        return new ResourceProvider<Object>() {
+                            @Override
+                            public Resource getResource(
+                                    ResolveContext<Object> ctx,
+                                    String path,
+                                    ResourceContext resourceContext,
+                                    Resource parent) {
+                                return resource;
+                            }
+
+                            @Override
+                            public Iterator<Resource> listChildren(ResolveContext<Object> ctx, Resource parent) {
+                                return null;
+                            }
+                        };
+                    }
+                },
+                path);
     }
 }

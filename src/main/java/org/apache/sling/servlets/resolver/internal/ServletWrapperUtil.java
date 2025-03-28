@@ -18,11 +18,10 @@
  */
 package org.apache.sling.servlets.resolver.internal;
 
+import jakarta.servlet.Servlet;
 import org.apache.sling.api.servlets.JakartaOptingServlet;
 import org.apache.sling.api.wrappers.JakartaToJavaxServletWrapper;
 import org.apache.sling.api.wrappers.JavaxToJakartaServletWrapper;
-
-import jakarta.servlet.Servlet;
 
 public class ServletWrapperUtil {
 
@@ -51,14 +50,17 @@ public class ServletWrapperUtil {
 
     public static class ScriptServletWrapper extends JakartaToJavaxServletWrapper {
         public final Servlet servlet;
+
         public ScriptServletWrapper(final Servlet servlet) {
             super(servlet);
             this.servlet = servlet;
         }
     }
 
-    public static class ScriptOptingServletWrapper extends JakartaToJavaxServletWrapper.JakartaToJavaxOptingServletWrapper {
+    public static class ScriptOptingServletWrapper
+            extends JakartaToJavaxServletWrapper.JakartaToJavaxOptingServletWrapper {
         public final Servlet servlet;
+
         public ScriptOptingServletWrapper(final JakartaOptingServlet servlet) {
             super(servlet);
             this.servlet = servlet;

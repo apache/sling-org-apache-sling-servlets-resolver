@@ -18,12 +18,6 @@
  */
 package org.apache.sling.servlets.resolver.internal.defaults;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
-import jakarta.json.Json;
-import jakarta.json.stream.JsonGenerator;
 import javax.servlet.GenericServlet;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.Servlet;
@@ -33,10 +27,16 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
+import jakarta.json.Json;
+import jakarta.json.stream.JsonGenerator;
 import org.apache.sling.api.SlingHttpServletRequest;
-import org.apache.sling.api.request.header.MediaRangeList;
 import org.apache.sling.api.request.RequestProgressTracker;
 import org.apache.sling.api.request.ResponseUtil;
+import org.apache.sling.api.request.header.MediaRangeList;
 import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Component;
 import org.slf4j.Logger;
@@ -49,12 +49,13 @@ import org.slf4j.LoggerFactory;
  * global search path
  */
 @SuppressWarnings("serial")
-@Component(service = Servlet.class,
-    property = {
+@Component(
+        service = Servlet.class,
+        property = {
             Constants.SERVICE_VENDOR + "=The Apache Software Foundation",
             "sling.servlet.paths=sling/servlet/errorhandler/default",
             "sling.servlet.prefix=-1"
-    })
+        })
 public class DefaultErrorHandlerServlet extends GenericServlet {
     private static final String JSON_CONTENT_TYPE = "application/json";
     private static final String HTML_CONTENT_TYPE = "text/html";
@@ -63,8 +64,7 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
     private final transient Logger log = LoggerFactory.getLogger(DefaultErrorHandlerServlet.class);
 
     @Override
-    public void service(ServletRequest req, ServletResponse res)
-            throws IOException {
+    public void service(ServletRequest req, ServletResponse res) throws IOException {
 
         // get settings
         Integer scObject = (Integer) req.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
@@ -73,19 +73,18 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
         String servletName = (String) req.getAttribute(RequestDispatcher.ERROR_SERVLET_NAME);
 
         // ensure values
-        int statusCode = (scObject != null)
-                ? scObject.intValue()
-                : HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+        int statusCode = (scObject != null) ? scObject.intValue() : HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
         if (statusMessage == null) {
             statusMessage = statusToString(statusCode);
         }
 
-        //properly consider the 'Accept' header conditions to decide whether to send json or html back
-        if (req instanceof HttpServletRequest &&
-                JSON_CONTENT_TYPE.equals(new MediaRangeList((HttpServletRequest)req).prefer(HTML_CONTENT_TYPE, JSON_CONTENT_TYPE))) {
+        // properly consider the 'Accept' header conditions to decide whether to send json or html back
+        if (req instanceof HttpServletRequest
+                && JSON_CONTENT_TYPE.equals(
+                        new MediaRangeList((HttpServletRequest) req).prefer(HTML_CONTENT_TYPE, JSON_CONTENT_TYPE))) {
             renderJson(req, res, statusMessage, requestUri, servletName, statusCode);
         } else {
-            //default to HTML rendering
+            // default to HTML rendering
             renderHtml(req, res, statusMessage, requestUri, servletName, statusCode);
         }
     }
@@ -93,15 +92,19 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
     /**
      * Render the error as html
      */
-    protected void renderHtml(ServletRequest req, ServletResponse res, String statusMessage, String requestUri,
-            String servletName, int statusCode) throws IOException {
+    protected void renderHtml(
+            ServletRequest req,
+            ServletResponse res,
+            String statusMessage,
+            String requestUri,
+            String servletName,
+            int statusCode)
+            throws IOException {
         // start the response message
-        final PrintWriter pw = sendIntro((HttpServletResponse) res, statusCode,
-            statusMessage, requestUri, servletName);
+        final PrintWriter pw = sendIntro((HttpServletResponse) res, statusCode, statusMessage, requestUri, servletName);
 
         // write the exception message
-        final PrintWriter escapingWriter = new PrintWriter(
-            ResponseUtil.getXmlEscapingWriter(pw));
+        final PrintWriter escapingWriter = new PrintWriter(ResponseUtil.getXmlEscapingWriter(pw));
 
         // dump the stack trace
         if (req.getAttribute(RequestDispatcher.ERROR_EXCEPTION) instanceof Throwable) {
@@ -132,9 +135,15 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
     /**
      * Render the error as json
      */
-    protected void renderJson(ServletRequest req, ServletResponse res, String statusMessage, String requestUri,
-            String servletName, int statusCode) throws IOException {
-        HttpServletResponse response = (HttpServletResponse)res;
+    protected void renderJson(
+            ServletRequest req,
+            ServletResponse res,
+            String statusMessage,
+            String requestUri,
+            String servletName,
+            int statusCode)
+            throws IOException {
+        HttpServletResponse response = (HttpServletResponse) res;
         response.setStatus(statusCode);
         response.setContentType(JSON_CONTENT_TYPE);
         response.setCharacterEncoding("UTF-8");
@@ -144,7 +153,7 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
             jsonGenerator.writeStartObject();
             jsonGenerator.write("status", statusCode);
 
-            String msg = (String)req.getAttribute(RequestDispatcher.ERROR_MESSAGE);
+            String msg = (String) req.getAttribute(RequestDispatcher.ERROR_MESSAGE);
             if (msg != null && !msg.isEmpty()) {
                 jsonGenerator.write("message", statusMessage);
             }
@@ -162,9 +171,9 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
             Object exceptionTypeObj = req.getAttribute(RequestDispatcher.ERROR_EXCEPTION_TYPE);
             String exceptionType = null;
             if (exceptionTypeObj instanceof String) {
-                exceptionType = (String)exceptionTypeObj;
+                exceptionType = (String) exceptionTypeObj;
             } else if (exceptionTypeObj instanceof Class) {
-                exceptionType = ((Class<?>)exceptionTypeObj).getName();
+                exceptionType = ((Class<?>) exceptionTypeObj).getName();
             }
             if (exceptionType != null && !exceptionType.isEmpty()) {
                 jsonGenerator.write("exceptionType", exceptionType);
@@ -183,7 +192,7 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
             // dump the request progress tracker
             if (req instanceof SlingHttpServletRequest) {
                 // dump the request progress tracker
-                final RequestProgressTracker tracker = ((SlingHttpServletRequest)req).getRequestProgressTracker();
+                final RequestProgressTracker tracker = ((SlingHttpServletRequest) req).getRequestProgressTracker();
                 StringWriter strWriter = new StringWriter();
                 try (PrintWriter progressWriter = new PrintWriter(strWriter)) {
                     tracker.dump(progressWriter);
@@ -227,12 +236,13 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
      * Sets the response status and content type header and starts the the
      * response HTML text with the header, and an introductory phrase.
      */
-    private PrintWriter sendIntro(final HttpServletResponse response,
+    private PrintWriter sendIntro(
+            final HttpServletResponse response,
             final int statusCode,
             final String statusMessageIn,
             final String requestUri,
             final String servletName)
-    throws IOException {
+            throws IOException {
 
         final String statusMessage = ResponseUtil.escapeXml(statusMessageIn);
 
@@ -263,7 +273,6 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
             // the error inline and warn about that
             log.warn("Response already committed, unable to change status, output might not be well formed");
             pw = response.getWriter();
-
         }
 
         pw.print("<h1>");

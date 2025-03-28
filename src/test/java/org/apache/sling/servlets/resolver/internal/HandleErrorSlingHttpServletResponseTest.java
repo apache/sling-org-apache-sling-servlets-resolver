@@ -18,15 +18,16 @@
  */
 package org.apache.sling.servlets.resolver.internal;
 
-import static org.junit.Assert.assertFalse;
-
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import static org.junit.Assert.assertFalse;
+
 public class HandleErrorSlingHttpServletResponseTest {
 
-    @Test public void testIsClosed() {
+    @Test
+    public void testIsClosed() {
         final SlingHttpServletResponse orig = Mockito.mock(SlingHttpServletResponse.class);
 
         final HandleErrorSlingHttpServletResponse resp = new HandleErrorSlingHttpServletResponse(orig);
