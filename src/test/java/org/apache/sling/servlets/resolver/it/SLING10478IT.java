@@ -32,7 +32,10 @@ import jakarta.json.stream.JsonGenerator;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
+import org.apache.sling.api.SlingJakartaHttpServletResponse;
+import org.apache.sling.api.request.builder.Builders;
+import org.apache.sling.api.request.builder.SlingJakartaHttpServletResponseResult;
+import org.apache.sling.api.wrappers.SlingJakartaHttpServletResponseWrapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -84,7 +87,7 @@ public class SLING10478IT extends ServletResolverTestSupport {
                 resp.setContentType("text/plain");
 
                 resp.getWriter().print("hello error");
-                
+
                 // response writer remains unclosed
             }
 
@@ -94,11 +97,6 @@ public class SLING10478IT extends ServletResolverTestSupport {
         .with(P_METHODS, "default")
         .with(P_PREFIX, -1)
         .register(bundleContext);
-    }
-
-    @Override
-    protected MockSlingHttpServletResponse createMockSlingHttpServletResponse() {
-        return new HandleErrorMockSlingHttpServletResponse();
     }
 
     /**
@@ -117,9 +115,15 @@ public class SLING10478IT extends ServletResolverTestSupport {
         checkErrorHandlerServlet("/not_real_path.noclose");
     }
 
+    protected SlingJakartaHttpServletResponse createMockSlingHttpServletResponse() {
+        final SlingJakartaHttpServletResponse response = Builders.newResponseBuilder().buildJakartaResponseResult();
+        return new HandleErrorMockSlingHttpServletResponse(response);
+    }
+
     void checkErrorHandlerServlet(String path) throws Exception, InvocationTargetException {
         try {
-            final String output = executeRequest(M_GET, path, HttpServletResponse.SC_NOT_FOUND).getOutputAsString();
+            final SlingJakartaHttpServletResponse response = executeRequest(M_GET, path, HttpServletResponse.SC_NOT_FOUND);
+            final String output = ((SlingJakartaHttpServletResponseResult)((HandleErrorMockSlingHttpServletResponse)response).getResponse()).getOutputAsString();
             assertNotNull(output);
             assertTrue(output, output.contains("hello"));
         } catch (InvocationTargetException t) {
@@ -132,15 +136,19 @@ public class SLING10478IT extends ServletResolverTestSupport {
         }
     }
 
-
-    /**
-     * Subclass to simulate what the SlingHttpServletResponseImpl writer does 
+   /**
+     * Subclass to simulate what the SlingHttpServletResponseImpl writer does
      */
-    private static final class HandleErrorMockSlingHttpServletResponse extends MockSlingHttpServletResponse {
+    private static final class HandleErrorMockSlingHttpServletResponse extends SlingJakartaHttpServletResponseWrapper {
+
         private HandleErrorResponseWriter writer = null;
 
+        public HandleErrorMockSlingHttpServletResponse(final SlingJakartaHttpServletResponse r) {
+            super(r);
+        }
+
         @Override
-        public PrintWriter getWriter() {
+        public PrintWriter getWriter() throws IOException{
             if (writer == null) {
                 writer = new HandleErrorResponseWriter(super.getWriter());
             }
@@ -148,7 +156,7 @@ public class SLING10478IT extends ServletResolverTestSupport {
         }
 
         @Override
-        public void flushBuffer() {
+        public void flushBuffer() throws IOException {
             if (!writer.isOpen()) {
                 throw new IllegalStateException("Writer Already Closed");
             }
@@ -157,7 +165,7 @@ public class SLING10478IT extends ServletResolverTestSupport {
     }
 
     /**
-     * Subclass to simulate what the SlingHttpServletResponseImpl writer does 
+     * Subclass to simulate what the SlingHttpServletResponseImpl writer does
      */
     private static final class HandleErrorResponseWriter extends PrintWriter {
 
@@ -176,7 +184,5 @@ public class SLING10478IT extends ServletResolverTestSupport {
         public boolean isOpen() {
             return open;
         }
-
     }
-
 }

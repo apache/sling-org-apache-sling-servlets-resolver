@@ -21,8 +21,8 @@ package org.apache.sling.servlets.resolver.internal.helper;
 import java.util.Collection;
 import java.util.Collections;
 
+import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.resource.Resource;
-import org.apache.sling.commons.testing.sling.MockSlingHttpServletRequest;
 
 /** Various tests that explain and demonstrate how scripts are
  *  selected. See the assertScript methods for how to interpret
@@ -66,7 +66,7 @@ public class ScriptSelectionTest extends HelperTestBase {
         }
 
         // Create mock request and get scripts from ResourceCollector
-        final MockSlingHttpServletRequest req = makeRequest(method, selectors, extension);
+        final SlingHttpServletRequest req = makeRequest(method, selectors, extension);
         final ResourceCollector u = ResourceCollector.create(req, null, new String[] {"html"}, true);
         final Collection<Resource> s = u.getServlets(req.getResourceResolver(), Collections.emptyList());
 
