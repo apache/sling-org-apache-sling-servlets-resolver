@@ -52,9 +52,6 @@ import java.util.stream.Stream;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.felix.hc.api.FormattingResultLog;
-import org.apache.felix.hc.api.HealthCheck;
-import org.apache.felix.hc.api.Result;
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
@@ -88,9 +85,6 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.metatype.annotations.AttributeDefinition;
-import org.osgi.service.metatype.annotations.Designate;
-import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 import org.osgi.util.converter.Converter;
 import org.osgi.util.converter.Converters;
 import org.osgi.util.tracker.BundleTracker;
@@ -98,16 +92,17 @@ import org.osgi.util.tracker.BundleTrackerCustomizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component(service = {HealthCheck.class})
+@Component(immediate = true, service = BundledScriptTracker.class)
+// component needs to be immediate as this is registered as a internal service
+// which is picked up by the optional BundledScriptTrackerHC
 @Capability(
         namespace = ExtenderNamespace.EXTENDER_NAMESPACE,
         name = BundledScriptTracker.NS_SLING_SCRIPTING_EXTENDER,
         version = "1.0.0")
-@Designate(ocd = BundledScriptTracker.BundledScriptTrackerConfig.class)
-public class BundledScriptTracker implements BundleTrackerCustomizer<List<ServiceRegistration<Servlet>>>, HealthCheck {
+public class BundledScriptTracker implements BundleTrackerCustomizer<List<ServiceRegistration<Servlet>>> {
     static final String NS_SLING_SCRIPTING_EXTENDER = "sling.scripting";
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(BundledScriptTracker.class);
+    static final Logger LOGGER = LoggerFactory.getLogger(BundledScriptTracker.class);
     private static final String REGISTERING_BUNDLE = "BundledScriptTracker.registering_bundle";
     public static final String NS_SLING_SERVLET = "sling.servlet";
     public static final String AT_VERSION = "version";
@@ -128,28 +123,14 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     private volatile List<String> searchPaths;
 
     private Set<String> registeredBundles = new HashSet<>();
-    private Set<String> expectedBundles = new HashSet<>();
-    private boolean ignoreNonExistingBundles = false;
-
-    private ServiceRegistration<HealthCheck> healthCheckRegistration = null;
 
     @Activate
-    protected void activate(BundleContext context, BundledScriptTrackerConfig config) {
+    protected void activate(BundleContext context) {
         bundleContext.set(context);
         dispatchers.set(new HashMap<>());
         BundleTracker<List<ServiceRegistration<Servlet>>> bt = new BundleTracker<>(context, Bundle.ACTIVE, this);
         tracker.set(bt);
         bt.open();
-        if (config.mandatoryBundles() != null) {
-            expectedBundles.addAll(Arrays.asList(config.mandatoryBundles()));
-            ignoreNonExistingBundles = config.ignoreNonExistingBundles();
-            healthCheckRegistration = registerHealthCheck(config.tags());
-            LOGGER.info(
-                    "Healthcheck configured with mandatory bundles {} for tags {}, ignoreNonExistingBundles = {}",
-                    Arrays.toString(config.mandatoryBundles()),
-                    Arrays.toString(config.tags()),
-                    ignoreNonExistingBundles);
-        }
     }
 
     @Deactivate
@@ -158,20 +139,8 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         if (bt != null) {
             bt.close();
         }
-        if (healthCheckRegistration != null) {
-            healthCheckRegistration.unregister();
-            healthCheckRegistration = null;
-        }
         bundleContext.set(null);
         dispatchers.set(null);
-    }
-
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    ServiceRegistration<HealthCheck> registerHealthCheck(String[] tags) {
-        Dictionary props = new Hashtable();
-        props.put(HealthCheck.NAME, "BundledScriptTracker Healthcheck");
-        props.put(HealthCheck.TAGS, tags);
-        return bundleContext.get().registerService(HealthCheck.class, this, props);
     }
 
     @Reference(policy = ReferencePolicy.DYNAMIC, updated = "bindSearchPathProvider")
@@ -635,42 +604,8 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         registeredBundles.remove(bundle.getSymbolicName());
     }
 
-    @Override
-    public Result execute() {
-
-        if (expectedBundles == null) {
-            return new Result(Result.Status.OK, "Health check is not configured.");
-        }
-
-        Set<String> mandatoryAvailableBundles;
-        if (ignoreNonExistingBundles) {
-            // Filter the provided symbolic names if a bundle with that name actually exists
-            mandatoryAvailableBundles = filterForExistingBundles(bundleContext.get(), expectedBundles);
-        } else {
-            mandatoryAvailableBundles = expectedBundles;
-        }
-
-        if (registeredBundles.containsAll(mandatoryAvailableBundles)) {
-            return new Result(Result.Status.OK, "All expected bundles have registered their scripts.");
-        } else {
-            FormattingResultLog log = new FormattingResultLog();
-            log.warn("Expected bundles : {}, registered bundles: {}", mandatoryAvailableBundles, registeredBundles);
-            return new Result(log);
-        }
-    }
-
-    /**
-     * Return the symbolic names of bundles which are provided via {{code expectedBundles}} and present
-     * @param bundleContext a bundleContext
-     * @param expectedBundles the symbolic names of bundles to check for
-     * @return the symbolic names of present bundles
-     */
-    protected static Set<String> filterForExistingBundles(BundleContext bundleContext, Set<String> expectedBundles) {
-        List<Bundle> allBundles = Arrays.asList(bundleContext.getBundles());
-        return allBundles.stream()
-                .map(Bundle::getSymbolicName)
-                .filter(s -> expectedBundles.contains(s))
-                .collect(Collectors.toSet());
+    public Set<String> getRegisteredBundles() {
+        return Collections.unmodifiableSet(registeredBundles);
     }
 
     private class DispatcherServlet extends GenericServlet {
@@ -895,27 +830,5 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         newSet.addAll(extenders);
         newSet.addAll(originalCapabilities);
         return newSet;
-    }
-
-    @ObjectClassDefinition
-    public @interface BundledScriptTrackerConfig {
-
-        @AttributeDefinition(
-                name = "Mandatory Bundles",
-                description =
-                        "A list of symbolic bundle names for which the "
-                                + "script registration process must have been successfully completed for the health check to report ok.")
-        String[] mandatoryBundles();
-
-        @AttributeDefinition(
-                name = "Check for bundle presence",
-                description =
-                        "If disabled, bundles listed as mandatory are ignored if no bundle with that symbolic name is present")
-        boolean ignoreNonExistingBundles() default false;
-
-        @AttributeDefinition(
-                name = "healthcheck tags",
-                description = "the tags under which the healthcheck should be registered")
-        String[] tags() default "systemready";
     }
 }
