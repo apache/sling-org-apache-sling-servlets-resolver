@@ -21,7 +21,6 @@ package org.apache.sling.servlets.resolver.it;
 import java.util.Iterator;
 
 import org.apache.sling.api.resource.Resource;
-import org.apache.sling.spi.resource.provider.ProviderContext;
 import org.apache.sling.spi.resource.provider.ResolveContext;
 import org.apache.sling.spi.resource.provider.ResourceContext;
 import org.apache.sling.spi.resource.provider.ResourceProvider;
@@ -30,18 +29,16 @@ import org.jetbrains.annotations.Nullable;
 import org.osgi.service.component.annotations.Component;
 
 @Component(
-    service = ResourceProvider.class,
-    property = {
-        "provider.root=/"
-    }
-)
+        service = ResourceProvider.class,
+        property = {"provider.root=/"})
 public class TestResourceProvider extends ResourceProvider<Void> {
 
-    public TestResourceProvider() {
-    }
-
     @Override
-    public @Nullable Resource getResource(@NotNull ResolveContext<Void> ctx, @NotNull String path, @NotNull ResourceContext resourceContext, @Nullable Resource parent) {
+    public @Nullable Resource getResource(
+            @NotNull ResolveContext<Void> ctx,
+            @NotNull String path,
+            @NotNull ResourceContext resourceContext,
+            @Nullable Resource parent) {
         return null;
     }
 
@@ -49,20 +46,4 @@ public class TestResourceProvider extends ResourceProvider<Void> {
     public @Nullable Iterator<Resource> listChildren(@NotNull ResolveContext<Void> ctx, @NotNull Resource parent) {
         return null;
     }
-
-    @Override
-    public void start(@NotNull ProviderContext ctx) {
-        super.start(ctx);
-    }
-
-    @Override
-    public void stop() {
-        super.stop();
-    }
-
-    @Override
-    public void update(long changeSet) {
-        super.update(changeSet);
-    }
-
 }

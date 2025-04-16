@@ -18,15 +18,15 @@
  */
 package org.apache.sling.servlets.resolver.internal;
 
-import javax.servlet.Servlet;
-
 import java.lang.reflect.Field;
 import java.util.Map;
 
+import jakarta.servlet.Servlet;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.wrappers.ResourceResolverWrapper;
 import org.apache.sling.servlets.resolver.internal.resolution.ResolutionCache;
+import org.apache.sling.servlets.resolver.internal.resource.MockJakartaServletResource;
 import org.apache.sling.servlets.resolver.internal.resource.MockServletResource;
 import org.apache.sling.testing.resourceresolver.DefaultMockResourceFactory;
 import org.apache.sling.testing.resourceresolver.MockResourceResolverFactory;
@@ -36,7 +36,7 @@ import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
-public abstract class SlingServletResolverTestBase {
+public abstract class SlingServletResolverJakaraTestBase {
 
     /**
      * Custom factory that will create a MockServletResource for
@@ -48,7 +48,7 @@ public abstract class SlingServletResolverTestBase {
         public Resource newMockResource(String path, Map<String, Object> properties, ResourceResolver resolver) {
             if (path.endsWith(".servlet")) {
                 Servlet servlet = (Servlet) properties.get(MockServletResource.PROP_SERVLET);
-                return new MockServletResource(resolver, servlet, path);
+                return new MockJakartaServletResource(resolver, servlet, path);
             }
             return super.newMockResource(path, properties, resolver);
         }

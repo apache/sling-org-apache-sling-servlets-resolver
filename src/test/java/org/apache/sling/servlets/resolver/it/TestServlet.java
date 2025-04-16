@@ -18,14 +18,14 @@
  */
 package org.apache.sling.servlets.resolver.it;
 
-import java.io.IOException;
-import java.util.Dictionary;
-import java.util.Hashtable;
-
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+import java.util.Dictionary;
+import java.util.Hashtable;
 
 import org.osgi.framework.BundleContext;
 

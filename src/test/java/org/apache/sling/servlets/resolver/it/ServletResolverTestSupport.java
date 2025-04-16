@@ -18,34 +18,33 @@
  */
 package org.apache.sling.servlets.resolver.it;
 
-import java.lang.reflect.Method;
-
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
+import org.apache.sling.api.SlingJakartaHttpServletRequest;
+import org.apache.sling.api.SlingJakartaHttpServletResponse;
+import org.apache.sling.api.request.builder.Builders;
+import org.apache.sling.api.request.builder.SlingJakartaHttpServletResponseResult;
+import org.apache.sling.api.resource.AbstractResource;
+import org.apache.sling.api.resource.Resource;
+import org.apache.sling.api.resource.ResourceMetadata;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.engine.SlingRequestProcessor;
-import org.apache.sling.servlethelpers.MockSlingHttpServletRequest;
-import org.apache.sling.servlethelpers.MockSlingHttpServletResponse;
 import org.apache.sling.testing.paxexam.TestSupport;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.options.extra.VMOption;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
-import static org.apache.sling.testing.paxexam.SlingOptions.sling;
-import static org.apache.sling.testing.paxexam.SlingOptions.slingScripting;
-import static org.apache.sling.testing.paxexam.SlingOptions.slingXss;
-import static org.apache.sling.testing.paxexam.SlingOptions.versionResolver;
-import static org.apache.sling.testing.paxexam.SlingVersionResolver.SLING_GROUP_ID;
+import static org.apache.sling.testing.paxexam.SlingOptions.eventadmin;
+import static org.apache.sling.testing.paxexam.SlingOptions.scr;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.ops4j.pax.exam.CoreOptions.composite;
-import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.CoreOptions.options;
 import static org.ops4j.pax.exam.CoreOptions.vmOption;
@@ -56,14 +55,10 @@ import static org.ops4j.pax.exam.cm.ConfigurationAdminOptions.newConfiguration;
 public class ServletResolverTestSupport extends TestSupport {
 
     @Inject
-    private ResourceResolverFactory resourceResolverFactory;
+    protected ResourceResolverFactory resourceResolverFactory;
 
     @Inject
     protected BundleContext bundleContext;
-
-    @SuppressWarnings("unused")
-    @Inject
-    private SlingRequestProcessor slingRequestProcessor;
 
     public static final String P_PATHS = "sling.servlet.paths";
     public static final String P_RESOURCE_TYPES = "sling.servlet.resourceTypes";
@@ -80,7 +75,8 @@ public class ServletResolverTestSupport extends TestSupport {
         final String debugPort = System.getProperty("debugPort");
         VMOption debugOption = null;
         if (debugPort != null && !debugPort.isEmpty()) {
-            debugOption = vmOption(String.format("-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=%s", debugPort));
+            debugOption =
+                    vmOption(String.format("-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=%s", debugPort));
         }
 
         final String vmOpt = System.getProperty("pax.vm.options");
@@ -96,107 +92,180 @@ public class ServletResolverTestSupport extends TestSupport {
         }
 
         final int httpPort = findFreePort();
-        versionResolver.setVersionFromProject(SLING_GROUP_ID, "org.apache.sling.api");
-        versionResolver.setVersionFromProject(SLING_GROUP_ID, "org.apache.sling.resourceresolver");
-        versionResolver.setVersionFromProject(SLING_GROUP_ID, "org.apache.sling.scripting.core");
-        versionResolver.setVersionFromProject(SLING_GROUP_ID, "org.apache.sling.commons.johnzon");
-        versionResolver.setVersionFromProject(SLING_GROUP_ID, "org.apache.sling.engine");
-        versionResolver.setVersion(SLING_GROUP_ID, "org.apache.sling.auth.core", "1.6.0");
-        versionResolver.setVersion("commons-fileupload", "commons-fileupload", "1.5");
-        return options(
-            composite(
+        return options(composite(
                 when(debugOption != null).useOptions(debugOption),
                 when(vmOption != null).useOptions(vmOption),
                 when(jacocoCommand != null).useOptions(jacocoCommand),
                 baseConfiguration(),
-                sling(),
-                slingScripting(),
-                slingXss(),
+                mavenBundle()
+                        .groupId("org.apache.felix")
+                        .artifactId("org.apache.felix.http.servlet-api")
+                        .version("3.0.0"),
+                mavenBundle()
+                        .groupId("org.apache.felix")
+                        .artifactId("org.apache.felix.http.jetty12")
+                        .version("1.0.26"),
+                scr(),
+                eventadmin(),
+                mavenBundle()
+                        .groupId("org.osgi")
+                        .artifactId("org.osgi.util.converter")
+                        .version("1.0.9"),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.commons.johnzon")
+                        .versionAsInProject(),
+                mavenBundle().groupId("commons-io").artifactId("commons-io").versionAsInProject(),
+                mavenBundle()
+                        .groupId("commons-codec")
+                        .artifactId("commons-codec")
+                        .version("1.15"),
+                mavenBundle()
+                        .groupId("org.apache.commons")
+                        .artifactId("commons-lang3")
+                        .versionAsInProject(),
+                mavenBundle()
+                        .groupId("org.apache.commons")
+                        .artifactId("commons-collections4")
+                        .version("4.4"),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.commons.mime")
+                        .versionAsInProject(),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.commons.osgi")
+                        .version("2.4.2"),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.api")
+                        .versionAsInProject(),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.scripting.spi")
+                        .versionAsInProject(),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.serviceusermapper")
+                        .versionAsInProject(),
+                mavenBundle()
+                        .groupId("org.apache.felix")
+                        .artifactId("org.apache.felix.healthcheck.api")
+                        .versionAsInProject(),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.auth.core")
+                        .versionAsInProject(),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.resourceresolver")
+                        .versionAsInProject(),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.settings")
+                        .version("1.4.2"),
+                mavenBundle()
+                        .groupId("org.apache.commons")
+                        .artifactId("commons-fileupload2-core")
+                        .version("2.0.0-M2"),
+                mavenBundle()
+                        .groupId("org.apache.commons")
+                        .artifactId("commons-fileupload2-jakarta-servlet5")
+                        .version("2.0.0-M2"),
+                mavenBundle()
+                        .groupId("org.apache.sling")
+                        .artifactId("org.apache.sling.engine")
+                        .versionAsInProject(),
                 factoryConfiguration("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended")
-                    .put("user.mapping", new String[]{"org.apache.sling.servlets.resolver:console=sling-readall", "org.apache.sling.servlets.resolver:scripts=sling-scripting"})
-                    .asOption(),
-
-                mavenBundle().groupId("org.osgi").artifactId("org.osgi.util.converter").version("1.0.9"), // new Sling API dependency
-                testBundle(),
-                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.scripting.spi").versionAsInProject(),
-                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.servlet-helpers").versionAsInProject(),
-                mavenBundle().groupId("org.glassfish").artifactId("jakarta.json").versionAsInProject(),
-                //
-                mavenBundle().groupId("commons-codec").artifactId("commons-codec").version("1.15"),
-                //
-                mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.healthcheck.api").versionAsInProject(),
-                //
-                junitBundles(),
+                        .put("user.mapping", new String[] {
+                            "org.apache.sling.servlets.resolver:console=sling-readall",
+                            "org.apache.sling.servlets.resolver:scripts=sling-scripting"
+                        })
+                        .asOption(),
                 newConfiguration("org.apache.felix.http")
-                    .put("org.osgi.service.http.port", httpPort)
-                    .asOption(),
+                        .put("org.osgi.service.http.port", httpPort)
+                        .asOption(),
                 newConfiguration("org.apache.sling.jcr.resource.internal.JcrResourceResolverFactoryImpl")
-                    .put("resource.resolver.required.providernames", "")
-                    .asOption(),
+                        .put("resource.resolver.required.providernames", "")
+                        .asOption(),
                 buildBundleWithBnd(
-                    TestResourceProvider.class,
-                    TestServiceUserValidator.class
-                ),
+                        TestResourceProvider.class, TestServiceUserValidator.class, ScriptEngineManagerMock.class),
+                testBundle(),
                 newConfiguration("org.apache.sling.jcr.base.internal.LoginAdminWhitelist")
-                    .put("whitelist.bundles.regexp", "^PAXEXAM.*$")
-                    .asOption(),
+                        .put("whitelist.bundles.regexp", "^PAXEXAM.*$")
+                        .asOption(),
                 newConfiguration("org.apache.sling.servlets.resolver.internal.bundle.BundledScriptTracker")
-                    .put("mandatoryBundles", "testBundle")
-                    .asOption()
-            )
-        );
+                        .put("mandatoryBundles", "testBundle")
+                        .asOption()));
     }
 
     protected Option testBundle() {
         return testBundle("bundle.filename");
     }
 
-    protected MockSlingHttpServletResponse executeRequest(final String path, final int expectedStatus) throws Exception {
+    protected SlingJakartaHttpServletResponse createMockSlingHttpServletResponse() {
+        return Builders.newResponseBuilder().buildJakartaResponseResult();
+    }
+
+    protected SlingJakartaHttpServletResponse executeRequest(final String path, final int expectedStatus)
+            throws Exception {
         return executeRequest("GET", path, expectedStatus);
     }
 
-    protected MockSlingHttpServletResponse executeRequest(final String method, final String path, final int expectedStatus) throws Exception {
+    protected SlingJakartaHttpServletResponse executeRequest(
+            final String method, final String path, final int expectedStatus) throws Exception {
         final ResourceResolver resourceResolver = resourceResolverFactory.getAdministrativeResourceResolver(null);
         assertNotNull("Expecting ResourceResolver", resourceResolver);
-        final MockSlingHttpServletRequest request = new MockSlingHttpServletRequest(resourceResolver) {
+        final Resource resource = new AbstractResource() {
             @Override
-            public String getMethod() {
-                return method;
+            public String getPath() {
+                return path;
+            }
+
+            @Override
+            public @NotNull String getResourceType() {
+                return "foo/bar";
+            }
+
+            @Override
+            public @Nullable String getResourceSuperType() {
+                return null;
+            }
+
+            @Override
+            public @NotNull ResourceMetadata getResourceMetadata() {
+                return new ResourceMetadata();
+            }
+
+            @Override
+            public @NotNull ResourceResolver getResourceResolver() {
+                return resourceResolver;
             }
         };
-        request.setPathInfo(path);
-        final MockSlingHttpServletResponse response = createMockSlingHttpServletResponse();
 
-        // Get SlingRequestProcessor.processRequest method and execute request
-        // This module depends on an older version of the sling.engine module and I don't want
-        // to change it just for these tests, so using reflection to get the processor, as we're
-        // running with a more recent version of sling.engine in the pax exam environment
-        final String slingRequestProcessorClassName = "org.apache.sling.engine.SlingRequestProcessor";
-        final ServiceReference<?> ref = bundleContext.getServiceReference(slingRequestProcessorClassName);
-        assertNotNull("Expecting service:" + slingRequestProcessorClassName, ref);
+        final SlingJakartaHttpServletRequest request =
+                Builders.newRequestBuilder(resource).withRequestMethod(method).buildJakartaRequest();
+        final SlingJakartaHttpServletResponse response = createMockSlingHttpServletResponse();
 
-        final Object processor = bundleContext.getService(ref);
+        final ServiceReference<SlingRequestProcessor> ref =
+                bundleContext.getServiceReference(SlingRequestProcessor.class);
+        assertNotNull("Expecting service:" + SlingRequestProcessor.class, ref);
+
+        final SlingRequestProcessor processor = bundleContext.getService(ref);
         try {
-            // void processRequest(javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse resource, ResourceResolver resourceResolver)
-            final Method processMethod = processor.getClass().getMethod(
-                "processRequest",
-                HttpServletRequest.class, HttpServletResponse.class, ResourceResolver.class);
-            assertNotNull("Expecting processRequest method", processMethod);
-            processMethod.invoke(processor, request, response, resourceResolver);
+            processor.processRequest(request, response, resourceResolver);
         } finally {
             bundleContext.ungetService(ref);
         }
 
         if (expectedStatus > 0) {
-            assertEquals("Expected status " + expectedStatus + " for " + method
-                + " at " + path, expectedStatus, response.getStatus());
+            assertEquals(
+                    "Expected status " + expectedStatus + " for " + method + " at " + path,
+                    expectedStatus,
+                    response.getStatus());
         }
 
         return response;
-    }
-
-    protected MockSlingHttpServletResponse createMockSlingHttpServletResponse() {
-        return new MockSlingHttpServletResponse();
     }
 
     protected void assertTestServlet(final String path, int expectedStatus) throws Exception {
@@ -211,10 +280,11 @@ public class ServletResolverTestSupport extends TestSupport {
         assertTestServlet(M_GET, path, servletName);
     }
 
-    protected void assertTestServlet(final String method, final String path, final String servletName) throws Exception {
-        final String output = executeRequest(method, path, TestServlet.IM_A_TEAPOT).getOutputAsString();
+    protected void assertTestServlet(final String method, final String path, final String servletName)
+            throws Exception {
+        final SlingJakartaHttpServletResponse response = executeRequest(method, path, TestServlet.IM_A_TEAPOT);
+        final String output = ((SlingJakartaHttpServletResponseResult) response).getOutputAsString();
         final String expected = TestServlet.SERVED_BY_PREFIX + servletName;
         assertTrue("Expecting output to contain " + expected + ", got " + output, output.contains(expected));
     }
-
 }

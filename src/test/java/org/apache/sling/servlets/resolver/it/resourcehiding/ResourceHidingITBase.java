@@ -29,9 +29,9 @@ import org.junit.Before;
 /** Base for all our hiding tests, so that they all use the same set of servlets  */
 public class ResourceHidingITBase extends ServletResolverTestSupport {
 
-    protected final static String EXT_A = "EXT_A" + UUID.randomUUID();
-    protected final static String EXT_B = "EXT_B" + UUID.randomUUID();
-    protected final static String SEL_A = "SEL_A" + UUID.randomUUID();
+    protected static final String EXT_A = "EXT_A" + UUID.randomUUID();
+    protected static final String EXT_B = "EXT_B" + UUID.randomUUID();
+    protected static final String SEL_A = "SEL_A" + UUID.randomUUID();
     protected int hiddenResourcesCount = 0;
 
     @Before
@@ -43,25 +43,25 @@ public class ResourceHidingITBase extends ServletResolverTestSupport {
     public void setupTestServletsAndResourceHiding() throws Exception {
         // Register two servlets differing only in extensions
         new TestServlet(EXT_A)
-        .with(P_RESOURCE_TYPES, RT_DEFAULT)
-        .with(P_METHODS, M_GET)
-        .with(P_EXTENSIONS, EXT_A)
-        .register(bundleContext);
+                .with(P_RESOURCE_TYPES, RT_DEFAULT)
+                .with(P_METHODS, M_GET)
+                .with(P_EXTENSIONS, EXT_A)
+                .register(bundleContext);
 
         new TestServlet(EXT_B)
-        .with(P_RESOURCE_TYPES, RT_DEFAULT)
-        .with(P_METHODS, M_GET)
-        .with(P_EXTENSIONS, EXT_B)
-        .register(bundleContext);
+                .with(P_RESOURCE_TYPES, RT_DEFAULT)
+                .with(P_METHODS, M_GET)
+                .with(P_EXTENSIONS, EXT_B)
+                .register(bundleContext);
 
         // And one more specific servlet, that will fall back
         // to EXT_A when hidden
         new TestServlet(SEL_A)
-        .with(P_RESOURCE_TYPES, RT_DEFAULT)
-        .with(P_METHODS, M_GET)
-        .with(P_EXTENSIONS, EXT_A)
-        .with(P_SELECTORS, SEL_A)
-        .register(bundleContext);
+                .with(P_RESOURCE_TYPES, RT_DEFAULT)
+                .with(P_METHODS, M_GET)
+                .with(P_EXTENSIONS, EXT_A)
+                .with(P_SELECTORS, SEL_A)
+                .register(bundleContext);
     }
 
     protected void registerPredicate(Predicate<String> p) {
@@ -69,14 +69,14 @@ public class ResourceHidingITBase extends ServletResolverTestSupport {
             @Override
             public boolean test(String path) {
                 final boolean result = p.test(path);
-                if(result) {
+                if (result) {
                     hiddenResourcesCount++;
                 }
                 return result;
             }
         };
-        final Hashtable<String,String> props = new Hashtable<>();
-        props.put("name","sling.servlet.resolver.resource.hiding");
+        final Hashtable<String, String> props = new Hashtable<>();
+        props.put("name", "sling.servlet.resolver.resource.hiding");
         bundleContext.registerService(Predicate.class.getName(), wrappedPredicate, props);
     }
 }

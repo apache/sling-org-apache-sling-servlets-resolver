@@ -18,13 +18,13 @@
  */
 package org.apache.sling.servlets.resolver.internal.resource;
 
-import java.util.Collections;
-import java.util.Set;
-
 import javax.servlet.GenericServlet;
 import javax.servlet.Servlet;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+
+import java.util.Collections;
+import java.util.Set;
 
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceUtil;
@@ -48,8 +48,7 @@ public class ServletResourceProviderCreateTest {
         private static final long serialVersionUID = 1L;
 
         @Override
-        public void service(ServletRequest req, ServletResponse res) {
-        }
+        public void service(ServletRequest req, ServletResponse res) {}
     };
 
     private static final String ROOT = "/apps/";
@@ -58,130 +57,129 @@ public class ServletResourceProviderCreateTest {
 
     private static final String RES_TYPE_PATH = ResourceUtil.resourceTypeToPath(RES_TYPE);
 
-    private ServletResourceProviderFactory factory = new ServletResourceProviderFactory(
-        ROOT, Collections.singletonList("/apps/"));
+    private ServletResourceProviderFactory factory =
+            new ServletResourceProviderFactory(ROOT, Collections.singletonList("/apps/"));
 
-    @Test public void testCreateMethodsDefault() {
+    @Test
+    public void testCreateMethodsDefault() {
         @SuppressWarnings("unchecked")
         final ServiceReference<Servlet> msr = Mockito.mock(ServiceReference.class);
-        Mockito.when(msr.getProperty(Constants.SERVICE_ID))
-           .thenReturn(1L);
+        Mockito.when(msr.getProperty(Constants.SERVICE_ID)).thenReturn(1L);
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES))
-           .thenReturn(RES_TYPE);
+                .thenReturn(RES_TYPE);
 
         final ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
         final Set<String> paths = srp.getServletPaths();
         assertEquals(2, paths.size());
         assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/" + HttpConstants.METHOD_GET
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+                + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
         assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/" + HttpConstants.METHOD_HEAD
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+                + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
     }
 
-    @Test public void testCreateMethodsSingle() {
+    @Test
+    public void testCreateMethodsSingle() {
         @SuppressWarnings("unchecked")
         final ServiceReference<Servlet> msr = Mockito.mock(ServiceReference.class);
-        Mockito.when(msr.getProperty(Constants.SERVICE_ID))
-           .thenReturn(1L);
+        Mockito.when(msr.getProperty(Constants.SERVICE_ID)).thenReturn(1L);
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES))
-           .thenReturn(RES_TYPE);
+                .thenReturn(RES_TYPE);
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_METHODS))
-            .thenReturn("GET");
+                .thenReturn("GET");
 
         final ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
         final Set<String> paths = srp.getServletPaths();
         assertEquals(1, paths.size());
         assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/" + HttpConstants.METHOD_GET
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+                + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
     }
 
-    @Test public void testCreateMethodsMultiple() {
+    @Test
+    public void testCreateMethodsMultiple() {
         @SuppressWarnings("unchecked")
         final ServiceReference<Servlet> msr = Mockito.mock(ServiceReference.class);
-        Mockito.when(msr.getProperty(Constants.SERVICE_ID))
-           .thenReturn(1L);
+        Mockito.when(msr.getProperty(Constants.SERVICE_ID)).thenReturn(1L);
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES))
-           .thenReturn(RES_TYPE);
+                .thenReturn(RES_TYPE);
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_METHODS))
-            .thenReturn(new String[] { "GET", "POST", "PUT" });
+                .thenReturn(new String[] {"GET", "POST", "PUT"});
 
         final ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
         final Set<String> paths = srp.getServletPaths();
         assertEquals(3, paths.size());
         assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/" + HttpConstants.METHOD_GET
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+                + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
         assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/" + HttpConstants.METHOD_POST
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+                + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
         assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/" + HttpConstants.METHOD_PUT
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+                + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
     }
 
-    @Test public void testCreateMethodsAll() {
+    @Test
+    public void testCreateMethodsAll() {
         @SuppressWarnings("unchecked")
         final ServiceReference<Servlet> msr = Mockito.mock(ServiceReference.class);
-        Mockito.when(msr.getProperty(Constants.SERVICE_ID))
-           .thenReturn(1L);
+        Mockito.when(msr.getProperty(Constants.SERVICE_ID)).thenReturn(1L);
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES))
-           .thenReturn(RES_TYPE);
+                .thenReturn(RES_TYPE);
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_METHODS))
-            .thenReturn("*");
+                .thenReturn("*");
 
         final ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
         final Set<String> paths = srp.getServletPaths();
         assertEquals(1, paths.size());
-        assertTrue(paths.contains(ROOT + RES_TYPE_PATH
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+        assertTrue(paths.contains(ROOT + RES_TYPE_PATH + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
     }
 
-    @Test public void testCreateSelectorsExtensions() {
+    @Test
+    public void testCreateSelectorsExtensions() {
         @SuppressWarnings("unchecked")
         final ServiceReference<Servlet> msr = Mockito.mock(ServiceReference.class);
-        Mockito.when(msr.getProperty(Constants.SERVICE_ID))
-           .thenReturn(1L);
+        Mockito.when(msr.getProperty(Constants.SERVICE_ID)).thenReturn(1L);
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES))
-           .thenReturn(RES_TYPE);
+                .thenReturn(RES_TYPE);
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_METHODS))
-            .thenReturn(new String[] { HttpConstants.METHOD_GET });
+                .thenReturn(new String[] {HttpConstants.METHOD_GET});
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_SELECTORS))
-            .thenReturn(new String[] { "ext" });
+                .thenReturn(new String[] {"ext"});
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_EXTENSIONS))
-            .thenReturn(new String[] { "json" });
+                .thenReturn(new String[] {"json"});
 
         final ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
         final Set<String> paths = srp.getServletPaths();
         assertEquals(1, paths.size());
         assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/ext.json."
-            + HttpConstants.METHOD_GET
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+                + HttpConstants.METHOD_GET
+                + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
     }
 
-    @Test public void testCreateMethodsExtensions() {
+    @Test
+    public void testCreateMethodsExtensions() {
         @SuppressWarnings("unchecked")
         final ServiceReference<Servlet> msr = Mockito.mock(ServiceReference.class);
-        Mockito.when(msr.getProperty(Constants.SERVICE_ID))
-           .thenReturn(1L);
+        Mockito.when(msr.getProperty(Constants.SERVICE_ID)).thenReturn(1L);
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES))
-           .thenReturn(RES_TYPE);
+                .thenReturn(RES_TYPE);
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_METHODS))
-            .thenReturn(new String[] { HttpConstants.METHOD_GET, HttpConstants.METHOD_POST });
+                .thenReturn(new String[] {HttpConstants.METHOD_GET, HttpConstants.METHOD_POST});
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_EXTENSIONS))
-            .thenReturn(new String[] { "json", "html" });
+                .thenReturn(new String[] {"json", "html"});
 
         final ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
         final Set<String> paths = srp.getServletPaths();
         assertEquals(4, paths.size());
         assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/json."
-            + HttpConstants.METHOD_GET
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+                + HttpConstants.METHOD_GET
+                + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
         assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/html."
-            + HttpConstants.METHOD_GET
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+                + HttpConstants.METHOD_GET
+                + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
         assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/json."
-            + HttpConstants.METHOD_POST
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+                + HttpConstants.METHOD_POST
+                + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
         assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/html."
-            + HttpConstants.METHOD_POST
-            + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+                + HttpConstants.METHOD_POST
+                + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
     }
 
     @Test
@@ -189,25 +187,34 @@ public class ServletResourceProviderCreateTest {
         @SuppressWarnings("unchecked")
         final ServiceReference<Servlet> msr = Mockito.mock(ServiceReference.class);
         Mockito.when(msr.getProperty(Constants.SERVICE_ID)).thenReturn(1L);
-        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES)).thenReturn(RES_TYPE);
-        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_EXTENSIONS)).thenReturn(new String[] {"html"});
-        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_SUPER_TYPE)).thenReturn(new String[] {"this/is/a" +
-                "/test", "resource/two"});
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES))
+                .thenReturn(RES_TYPE);
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_EXTENSIONS))
+                .thenReturn(new String[] {"html"});
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_SUPER_TYPE))
+                .thenReturn(new String[] {"this/is/a" + "/test", "resource/two"});
         final ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
         final Set<String> paths = srp.getServletPaths();
         assertEquals(2, paths.size());
         assertTrue(paths.contains(ROOT + RES_TYPE_PATH));
-        assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/html" + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+        assertTrue(
+                paths.contains(ROOT + RES_TYPE_PATH + "/html" + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
         @SuppressWarnings("unchecked")
-        Resource superTypeMarkingResource = srp.getResource(Mockito.mock(ResolveContext.class), "/apps/sling/sample",
-                Mockito.mock(ResourceContext.class), Mockito.mock(Resource.class));
+        Resource superTypeMarkingResource = srp.getResource(
+                Mockito.mock(ResolveContext.class),
+                "/apps/sling/sample",
+                Mockito.mock(ResourceContext.class),
+                Mockito.mock(Resource.class));
         assertNotNull(superTypeMarkingResource);
         assertEquals("this/is/a/test", superTypeMarkingResource.getResourceSuperType());
         assertNull(superTypeMarkingResource.adaptTo(Servlet.class));
 
         @SuppressWarnings("unchecked")
-        Resource servletResource = srp.getResource(Mockito.mock(ResolveContext.class), "/apps/sling/sample/html.servlet",
-                Mockito.mock(ResourceContext.class), Mockito.mock(Resource.class));
+        Resource servletResource = srp.getResource(
+                Mockito.mock(ResolveContext.class),
+                "/apps/sling/sample/html.servlet",
+                Mockito.mock(ResourceContext.class),
+                Mockito.mock(Resource.class));
         assertNotNull(servletResource);
         assertEquals("this/is/a/test", servletResource.getResourceSuperType());
         assertEquals(TEST_SERVLET, servletResource.adaptTo(Servlet.class));
@@ -218,26 +225,35 @@ public class ServletResourceProviderCreateTest {
         @SuppressWarnings("unchecked")
         final ServiceReference<Servlet> msr = Mockito.mock(ServiceReference.class);
         Mockito.when(msr.getProperty(Constants.SERVICE_ID)).thenReturn(1L);
-        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES)).thenReturn(RES_TYPE);
-        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_SELECTORS)).thenReturn("sel");
-        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_EXTENSIONS)).thenReturn(new String[] {"html"});
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES))
+                .thenReturn(RES_TYPE);
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_SELECTORS))
+                .thenReturn("sel");
+        Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_EXTENSIONS))
+                .thenReturn(new String[] {"html"});
         Mockito.when(msr.getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_SUPER_TYPE))
-                .thenReturn(new String[]{ServletResource.DEFAULT_RESOURCE_SUPER_TYPE});
+                .thenReturn(new String[] {ServletResource.DEFAULT_RESOURCE_SUPER_TYPE});
         final ServletResourceProvider srp = factory.create(msr, TEST_SERVLET);
         final Set<String> paths = srp.getServletPaths();
         assertEquals(1, paths.size());
-        assertTrue(paths.contains(ROOT + RES_TYPE_PATH + "/sel.html" + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
+        assertTrue(paths.contains(
+                ROOT + RES_TYPE_PATH + "/sel.html" + ServletResourceProviderFactory.SERVLET_PATH_EXTENSION));
         @SuppressWarnings("unchecked")
-        Resource superTypeMarkingResource = srp.getResource(Mockito.mock(ResolveContext.class), "/apps/sling/sample",
-                Mockito.mock(ResourceContext.class), Mockito.mock(Resource.class));
+        Resource superTypeMarkingResource = srp.getResource(
+                Mockito.mock(ResolveContext.class),
+                "/apps/sling/sample",
+                Mockito.mock(ResourceContext.class),
+                Mockito.mock(Resource.class));
         assertNull(superTypeMarkingResource);
 
         @SuppressWarnings("unchecked")
-        Resource servletResource = srp.getResource(Mockito.mock(ResolveContext.class), "/apps/sling/sample/sel.html.servlet",
-                Mockito.mock(ResourceContext.class), Mockito.mock(Resource.class));
+        Resource servletResource = srp.getResource(
+                Mockito.mock(ResolveContext.class),
+                "/apps/sling/sample/sel.html.servlet",
+                Mockito.mock(ResourceContext.class),
+                Mockito.mock(Resource.class));
         assertNotNull(servletResource);
         assertEquals(ServletResource.DEFAULT_RESOURCE_SUPER_TYPE, servletResource.getResourceSuperType());
         assertEquals(TEST_SERVLET, servletResource.adaptTo(Servlet.class));
     }
-
 }

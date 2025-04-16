@@ -37,7 +37,8 @@ public class NamedScriptResourceCollector extends AbstractResourceCollector {
 
     private final String scriptName;
 
-    public static NamedScriptResourceCollector create(final String name,
+    public static NamedScriptResourceCollector create(
+            final String name,
             final Resource resource,
             final String[] executionPaths,
             final boolean useResourceCaching) {
@@ -46,7 +47,7 @@ public class NamedScriptResourceCollector extends AbstractResourceCollector {
         final String baseResourceType;
         final String extension;
         final String scriptName;
-        if ( resource != null ) {
+        if (resource != null) {
             resourceType = resource.getResourceType();
             resourceSuperType = resource.getResourceSuperType();
             baseResourceType = ServletResolverConstants.DEFAULT_RESOURCE_TYPE;
@@ -57,12 +58,13 @@ public class NamedScriptResourceCollector extends AbstractResourceCollector {
         }
         scriptName = name;
         final int pos = name.lastIndexOf('.');
-        if ( pos == -1 ) {
+        if (pos == -1) {
             extension = null;
         } else {
             extension = name.substring(pos);
         }
-        return new NamedScriptResourceCollector(baseResourceType,
+        return new NamedScriptResourceCollector(
+                baseResourceType,
                 resourceType,
                 resourceSuperType,
                 scriptName,
@@ -71,32 +73,38 @@ public class NamedScriptResourceCollector extends AbstractResourceCollector {
                 useResourceCaching);
     }
 
-    public NamedScriptResourceCollector(final String baseResourceType,
-                              final String resourceType,
-                              final String resourceSuperType,
-                              final String scriptName,
-                              final String extension,
-                              final String[] executionPaths,
-                              final boolean useResourceCaching) {
+    public NamedScriptResourceCollector(
+            final String baseResourceType,
+            final String resourceType,
+            final String resourceSuperType,
+            final String scriptName,
+            final String extension,
+            final String[] executionPaths,
+            final boolean useResourceCaching) {
         super(baseResourceType, resourceType, resourceSuperType, extension, executionPaths, useResourceCaching);
         this.scriptName = scriptName;
         // create the hash code once
-        final String key = baseResourceType + ':' + this.scriptName + ':' +
-            this.resourceType + ':' + (this.resourceSuperType == null ? "" : this.resourceSuperType) +
-            ':' + (this.extension == null ? "" : this.extension);
+        final String key = baseResourceType
+                + ':'
+                + this.scriptName
+                + ':'
+                + this.resourceType
+                + ':'
+                + (this.resourceSuperType == null ? "" : this.resourceSuperType)
+                + ':'
+                + (this.extension == null ? "" : this.extension);
         this.hashCode = key.hashCode();
     }
 
     @Override
-    protected void getWeightedResources(final Set<WeightedResource> resources,
-                                        final Resource location) {
+    protected void getWeightedResources(final Set<WeightedResource> resources, final Resource location) {
         final ResourceResolver resolver = location.getResourceResolver();
         // if extension is set, we first check for an exact script match
-        if ( this.extension != null ) {
+        if (this.extension != null) {
             final String path = ResourceUtil.normalize(location.getPath() + '/' + this.scriptName);
-            if ( SlingServletResolver.isPathAllowed(path, this.executionPaths) ) {
+            if (SlingServletResolver.isPathAllowed(path, this.executionPaths)) {
                 final Resource current = getResourceOrNull(resolver, path, useResourceCaching);
-                if ( current != null ) {
+                if (current != null) {
                     this.addWeightedResource(resources, current, 0, WeightedResource.WEIGHT_EXTENSION);
                 }
             }
@@ -106,17 +114,18 @@ public class NamedScriptResourceCollector extends AbstractResourceCollector {
         final Resource current;
         final String name;
         final int pos = this.scriptName.lastIndexOf('/');
-        if ( pos == -1 ) {
+        if (pos == -1) {
             current = location;
             name = this.scriptName;
         } else {
-            current = getResource(resolver, location.getPath() + '/' + this.scriptName.substring(0, pos), useResourceCaching);
+            current = getResource(
+                    resolver, location.getPath() + '/' + this.scriptName.substring(0, pos), useResourceCaching);
             name = this.scriptName.substring(pos + 1);
         }
         final List<Resource> children = getChildrenList(current, useResourceCaching);
-        for (Resource child: children) {
+        for (Resource child : children) {
 
-            if ( SlingServletResolver.isPathAllowed(child.getPath(), this.executionPaths) ) {
+            if (SlingServletResolver.isPathAllowed(child.getPath(), this.executionPaths)) {
                 final String currentScriptName = child.getName();
                 final int lastDot = currentScriptName.lastIndexOf('.');
                 if (lastDot < 0) {
@@ -124,7 +133,7 @@ public class NamedScriptResourceCollector extends AbstractResourceCollector {
                     continue;
                 }
 
-                if ( currentScriptName.substring(0, lastDot).equals(name) ) {
+                if (currentScriptName.substring(0, lastDot).equals(name)) {
                     this.addWeightedResource(resources, child, 0, WeightedResource.WEIGHT_PREFIX);
                 }
             }
@@ -141,19 +150,13 @@ public class NamedScriptResourceCollector extends AbstractResourceCollector {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (!super.equals(obj))
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
+        if (this == obj) return true;
+        if (!super.equals(obj)) return false;
+        if (getClass() != obj.getClass()) return false;
         NamedScriptResourceCollector other = (NamedScriptResourceCollector) obj;
         if (scriptName == null) {
-            if (other.scriptName != null)
-                return false;
-        } else if (!scriptName.equals(other.scriptName))
-            return false;
+            if (other.scriptName != null) return false;
+        } else if (!scriptName.equals(other.scriptName)) return false;
         return true;
     }
-
 }

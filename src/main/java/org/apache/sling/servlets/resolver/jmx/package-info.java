@@ -19,6 +19,3 @@
 
 @org.osgi.annotation.versioning.Version("2.3.7")
 package org.apache.sling.servlets.resolver.jmx;
-
-
-

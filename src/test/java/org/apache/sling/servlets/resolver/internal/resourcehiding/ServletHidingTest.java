@@ -18,10 +18,8 @@
  */
 package org.apache.sling.servlets.resolver.internal.resourcehiding;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import javax.servlet.Servlet;
+import javax.servlet.http.HttpServlet;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -30,33 +28,30 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
-import javax.servlet.Servlet;
-
+import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.request.builder.Builders;
 import org.apache.sling.api.resource.PersistenceException;
+import org.apache.sling.api.resource.Resource;
+import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceUtil;
-import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
-import org.apache.sling.commons.testing.sling.MockSlingHttpServletRequest;
 import org.apache.sling.servlets.resolver.internal.SlingServletResolverTestBase;
 import org.apache.sling.servlets.resolver.internal.helper.HelperTestBase;
 import org.apache.sling.servlets.resolver.internal.resource.MockServletResource;
+import org.apache.sling.servlets.resolver.internal.resource.ServletResource;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
+
+import static org.junit.Assert.fail;
 
 public class ServletHidingTest extends SlingServletResolverTestBase {
 
-    private static final String TEST_ID = UUID.randomUUID().toString();
+    private static final String SERVLET_EXTENSION = "html";
+    private static final String RESOURCE_TYPE =
+            ServletHidingTest.class.getSimpleName() + "/" + UUID.randomUUID().toString();
 
-    protected static class TestServlet extends SlingSafeMethodsServlet {
-        private final String id;
-
-        public TestServlet(String id) {
-            this.id = id;
-        }
-
-        public String toString() {
-            return id;
-        }
-    }
+    protected static class TestServlet extends HttpServlet {}
+    ;
 
     private void setServletHidingFilter(Predicate<String> predicate) throws Exception {
         final Field predicateField = servletResolver.getClass().getDeclaredField("resourceHidingPredicate");
@@ -64,37 +59,41 @@ public class ServletHidingTest extends SlingServletResolverTestBase {
         predicateField.set(servletResolver, predicate);
     }
 
-    private void registerServlet(String id, String resourceType) {
-        final String path = "/" + resourceType + "/" + ResourceUtil.getName(resourceType) + ".servlet";
+    @Override
+    protected void defineTestServlets(Bundle bundle) {
+        final TestServlet testServlet = new TestServlet();
+        String path = "/" + RESOURCE_TYPE + "/" + ResourceUtil.getName(RESOURCE_TYPE) + ".servlet";
         Map<String, Object> props = new HashMap<>();
-        props.put(MockServletResource.PROP_SERVLET, new TestServlet(id));
+        props.put(ResourceResolver.PROPERTY_RESOURCE_TYPE, path);
+        props.put("sling:resourceSuperType", ServletResource.DEFAULT_RESOURCE_SUPER_TYPE);
+        props.put(MockServletResource.PROP_SERVLET, testServlet);
         HelperTestBase.addOrReplaceResource(mockResourceResolver, path, props);
         try {
+            // commit so the resource is visible to the script resource resolver
+            //  that is created later and can't see the temporary resources in
+            //  this resource resolver
             mockResourceResolver.commit();
         } catch (PersistenceException e) {
-            fail(e.toString());
+            fail("Did not expect a persistence exception: " + e.getMessage());
         }
     }
 
-    private Servlet resolveServlet() {
-        MockSlingHttpServletRequest req = new MockSlingHttpServletRequest(
-                MockSlingHttpServletRequest.RESOURCE_TYPE, null, "html", null, null);
-        req.setResourceResolver(mockResourceResolver);
-        return servletResolver.resolveServlet(req);
-    }
+    private void assertResolvesToTestServlet(String info, boolean expectMatch) {
+        final Resource resource = Mockito.mock(Resource.class);
+        Mockito.when(resource.getResourceType()).thenReturn(RESOURCE_TYPE);
+        Mockito.when(resource.getPath()).thenReturn("/" + RESOURCE_TYPE);
 
-    @Override
-    protected void defineTestServlets(Bundle bundle) {
-        registerServlet(TEST_ID, MockSlingHttpServletRequest.RESOURCE_TYPE);
-    }
-
-    private void assertResolvesToTestServletId(String info, boolean expectMatch) {
-        final Servlet s = resolveServlet();
-        assertNotNull("Expecting non-null Servlet", s);
-        if(expectMatch) {
-            assertEquals("Expecting our test servlet (" + info + ")", TEST_ID, s.toString());
-        } else {
-            assertNotEquals("NOT expecting our test servlet (" + info + ")", TEST_ID, s.toString());
+        final SlingHttpServletRequest request = Builders.newRequestBuilder(resource)
+                .withExtension(SERVLET_EXTENSION)
+                .build();
+        final Servlet s = servletResolver.resolveServlet(request);
+        if (expectMatch != s.getClass().equals(TestServlet.class)) {
+            if (expectMatch) {
+                fail(info + ": expected to resolve to our test servlet, got "
+                        + s.getClass().getName());
+            } else {
+                fail(info + ": didn't expect to resolve to our test servlet");
+            }
         }
     }
 
@@ -105,21 +104,20 @@ public class ServletHidingTest extends SlingServletResolverTestBase {
 
         // No filtering
         setServletHidingFilter(null);
-        assertResolvesToTestServletId("before hiding", true);
+        assertResolvesToTestServlet("before hiding", true);
 
         // Filter with our predicate
         setServletHidingFilter(pred);
         hide.set(true);
-        assertResolvesToTestServletId("hidden by our Predicate", false);
+        assertResolvesToTestServlet("hidden by our Predicate", false);
         hide.set(false);
-        assertResolvesToTestServletId("Predicate active but returns false", true);
+        assertResolvesToTestServlet("Predicate active but returns false", true);
 
         // Back to no filtering, (paranoid) check that it's really gone
         setServletHidingFilter(null);
         hide.set(false);
-        assertResolvesToTestServletId("No Predicate set, hide=false", true);
+        assertResolvesToTestServlet("No Predicate set, hide=false", true);
         hide.set(true);
-        assertResolvesToTestServletId("No Predicate set, hide=true", true);
+        assertResolvesToTestServlet("No Predicate set, hide=true", true);
     }
-
 }

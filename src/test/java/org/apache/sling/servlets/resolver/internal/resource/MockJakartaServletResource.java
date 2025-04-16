@@ -18,20 +18,20 @@
  */
 package org.apache.sling.servlets.resolver.internal.resource;
 
-import javax.servlet.Servlet;
-
+import jakarta.servlet.Servlet;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ValueMap;
 import org.apache.sling.api.wrappers.ValueMapDecorator;
+import org.apache.sling.servlets.resolver.internal.ServletWrapperUtil;
 
-public class MockServletResource extends org.apache.sling.servlets.resolver.internal.resource.ServletResource {
+public class MockJakartaServletResource extends org.apache.sling.servlets.resolver.internal.resource.ServletResource {
 
     public static final String PROP_SERVLET = ":servlet";
 
     private final Servlet servlet;
 
-    public MockServletResource(ResourceResolver resourceResolver, Servlet servlet, String path) {
-        super(resourceResolver, servlet, path);
+    public MockJakartaServletResource(ResourceResolver resourceResolver, Servlet servlet, String path) {
+        super(resourceResolver, ServletWrapperUtil.toJavaxServlet(servlet), path);
         this.servlet = servlet;
     }
 

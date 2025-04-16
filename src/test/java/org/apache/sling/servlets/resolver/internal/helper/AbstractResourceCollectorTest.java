@@ -18,10 +18,6 @@
  */
 package org.apache.sling.servlets.resolver.internal.helper;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-
 import java.util.List;
 import java.util.Map;
 
@@ -33,12 +29,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-public class AbstractResourceCollectorTest {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
+public class AbstractResourceCollectorTest {
 
     @Rule
     public SlingContext context = new SlingContext();
-
 
     @Before
     public void setup() {
@@ -54,17 +52,16 @@ public class AbstractResourceCollectorTest {
         Resource spy = Mockito.spy(context.resourceResolver().getResource("/parent"));
 
         List<Resource> children = AbstractResourceCollector.getChildrenList(spy, true);
-        assertEquals(3,children.size());
+        assertEquals(3, children.size());
         children = AbstractResourceCollector.getChildrenList(spy, true);
-        Mockito.verify(spy,Mockito.times(1)).listChildren();
+        Mockito.verify(spy, Mockito.times(1)).listChildren();
 
-        Map<String,List<Resource>> map = (Map<String, List<Resource>>) 
+        Map<String, List<Resource>> map = (Map<String, List<Resource>>)
                 context.resourceResolver().getPropertyMap().get(AbstractResourceCollector.CACHE_KEY_CHILDREN_LIST);
         assertEquals(1, map.values().size());
         AbstractResourceCollector.clearCache(context.resourceResolver());
         assertEquals(0, map.values().size());
     }
-
 
     @Test
     public void testGetChildrenWithCachingDisabled() {
@@ -72,9 +69,9 @@ public class AbstractResourceCollectorTest {
         Resource spy = Mockito.spy(context.resourceResolver().getResource("/parent"));
 
         List<Resource> children = AbstractResourceCollector.getChildrenList(spy, false);
-        assertEquals(3,children.size());
+        assertEquals(3, children.size());
         children = AbstractResourceCollector.getChildrenList(spy, false);
-        Mockito.verify(spy,Mockito.times(2)).listChildren(); 
+        Mockito.verify(spy, Mockito.times(2)).listChildren();
     }
 
     @Test
@@ -85,46 +82,49 @@ public class AbstractResourceCollectorTest {
         context.resourceResolver().getPropertyMap().put(AbstractResourceCollector.CACHE_KEY_CHILDREN_LIST, payload);
 
         List<Resource> children = AbstractResourceCollector.getChildrenList(spy, true);
-        assertEquals(3,children.size());
+        assertEquals(3, children.size());
         children = AbstractResourceCollector.getChildrenList(spy, true);
-        Mockito.verify(spy,Mockito.times(2)).listChildren();
-        assertEquals(payload, context.resourceResolver().getPropertyMap().get(AbstractResourceCollector.CACHE_KEY_CHILDREN_LIST));
+        Mockito.verify(spy, Mockito.times(2)).listChildren();
+        assertEquals(
+                payload,
+                context.resourceResolver().getPropertyMap().get(AbstractResourceCollector.CACHE_KEY_CHILDREN_LIST));
 
         AbstractResourceCollector.clearCache(context.resourceResolver());
-        assertEquals(payload, context.resourceResolver().getPropertyMap().get(AbstractResourceCollector.CACHE_KEY_CHILDREN_LIST));
+        assertEquals(
+                payload,
+                context.resourceResolver().getPropertyMap().get(AbstractResourceCollector.CACHE_KEY_CHILDREN_LIST));
     }
-
 
     @Test
     public void testGetResourceOrNullWithCachingEnabled() {
         ResourceResolver spyResolver = Mockito.spy(context.resourceResolver());
 
         // not yet initialized
-        Resource res1 = AbstractResourceCollector.getResourceOrNull(spyResolver,"/parent/child1",true);
+        Resource res1 = AbstractResourceCollector.getResourceOrNull(spyResolver, "/parent/child1", true);
         assertNotNull(res1);
-        Mockito.verify(spyResolver,Mockito.times(1)).getResource("/parent/child1");
+        Mockito.verify(spyResolver, Mockito.times(1)).getResource("/parent/child1");
         // cache hit
-        Resource res2 = AbstractResourceCollector.getResourceOrNull(spyResolver,"/parent/child1",true);
+        Resource res2 = AbstractResourceCollector.getResourceOrNull(spyResolver, "/parent/child1", true);
         assertNotNull(res2);
-        Mockito.verify(spyResolver,Mockito.times(1)).getResource("/parent/child1");
-        assertEquals(res1,res2);
+        Mockito.verify(spyResolver, Mockito.times(1)).getResource("/parent/child1");
+        assertEquals(res1, res2);
 
         // cache miss
-        Resource res3 = AbstractResourceCollector.getResourceOrNull(spyResolver,"/parent/child2",true);
+        Resource res3 = AbstractResourceCollector.getResourceOrNull(spyResolver, "/parent/child2", true);
         assertNotNull(res2);
-        Mockito.verify(spyResolver,Mockito.times(1)).getResource("/parent/child2");
+        Mockito.verify(spyResolver, Mockito.times(1)).getResource("/parent/child2");
 
         // cache miss
         assertNull(AbstractResourceCollector.getResourceOrNull(spyResolver, "/parent/nonExistingChild", true));
         assertNull(AbstractResourceCollector.getResourceOrNull(spyResolver, "/parent/nonExistingChild", true));
-        Mockito.verify(spyResolver,Mockito.times(1)).getResource("/parent/nonExistingChild");
+        Mockito.verify(spyResolver, Mockito.times(1)).getResource("/parent/nonExistingChild");
 
         // when the cache is cleared, it should read again via the ResourceResolver
         AbstractResourceCollector.clearCache(spyResolver);
         Mockito.reset(spyResolver);
-        Resource res4 = AbstractResourceCollector.getResourceOrNull(spyResolver,"/parent/child1",true);
+        Resource res4 = AbstractResourceCollector.getResourceOrNull(spyResolver, "/parent/child1", true);
         assertNotNull(res4);
-        Mockito.verify(spyResolver,Mockito.times(1)).getResource("/parent/child1");
+        Mockito.verify(spyResolver, Mockito.times(1)).getResource("/parent/child1");
     }
 
     @Test
@@ -135,9 +135,9 @@ public class AbstractResourceCollectorTest {
         spyResolver.getPropertyMap().put(AbstractResourceCollector.CACHE_KEY_RESOURCES, payload);
 
         // not yet initialized
-        Resource res1 = AbstractResourceCollector.getResourceOrNull(spyResolver,"/parent/child1",true);
-        Resource res2 = AbstractResourceCollector.getResourceOrNull(spyResolver,"/parent/child1",true);
-        Mockito.verify(spyResolver,Mockito.times(2)).getResource("/parent/child1");
+        Resource res1 = AbstractResourceCollector.getResourceOrNull(spyResolver, "/parent/child1", true);
+        Resource res2 = AbstractResourceCollector.getResourceOrNull(spyResolver, "/parent/child1", true);
+        Mockito.verify(spyResolver, Mockito.times(2)).getResource("/parent/child1");
 
         assertEquals(payload, spyResolver.getPropertyMap().get(AbstractResourceCollector.CACHE_KEY_RESOURCES));
         AbstractResourceCollector.clearCache(spyResolver);
@@ -148,13 +148,11 @@ public class AbstractResourceCollectorTest {
     public void testGetResourceOrNullCachingDisabled() {
         ResourceResolver spyResolver = Mockito.spy(context.resourceResolver());
 
-        Resource res1 = AbstractResourceCollector.getResourceOrNull(spyResolver,"/parent/child1",false);
+        Resource res1 = AbstractResourceCollector.getResourceOrNull(spyResolver, "/parent/child1", false);
         assertNotNull(res1);
-        Mockito.verify(spyResolver,Mockito.times(1)).getResource("/parent/child1");
-        Resource res2 = AbstractResourceCollector.getResourceOrNull(spyResolver,"/parent/child1",false);
+        Mockito.verify(spyResolver, Mockito.times(1)).getResource("/parent/child1");
+        Resource res2 = AbstractResourceCollector.getResourceOrNull(spyResolver, "/parent/child1", false);
         assertNotNull(res2);
-        Mockito.verify(spyResolver,Mockito.times(2)).getResource("/parent/child1");
+        Mockito.verify(spyResolver, Mockito.times(2)).getResource("/parent/child1");
     }
-
-
 }

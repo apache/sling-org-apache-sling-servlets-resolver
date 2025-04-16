@@ -18,14 +18,14 @@
  */
 package org.apache.sling.servlets.resolver.internal.resource;
 
+import javax.servlet.Servlet;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-
-import javax.servlet.Servlet;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
 
 import org.osgi.framework.ServiceReference;
 
@@ -49,8 +49,8 @@ public class SlingServletConfig implements ServletConfig {
      *            parameter values.
      * @param name The name of this configuration.
      */
-    public SlingServletConfig(final ServletContext servletContext,
-            final ServiceReference<Servlet> reference, final String name) {
+    public SlingServletConfig(
+            final ServletContext servletContext, final ServiceReference<Servlet> reference, final String name) {
         this.servletContext = servletContext;
         this.reference = reference;
         this.name = name;
@@ -99,8 +99,8 @@ public class SlingServletConfig implements ServletConfig {
 
     /** @return the OSGi service property keys of this servlet
      *  (which can be an array that getInitParameter* messes up)
-    */
-    public String [] getServicePropertyKeys() {
+     */
+    public String[] getServicePropertyKeys() {
         return reference.getPropertyKeys();
     }
 }

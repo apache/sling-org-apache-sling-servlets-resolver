@@ -50,7 +50,7 @@ public class SearchPathProvider {
         if (this.serviceRegistration != null) {
             try {
                 this.serviceRegistration.unregister();
-            } catch ( final IllegalStateException ise) {
+            } catch (final IllegalStateException ise) {
                 // ignore on shutdown
             }
             this.serviceRegistration = null;
@@ -59,11 +59,11 @@ public class SearchPathProvider {
 
     @Reference(policy = ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL)
     protected void bindResourceResolverFactory(final ResourceResolverFactory factory) {
-        if ( this.searchPaths == null || !this.searchPaths.equals(factory.getSearchPath())) {
+        if (this.searchPaths == null || !this.searchPaths.equals(factory.getSearchPath())) {
             this.searchPaths = factory.getSearchPath();
             final Dictionary<String, Object> props = new java.util.Hashtable<>();
             props.put("paths", this.searchPaths.toArray(new String[this.searchPaths.size()]));
-            if ( this.serviceRegistration != null ) {
+            if (this.serviceRegistration != null) {
                 this.serviceRegistration.setProperties(props);
             } else {
                 this.serviceRegistration = this.bundleContext.registerService(SearchPathProvider.class, this, props);

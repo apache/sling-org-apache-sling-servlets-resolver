@@ -18,20 +18,19 @@
  */
 package org.apache.sling.servlets.resolver.internal;
 
-import javax.servlet.Servlet;
-import javax.servlet.http.HttpServlet;
-
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.sling.api.SlingHttpServletRequest;
+import jakarta.servlet.Servlet;
+import jakarta.servlet.http.HttpServlet;
+import org.apache.sling.api.SlingJakartaHttpServletRequest;
 import org.apache.sling.api.request.builder.Builders;
 import org.apache.sling.api.resource.PersistenceException;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceUtil;
-import org.apache.sling.api.servlets.OptingServlet;
-import org.apache.sling.api.wrappers.SlingHttpServletRequestWrapper;
+import org.apache.sling.api.servlets.JakartaOptingServlet;
+import org.apache.sling.api.wrappers.SlingJakartaHttpServletRequestWrapper;
 import org.apache.sling.servlets.resolver.internal.helper.HelperTestBase;
 import org.apache.sling.servlets.resolver.internal.resource.MockServletResource;
 import org.apache.sling.servlets.resolver.internal.resource.ServletResource;
@@ -43,8 +42,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.fail;
 
-@SuppressWarnings("deprecation")
-public class SecureRequestsOptingServletTest extends SlingServletResolverTestBase {
+public class SecureRequestsJakartaOptingServletTest extends SlingServletResolverJakaraTestBase {
 
     protected static final String SERVLET_PATH = "/mock";
     protected static final String SERVLET_NAME = "TestServlet";
@@ -78,10 +76,10 @@ public class SecureRequestsOptingServletTest extends SlingServletResolverTestBas
         Mockito.when(resource.getResourceType()).thenReturn(RESOURCE_TYPE);
         Mockito.when(resource.getPath()).thenReturn("/" + RESOURCE_TYPE);
 
-        SlingHttpServletRequest secureRequest = new SecureRequest(Builders.newRequestBuilder(resource)
+        SlingJakartaHttpServletRequest secureRequest = new SecureRequest(Builders.newRequestBuilder(resource)
                 .withExtension(SERVLET_EXTENSION)
-                .build());
-        Servlet result = servletResolver.resolveServlet(secureRequest);
+                .buildJakartaRequest());
+        Servlet result = servletResolver.resolve(secureRequest);
         assertEquals("Expecting our test servlet", testServlet, result);
     }
 
@@ -91,17 +89,17 @@ public class SecureRequestsOptingServletTest extends SlingServletResolverTestBas
         Mockito.when(resource.getResourceType()).thenReturn(RESOURCE_TYPE);
         Mockito.when(resource.getPath()).thenReturn("/" + RESOURCE_TYPE);
 
-        SlingHttpServletRequest insecureRequest = Builders.newRequestBuilder(resource)
+        SlingJakartaHttpServletRequest insecureRequest = Builders.newRequestBuilder(resource)
                 .withExtension(SERVLET_EXTENSION)
-                .build();
-        Servlet result = servletResolver.resolveServlet(insecureRequest);
+                .buildJakartaRequest();
+        Servlet result = servletResolver.resolve(insecureRequest);
         assertNotSame(
                 "Expecting a different servlet than our own", result.getClass(), SecureRequestsOptingServlet.class);
     }
 
-    public static class SecureRequest extends SlingHttpServletRequestWrapper {
+    public static class SecureRequest extends SlingJakartaHttpServletRequestWrapper {
 
-        public SecureRequest(final SlingHttpServletRequest request) {
+        public SecureRequest(final SlingJakartaHttpServletRequest request) {
             super(request);
         }
 
@@ -111,10 +109,11 @@ public class SecureRequestsOptingServletTest extends SlingServletResolverTestBas
         }
     }
 
-    private static class SecureRequestsOptingServlet extends HttpServlet implements OptingServlet {
+    @SuppressWarnings("serial")
+    private static class SecureRequestsOptingServlet extends HttpServlet implements JakartaOptingServlet {
 
         @Override
-        public boolean accepts(SlingHttpServletRequest request) {
+        public boolean accepts(SlingJakartaHttpServletRequest request) {
             return request.isSecure();
         }
     }
