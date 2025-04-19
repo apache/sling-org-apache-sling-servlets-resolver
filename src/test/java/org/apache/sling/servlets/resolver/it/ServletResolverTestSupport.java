@@ -100,7 +100,7 @@ public class ServletResolverTestSupport extends TestSupport {
                 mavenBundle()
                         .groupId("org.apache.felix")
                         .artifactId("org.apache.felix.http.servlet-api")
-                        .version("3.0.0"),
+                        .version("6.1.0"),
                 mavenBundle()
                         .groupId("org.apache.felix")
                         .artifactId("org.apache.felix.http.jetty12")
