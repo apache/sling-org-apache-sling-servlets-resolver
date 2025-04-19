@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
@@ -68,6 +69,8 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.service.metatype.annotations.Designate;
 import org.osgi.util.tracker.ServiceTracker;
 import org.slf4j.Logger;
@@ -136,6 +139,12 @@ public class SlingServletResolver implements ServletResolver, SlingRequestListen
     private AtomicReference<ResourceResolver> sharedScriptResolver = new AtomicReference<>();
 
     private final ThreadLocal<ResourceResolver> perThreadScriptResolver = new ThreadLocal<>();
+
+    @Reference(
+            target = "(name=sling.servlet.resolver.resource.hiding)",
+            policy = ReferencePolicy.DYNAMIC,
+            cardinality = ReferenceCardinality.OPTIONAL)
+    private volatile Predicate<String> resourceHidingPredicate;
 
     /**
      * The allowed execution paths.
@@ -473,6 +482,16 @@ public class SlingServletResolver implements ServletResolver, SlingRequestListen
         return res;
     }
 
+    /** @return true if the given Resource is hidden by our resourceHidingPredicate */
+    private boolean isHidden(Resource r) {
+        final boolean result =
+                r != null && resourceHidingPredicate != null && resourceHidingPredicate.test(r.getPath());
+        if (result && LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Resource hidden by resource hiding predicate: {}", r.getPath());
+        }
+        return result;
+    }
+
     /**
      * Resolve an appropriate servlet for a given request and resource type
      * using the provided ResourceResolver
@@ -577,6 +596,7 @@ public class SlingServletResolver implements ServletResolver, SlingRequestListen
 
         final Collection<Resource> candidates =
                 locationUtil.getServlets(resolver, localCache.getScriptEngineExtensions());
+        candidates.removeIf(r -> isHidden(r));
 
         if (LOGGER.isDebugEnabled()) {
             if (candidates.isEmpty()) {
