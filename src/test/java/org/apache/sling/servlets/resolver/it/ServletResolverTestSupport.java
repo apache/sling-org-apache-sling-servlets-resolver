@@ -96,11 +96,16 @@ public class ServletResolverTestSupport extends TestSupport {
                 when(debugOption != null).useOptions(debugOption),
                 when(vmOption != null).useOptions(vmOption),
                 when(jacocoCommand != null).useOptions(jacocoCommand),
+                // update pax logging for SLF4J 2
+                mavenBundle()
+                        .groupId("org.ops4j.pax.logging")
+                        .artifactId("pax-logging-api")
+                        .version("2.3.0"),
                 baseConfiguration(),
                 mavenBundle()
                         .groupId("org.apache.felix")
                         .artifactId("org.apache.felix.http.servlet-api")
-                        .version("3.0.0"),
+                        .version("6.1.0"),
                 mavenBundle()
                         .groupId("org.apache.felix")
                         .artifactId("org.apache.felix.http.jetty12")

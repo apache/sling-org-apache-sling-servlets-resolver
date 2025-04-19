@@ -103,6 +103,11 @@ public class SlingServletResolver implements ServletResolver, SlingRequestListen
 
     private static final String SERVICE_USER = "scripts";
 
+    private static final String JAVAX_ERROR_METHOD =
+            jakarta.servlet.RequestDispatcher.ERROR_METHOD.replace("jakarta", "javax");
+    private static final String JAVAX_ERROR_QUERY_STRING =
+            jakarta.servlet.RequestDispatcher.ERROR_QUERY_STRING.replace("jakarta", "javax");
+
     /** Servlet resolver logger */
     public static final Logger LOGGER = LoggerFactory.getLogger(SlingServletResolver.class);
 
@@ -326,8 +331,12 @@ public class SlingServletResolver implements ServletResolver, SlingRequestListen
             }
 
             // set the message properties
-            request.setAttribute(ERROR_STATUS, Integer.valueOf(status));
+            request.setAttribute(ERROR_STATUS, status);
             request.setAttribute(ERROR_MESSAGE, message);
+            request.setAttribute(JAVAX_ERROR_METHOD, request.getMethod());
+            if (request.getQueryString() != null) {
+                request.setAttribute(JAVAX_ERROR_QUERY_STRING, request.getQueryString());
+            }
 
             // the servlet name for a sendError handling is still stored
             // as the request attribute
@@ -395,6 +404,10 @@ public class SlingServletResolver implements ServletResolver, SlingRequestListen
             request.setAttribute(SlingConstants.ERROR_EXCEPTION, throwable);
             request.setAttribute(SlingConstants.ERROR_EXCEPTION_TYPE, throwable.getClass());
             request.setAttribute(SlingConstants.ERROR_MESSAGE, throwable.getMessage());
+            request.setAttribute(JAVAX_ERROR_METHOD, request.getMethod());
+            if (request.getQueryString() != null) {
+                request.setAttribute(JAVAX_ERROR_QUERY_STRING, request.getQueryString());
+            }
 
             // log a track entry after resolution before calling the handler
             progressTracker.logTimer(timerName, "Using handler {0}", RequestUtil.getServletName(servlet));
