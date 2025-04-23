@@ -102,7 +102,7 @@ public class PathBasedServletAcceptorTest {
 
             // Wire the Servlet to our ServiceReference
             final ServletContext sc = mock(ServletContext.class);
-            final SlingServletConfig ssc = new SlingServletConfig(sc, reference, "42");
+            final ServletConfig ssc = new SlingServletConfig(sc, reference, "42");
             final Servlet servlet = mock(Servlet.class);
             when(servlet.getServletConfig()).thenReturn(ssc);
 

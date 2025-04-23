@@ -29,7 +29,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceUtil;
@@ -95,7 +94,7 @@ public abstract class AbstractResourceCollector {
                 String o2ScriptName = o2.getName();
                 String o1Extension = getScriptExtension(o1ScriptName);
                 String o2Extension = getScriptExtension(o2ScriptName);
-                if (StringUtils.isNotEmpty(o1Extension) && StringUtils.isNotEmpty(o2Extension)) {
+                if (o1Extension != null && o2Extension != null && !o1Extension.isEmpty() && !o2Extension.isEmpty()) {
                     String o1ScriptWithoutExtension =
                             o1ScriptName.substring(0, o1ScriptName.lastIndexOf("." + o1Extension));
                     String o2ScriptWithoutExtension =
@@ -270,10 +269,11 @@ public abstract class AbstractResourceCollector {
     /* Clear all caching structures
      * @param resolver
      */
+    @SuppressWarnings("unchecked")
     public static void clearCache(@NotNull ResourceResolver resolver) {
         Object o1 = resolver.getPropertyMap().get(CACHE_KEY_CHILDREN_LIST);
         if (o1 instanceof Map) {
-            Map<String, List<Resource>> childrenListMap = (Map) o1;
+            Map<String, List<Resource>> childrenListMap = (Map<String, List<Resource>>) o1;
             childrenListMap.clear();
         }
         Object o2 = resolver.getPropertyMap().get(CACHE_KEY_RESOURCES);
@@ -296,6 +296,7 @@ public abstract class AbstractResourceCollector {
         if (useCaching) {
             if (o instanceof Map) {
                 // cache structure already initialized
+                @SuppressWarnings("unchecked")
                 final Map<String, Resource> resourceMap = (Map<String, Resource>) o;
                 if (resourceMap.containsKey(path)) {
                     // cache hit

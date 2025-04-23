@@ -19,11 +19,10 @@
 package org.apache.sling.servlets.resolver.internal.helper;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.request.RequestPathInfo;
 import org.apache.sling.api.resource.Resource;
@@ -87,10 +86,11 @@ public class ResourceCollector extends AbstractResourceCollector {
     public static ResourceCollector create(
             final SlingHttpServletRequest request,
             final String[] executionPaths,
-            final String[] defaultExtensions,
+            final Collection<String> defaultExtensions,
             boolean UseResourceCaching) {
         final RequestPathInfo requestPathInfo = request.getRequestPathInfo();
-        final boolean isDefaultExtension = ArrayUtils.contains(defaultExtensions, requestPathInfo.getExtension());
+        final boolean isDefaultExtension =
+                requestPathInfo.getExtension() != null && defaultExtensions.contains(requestPathInfo.getExtension());
         return new ResourceCollector(
                 request.getResource(),
                 requestPathInfo.getExtension(),
@@ -105,11 +105,11 @@ public class ResourceCollector extends AbstractResourceCollector {
             final Resource resource,
             final String extension,
             final String[] executionPaths,
-            final String[] defaultExtensions,
+            final Collection<String> defaultExtensions,
             final String methodName,
             final String[] selectors,
             boolean useResourceCaching) {
-        boolean isDefaultExtension = ArrayUtils.contains(defaultExtensions, extension);
+        final boolean isDefaultExtension = extension != null && defaultExtensions.contains(extension);
         return new ResourceCollector(
                 resource, extension, executionPaths, isDefaultExtension, methodName, selectors, useResourceCaching);
     }
@@ -233,7 +233,7 @@ public class ResourceCollector extends AbstractResourceCollector {
                 + ':'
                 + extension
                 + ':'
-                + StringUtils.join(requestSelectors, '.')
+                + String.join(".", requestSelectors)
                 + ':'
                 + (this.resourceType == null ? "" : this.resourceType)
                 + ':'

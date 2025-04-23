@@ -56,35 +56,23 @@ public class SlingServletConfig implements ServletConfig {
         this.name = name;
     }
 
-    /**
-     * @see javax.servlet.ServletConfig#getInitParameter(java.lang.String)
-     */
     @Override
     public String getInitParameter(final String name) {
         final Object prop = reference.getProperty(name);
         return (prop == null) ? null : String.valueOf(prop);
     }
 
-    /**
-     * @see javax.servlet.ServletConfig#getInitParameterNames()
-     */
     @Override
     public Enumeration<String> getInitParameterNames() {
         final List<String> keys = Arrays.asList(reference.getPropertyKeys());
         return Collections.enumeration(keys);
     }
 
-    /**
-     * @see javax.servlet.ServletConfig#getServletContext()
-     */
     @Override
     public ServletContext getServletContext() {
         return servletContext;
     }
 
-    /**
-     * @see javax.servlet.ServletConfig#getServletName()
-     */
     @Override
     public String getServletName() {
         return this.name;

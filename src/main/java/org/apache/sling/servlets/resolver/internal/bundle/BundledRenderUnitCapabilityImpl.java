@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.type.ResourceType;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.scripting.spi.bundle.BundledRenderUnitCapability;
@@ -160,34 +159,34 @@ class BundledRenderUnitCapabilityImpl implements BundledRenderUnitCapability {
                     .append("=")
                     .append(selectors);
         }
-        if (StringUtils.isNotEmpty(extension)) {
+        if (extension != null && !extension.isEmpty()) {
             sb.append("; ")
                     .append(ServletResolverConstants.SLING_SERVLET_EXTENSIONS)
                     .append("=")
                     .append(extension);
         }
-        if (StringUtils.isNotEmpty(method)) {
+        if (method != null && !method.isEmpty()) {
             sb.append("; ")
                     .append(ServletResolverConstants.SLING_SERVLET_METHODS)
                     .append("=")
                     .append(method);
         }
-        if (StringUtils.isNotEmpty(path)) {
+        if (path != null && !path.isEmpty()) {
             sb.append("; ")
                     .append(ServletResolverConstants.SLING_SERVLET_PATHS)
                     .append("=")
                     .append(path);
         }
-        if (StringUtils.isNotEmpty(extendedResourceType)) {
+        if (extendedResourceType != null && !extendedResourceType.isEmpty()) {
             sb.append("; ").append(BundledScriptTracker.AT_EXTENDS).append("=").append(extendedResourceType);
         }
-        if (StringUtils.isNotEmpty(scriptEngineName)) {
+        if (scriptEngineName != null && !scriptEngineName.isEmpty()) {
             sb.append("; ")
                     .append(BundledScriptTracker.AT_SCRIPT_ENGINE)
                     .append("=")
                     .append(scriptEngineName);
         }
-        if (StringUtils.isNotEmpty(scriptExtension)) {
+        if (scriptExtension != null && !scriptExtension.isEmpty()) {
             sb.append("; ")
                     .append(BundledScriptTracker.AT_SCRIPT_EXTENSION)
                     .append("=")

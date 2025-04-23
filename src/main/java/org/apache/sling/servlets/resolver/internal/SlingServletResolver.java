@@ -18,6 +18,7 @@
  */
 package org.apache.sling.servlets.resolver.internal;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.Servlet;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -26,6 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
@@ -59,6 +61,7 @@ import org.apache.sling.servlets.resolver.internal.resolution.ResolutionCache;
 import org.apache.sling.servlets.resolver.internal.resource.MergingServletResourceProvider;
 import org.apache.sling.servlets.resolver.internal.resource.SlingServletConfig;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Activate;
@@ -73,8 +76,6 @@ import org.osgi.util.tracker.ServiceTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.sling.api.SlingConstants.ERROR_MESSAGE;
-import static org.apache.sling.api.SlingConstants.ERROR_SERVLET_NAME;
 import static org.apache.sling.api.SlingConstants.ERROR_STATUS;
 import static org.apache.sling.api.SlingConstants.SLING_CURRENT_SERVLET_NAME;
 import static org.apache.sling.api.servlets.ServletResolverConstants.DEFAULT_ERROR_HANDLER_RESOURCE_TYPE;
@@ -147,7 +148,7 @@ public class SlingServletResolver implements ServletResolver, SlingRequestListen
     /**
      * The default extensions
      */
-    private AtomicReference<String[]> defaultExtensions = new AtomicReference<>();
+    private AtomicReference<Collection<String>> defaultExtensions = new AtomicReference<>();
 
     private boolean useResourceCaching;
 
@@ -164,11 +165,8 @@ public class SlingServletResolver implements ServletResolver, SlingRequestListen
 
     // ---------- ServletResolver interface -----------------------------------
 
-    /**
-     * @see ServletResolver#resolveServlet(SlingHttpServletRequest)
-     */
     @Override
-    public Servlet resolveServlet(final SlingHttpServletRequest request) {
+    public @Nullable Servlet resolveServlet(@NotNull final SlingHttpServletRequest request) {
         final Resource resource = request.getResource();
 
         // start tracking servlet resolution
@@ -207,11 +205,8 @@ public class SlingServletResolver implements ServletResolver, SlingRequestListen
         return servlet;
     }
 
-    /**
-     * @see ServletResolver#resolveServlet(Resource, java.lang.String)
-     */
     @Override
-    public Servlet resolveServlet(final Resource resource, final String scriptName) {
+    public @Nullable Servlet resolveServlet(@NotNull final Resource resource, @NotNull final String scriptName) {
         if (resource == null) {
             throw new IllegalArgumentException("Resource must not be null");
         }
@@ -238,11 +233,9 @@ public class SlingServletResolver implements ServletResolver, SlingRequestListen
         return servlet;
     }
 
-    /**
-     * @see ServletResolver#resolveServlet(ResourceResolver, java.lang.String)
-     */
     @Override
-    public Servlet resolveServlet(final ResourceResolver resolver, final String scriptName) {
+    public @Nullable Servlet resolveServlet(
+            @NotNull final ResourceResolver resolver, @NotNull final String scriptName) {
         if (resolver == null) {
             throw new IllegalArgumentException("Resource resolver must not be null");
         }
@@ -288,10 +281,6 @@ public class SlingServletResolver implements ServletResolver, SlingRequestListen
 
     // ---------- ErrorHandler interface --------------------------------------
 
-    /**
-     * @see org.apache.sling.api.servlets.ErrorHandler#handleError(int,
-     *      String, SlingHttpServletRequest, SlingHttpServletResponse)
-     */
     @Override
     public void handleError(
             final int status,
@@ -334,7 +323,7 @@ public class SlingServletResolver implements ServletResolver, SlingRequestListen
 
             // set the message properties
             request.setAttribute(ERROR_STATUS, status);
-            request.setAttribute(ERROR_MESSAGE, message);
+            request.setAttribute(RequestDispatcher.ERROR_MESSAGE, message);
             request.setAttribute(JAVAX_ERROR_METHOD, request.getMethod());
             if (request.getQueryString() != null) {
                 request.setAttribute(JAVAX_ERROR_QUERY_STRING, request.getQueryString());
@@ -344,7 +333,7 @@ public class SlingServletResolver implements ServletResolver, SlingRequestListen
             // as the request attribute
             Object servletName = request.getAttribute(SLING_CURRENT_SERVLET_NAME);
             if (servletName instanceof String) {
-                request.setAttribute(ERROR_SERVLET_NAME, servletName);
+                request.setAttribute(RequestDispatcher.ERROR_SERVLET_NAME, servletName);
             }
 
             // log a track entry after resolution before calling the handler
@@ -357,15 +346,12 @@ public class SlingServletResolver implements ServletResolver, SlingRequestListen
         }
     }
 
-    /**
-     * @see org.apache.sling.api.servlets.ErrorHandler#handleError(java.lang.Throwable, SlingHttpServletRequest, SlingHttpServletResponse)
-     */
     @Override
     public void handleError(
             final Throwable throwable, final SlingHttpServletRequest request, final SlingHttpServletResponse response)
             throws IOException {
         // do not handle, if already handling ....
-        if (request.getAttribute(SlingConstants.ERROR_REQUEST_URI) != null) {
+        if (request.getAttribute(RequestDispatcher.ERROR_REQUEST_URI) != null) {
             LOGGER.error("handleError: Recursive invocation. Not further handling Throwable:", throwable);
             return;
         }
@@ -403,9 +389,9 @@ public class SlingServletResolver implements ServletResolver, SlingRequestListen
             }
 
             // set the message properties
-            request.setAttribute(SlingConstants.ERROR_EXCEPTION, throwable);
-            request.setAttribute(SlingConstants.ERROR_EXCEPTION_TYPE, throwable.getClass());
-            request.setAttribute(SlingConstants.ERROR_MESSAGE, throwable.getMessage());
+            request.setAttribute(RequestDispatcher.ERROR_EXCEPTION, throwable);
+            request.setAttribute(RequestDispatcher.ERROR_EXCEPTION_TYPE, throwable.getClass());
+            request.setAttribute(RequestDispatcher.ERROR_MESSAGE, throwable.getMessage());
             request.setAttribute(JAVAX_ERROR_METHOD, request.getMethod());
             if (request.getQueryString() != null) {
                 request.setAttribute(JAVAX_ERROR_QUERY_STRING, request.getQueryString());
@@ -436,9 +422,6 @@ public class SlingServletResolver implements ServletResolver, SlingRequestListen
         return scriptResolver;
     }
 
-    /**
-     * @see SlingRequestListener#onEvent(SlingRequestEvent)
-     */
     @Override
     public void onEvent(final SlingRequestEvent event) {
         if (event.getType() == SlingRequestEvent.EventType.EVENT_INIT) {
@@ -704,13 +687,13 @@ public class SlingServletResolver implements ServletResolver, SlingRequestListen
             final Servlet errorHandler, final SlingHttpServletRequest request, final SlingHttpServletResponse response)
             throws IOException {
 
-        request.setAttribute(SlingConstants.ERROR_REQUEST_URI, request.getRequestURI());
+        request.setAttribute(RequestDispatcher.ERROR_REQUEST_URI, request.getRequestURI());
 
         // if there is no explicitly known error causing servlet, use
         // the name of the error handler servlet
-        if (request.getAttribute(SlingConstants.ERROR_SERVLET_NAME) == null) {
+        if (request.getAttribute(RequestDispatcher.ERROR_SERVLET_NAME) == null) {
             request.setAttribute(
-                    SlingConstants.ERROR_SERVLET_NAME,
+                    RequestDispatcher.ERROR_SERVLET_NAME,
                     errorHandler.getServletConfig().getServletName());
         }
 
@@ -733,8 +716,8 @@ public class SlingServletResolver implements ServletResolver, SlingRequestListen
             }
         } catch (final Throwable t) { // NOSONAR
             LOGGER.error("Calling the error handler resulted in an error", t);
-            LOGGER.error("Original error " + request.getAttribute(SlingConstants.ERROR_EXCEPTION_TYPE), (Throwable)
-                    request.getAttribute(SlingConstants.ERROR_EXCEPTION));
+            LOGGER.error("Original error " + request.getAttribute(RequestDispatcher.ERROR_EXCEPTION_TYPE), (Throwable)
+                    request.getAttribute(RequestDispatcher.ERROR_EXCEPTION));
             final IOException x =
                     new IOException("Error handler failed: " + t.getClass().getName());
             x.initCause(t);
@@ -758,7 +741,7 @@ public class SlingServletResolver implements ServletResolver, SlingRequestListen
                 this.tracker::getService));
 
         this.executionPaths.set(getExecutionPaths(config.servletresolver_paths()));
-        this.defaultExtensions.set(config.servletresolver_defaultExtensions());
+        this.defaultExtensions.set(Arrays.asList(config.servletresolver_defaultExtensions()));
         this.useResourceCaching = config.enable_resource_caching();
 
         // setup default servlet

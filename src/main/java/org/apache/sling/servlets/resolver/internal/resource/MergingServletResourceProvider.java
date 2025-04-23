@@ -30,7 +30,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sling.api.resource.NonExistingResource;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.SyntheticResource;
@@ -43,30 +42,30 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceReference;
 
 public class MergingServletResourceProvider extends ResourceProvider<Object> {
-    private final List<Pair<ServletResourceProvider, ServiceReference<?>>> registrations = new ArrayList<>();
+    private final List<Map.Entry<ServletResourceProvider, ServiceReference<?>>> registrations = new ArrayList<>();
 
     private final AtomicReference<ConcurrentHashMap<String, Set<String>>> tree =
             new AtomicReference<>(new ConcurrentHashMap<>());
-    private final AtomicReference<ConcurrentHashMap<String, Pair<ServletResourceProvider, ServiceReference<?>>>>
+    private final AtomicReference<ConcurrentHashMap<String, Map.Entry<ServletResourceProvider, ServiceReference<?>>>>
             providers = new AtomicReference<>(new ConcurrentHashMap<>());
 
     synchronized void add(ServletResourceProvider provider, ServiceReference<?> reference) {
-        registrations.add(Pair.of(provider, reference));
+        registrations.add(Map.entry(provider, reference));
         ConcurrentHashMap<String, Set<String>> localTree = tree.get();
-        ConcurrentHashMap<String, Pair<ServletResourceProvider, ServiceReference<?>>> localProvs = providers.get();
+        ConcurrentHashMap<String, Map.Entry<ServletResourceProvider, ServiceReference<?>>> localProvs = providers.get();
         index(localTree, localProvs, Arrays.asList(registrations.get(registrations.size() - 1)));
     }
 
     synchronized boolean remove(ServletResourceProvider provider) {
         boolean found = false;
-        for (Iterator<Pair<ServletResourceProvider, ServiceReference<?>>> regIter = registrations.iterator();
+        for (Iterator<Map.Entry<ServletResourceProvider, ServiceReference<?>>> regIter = registrations.iterator();
                 regIter.hasNext(); ) {
-            Pair<ServletResourceProvider, ServiceReference<?>> reg = regIter.next();
-            if (reg.getLeft() == provider) {
+            Map.Entry<ServletResourceProvider, ServiceReference<?>> reg = regIter.next();
+            if (reg.getKey() == provider) {
                 regIter.remove();
                 found = true;
             } else {
-                Bundle bundle = reg.getRight().getBundle();
+                Bundle bundle = reg.getValue().getBundle();
                 if (bundle == null || bundle.getState() == Bundle.STOPPING) {
                     regIter.remove();
                     found = true;
@@ -75,7 +74,7 @@ public class MergingServletResourceProvider extends ResourceProvider<Object> {
         }
         if (found) {
             ConcurrentHashMap<String, Set<String>> localTree = new ConcurrentHashMap<>();
-            ConcurrentHashMap<String, Pair<ServletResourceProvider, ServiceReference<?>>> localProvs =
+            ConcurrentHashMap<String, Map.Entry<ServletResourceProvider, ServiceReference<?>>> localProvs =
                     new ConcurrentHashMap<>();
             index(localTree, localProvs, registrations);
             tree.set(localTree);
@@ -92,10 +91,10 @@ public class MergingServletResourceProvider extends ResourceProvider<Object> {
 
     private void index(
             ConcurrentHashMap<String, Set<String>> tree,
-            ConcurrentHashMap<String, Pair<ServletResourceProvider, ServiceReference<?>>> providers,
-            List<Pair<ServletResourceProvider, ServiceReference<?>>> registrations) {
-        for (Pair<ServletResourceProvider, ServiceReference<?>> reference : registrations) {
-            for (String path : reference.getLeft().getServletPaths()) {
+            ConcurrentHashMap<String, Map.Entry<ServletResourceProvider, ServiceReference<?>>> providers,
+            List<Map.Entry<ServletResourceProvider, ServiceReference<?>>> registrations) {
+        for (Map.Entry<ServletResourceProvider, ServiceReference<?>> reference : registrations) {
+            for (String path : reference.getKey().getServletPaths()) {
                 StringBuilder currentBuilder = new StringBuilder();
                 for (String part : path.split("/")) {
                     Set<String> childs = tree.computeIfAbsent(
@@ -109,11 +108,11 @@ public class MergingServletResourceProvider extends ResourceProvider<Object> {
                     childs.add(currentBuilder.toString());
                 }
 
-                Pair<ServletResourceProvider, ServiceReference<?>> old = providers.get(path);
+                Map.Entry<ServletResourceProvider, ServiceReference<?>> old = providers.get(path);
                 if (old == null) {
                     providers.put(path, reference);
                 } else {
-                    if (reference.getRight().compareTo(old.getRight()) > 0) {
+                    if (reference.getValue().compareTo(old.getValue()) > 0) {
                         providers.put(path, reference);
                     }
                 }
@@ -153,11 +152,11 @@ public class MergingServletResourceProvider extends ResourceProvider<Object> {
                     resolveContext.getParentResolveContext(), path, ResourceContext.EMPTY_CONTEXT, null);
         }
         Resource result;
-        Pair<ServletResourceProvider, ServiceReference<?>> provider =
+        Map.Entry<ServletResourceProvider, ServiceReference<?>> provider =
                 providers.get().get(path);
 
         if (provider != null) {
-            result = provider.getLeft().getResource(resolveContext, path, null, null);
+            result = provider.getKey().getResource(resolveContext, path, null, null);
             if (result instanceof ServletResource) {
                 ((ServletResource) result).setWrappedResource(wrapped);
             }
@@ -195,11 +194,11 @@ public class MergingServletResourceProvider extends ResourceProvider<Object> {
 
         if (paths != null) {
             for (String path : paths.toArray(new String[0])) {
-                Pair<ServletResourceProvider, ServiceReference<?>> provider =
+                Map.Entry<ServletResourceProvider, ServiceReference<?>> provider =
                         providers.get().get(path);
 
                 if (provider != null) {
-                    Resource resource = provider.getLeft().getResource(ctx, path, null, parent);
+                    Resource resource = provider.getKey().getResource(ctx, path, null, parent);
                     if (resource != null) {
                         Resource wrapped = result.put(path, resource);
                         if (resource instanceof ServletResource) {

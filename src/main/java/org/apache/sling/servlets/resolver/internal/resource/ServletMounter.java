@@ -169,6 +169,7 @@ public class ServletMounter {
         }
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     @Reference(
             name = REF_SERVLET,
             service = Servlet.class,
@@ -221,7 +222,8 @@ public class ServletMounter {
 
         // initialize now
         try {
-            servlet.init(new SlingServletConfig(servletContext, reference, name));
+            final SlingServletConfig servletConfig = new SlingServletConfig(servletContext, reference, name);
+            servlet.init(servletConfig);
             logger.debug("bindServlet: Servlet {} initialized", name);
         } catch (final ServletException ce) {
             logger.error(

@@ -223,7 +223,7 @@ public class ScriptSelection2Test {
             String... expectedScripts) {
         SlingHttpServletRequest request = prepareRequest(method, contentResource, selectors, extension);
         final ResourceCollector collector = ResourceCollector.create(
-                request, context.resourceResolver().getSearchPath(), new String[] {"html"}, true);
+                request, context.resourceResolver().getSearchPath(), Collections.singleton("html"), true);
         final Collection<Resource> s =
                 collector.getServlets(request.getResourceResolver(), scriptEngineFactoriesExtensions);
         if (expectedScripts == null || expectedScripts.length == 0) {

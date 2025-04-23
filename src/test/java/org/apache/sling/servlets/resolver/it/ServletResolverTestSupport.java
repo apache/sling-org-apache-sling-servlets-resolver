@@ -123,11 +123,12 @@ public class ServletResolverTestSupport extends TestSupport {
                 mavenBundle()
                         .groupId("org.apache.commons")
                         .artifactId("commons-lang3")
-                        .versionAsInProject(),
+                        .version("3.17.0"),
                 mavenBundle()
                         .groupId("org.apache.commons")
                         .artifactId("commons-collections4")
                         .version("4.4"),
+                mavenBundle().groupId("org.owasp.encoder").artifactId("encoder").versionAsInProject(),
                 mavenBundle()
                         .groupId("org.apache.sling")
                         .artifactId("org.apache.sling.commons.mime")

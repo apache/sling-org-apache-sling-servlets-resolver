@@ -19,6 +19,7 @@
 package org.apache.sling.servlets.resolver.internal.bundle;
 
 import javax.servlet.GenericServlet;
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -29,7 +30,6 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingException;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
@@ -65,7 +65,7 @@ public class BundledScriptServlet extends GenericServlet {
             SlingHttpServletRequest request = (SlingHttpServletRequest) req;
             SlingHttpServletResponse response = (SlingHttpServletResponse) res;
 
-            if (request.getAttribute(SlingConstants.ATTR_INCLUDE_SERVLET_PATH) == null) {
+            if (request.getAttribute(RequestDispatcher.INCLUDE_SERVLET_PATH) == null) {
                 final String contentType = request.getResponseContentType();
                 if (contentType != null) {
                     response.setContentType(contentType);

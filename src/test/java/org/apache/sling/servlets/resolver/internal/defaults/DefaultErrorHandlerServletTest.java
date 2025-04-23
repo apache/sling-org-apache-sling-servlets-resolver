@@ -18,6 +18,7 @@
  */
 package org.apache.sling.servlets.resolver.internal.defaults;
 
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
@@ -145,7 +146,7 @@ public class DefaultErrorHandlerServletTest {
      * Mock impl to simulate enough of a servlet context to satisfy what is used
      * by DefaultErrorHandlerServlet
      */
-    private static final class MockServletConfig implements javax.servlet.ServletConfig {
+    private static final class MockServletConfig implements ServletConfig {
 
         @Override
         public String getServletName() {
@@ -154,12 +155,9 @@ public class DefaultErrorHandlerServletTest {
 
         @Override
         public ServletContext getServletContext() {
-            return new org.apache.sling.servlethelpers.MockServletContext() {
-                @Override
-                public String getServerInfo() {
-                    return "Test Server Info";
-                }
-            };
+            final ServletContext ctx = Mockito.mock(ServletContext.class);
+            Mockito.when(ctx.getServerInfo()).thenReturn("Test Server Info");
+            return ctx;
         }
 
         @Override

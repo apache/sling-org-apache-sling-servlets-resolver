@@ -269,7 +269,7 @@ public class WebConsolePluginTest {
                         + "json</dd></dl>\n"
                         + "</dd><dt>Suffix</dt>\n"
                         + "<dd>\n"
-                        + "null</dd></dl>\n"
+                        + "</dd></dl>\n"
                         + "</td></tr>")
                 .replace("\n", System.lineSeparator());
         assertThat(htmlString, CoreMatchers.containsString(expectedDecomposedURLHTML));
@@ -309,7 +309,7 @@ public class WebConsolePluginTest {
                                 + "</tr>\n"
                                 + "<tr class='content'>\n"
                                 + "<td colspan='3' class='content'>To check which servlet is responsible for rendering a response, "
-                                + "enter a request path into the field and click &apos;Resolve&apos; to resolve it.</th>\n"
+                                + "enter a request path into the field and click &#39;Resolve&#39; to resolve it.</th>\n"
                                 + "</tr>\n"
                                 + "<tr class='content'>\n"
                                 + "<td class='content'>URL</td>\n"

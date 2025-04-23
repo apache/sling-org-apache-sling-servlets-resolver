@@ -56,15 +56,25 @@ class PathBasedServletAcceptor {
         }
     }
 
+    SlingServletConfig getSlingServletConfig(final ServletConfig cfg, final Servlet servlet) {
+        if (cfg instanceof SlingServletConfig) {
+            return (SlingServletConfig) cfg;
+        }
+        final Servlet s = servlet;
+        if (s != null && s.getServletConfig() instanceof SlingServletConfig) {
+            return ((SlingServletConfig) s.getServletConfig());
+        }
+        return null;
+    }
+
     boolean accept(SlingHttpServletRequest request, Servlet servlet) {
+        final String servletName = RequestUtil.getServletName(servlet);
         // Get OSGi service properties from the SlingServletConfig
-        final ServletConfig rawCfg = servlet.getServletConfig();
-        if (!(rawCfg instanceof SlingServletConfig)) {
-            LOGGER.debug("Did not get a SlingServletConfig for {}", RequestUtil.getServletName(servlet));
+        final SlingServletConfig config = getSlingServletConfig(servlet.getServletConfig(), servlet);
+        if (config == null) {
+            LOGGER.debug("Did not get a SlingServletConfig for {}", servletName);
             return true;
         }
-        final SlingServletConfig config = (SlingServletConfig) rawCfg;
-        final String servletName = RequestUtil.getServletName(servlet);
 
         // If the servlet properties have the "extpaths" option, check extension, selector etc.
         boolean accepted = true;

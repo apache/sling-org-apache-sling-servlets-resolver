@@ -29,6 +29,7 @@ import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,10 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.request.RequestPathInfo;
-import org.apache.sling.api.request.ResponseUtil;
 import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
@@ -62,6 +60,7 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
+import org.owasp.encoder.Encode;
 
 /**
  * If the servlet request path ends with .json, the information is returned in JSON format.
@@ -86,7 +85,9 @@ public class WebConsolePlugin extends HttpServlet {
 
     private static final String SERVICE_USER_CONSOLE = "console";
 
-    @Reference(target = "(" + ServiceUserMapped.SUBSERVICENAME + "=" + SERVICE_USER_CONSOLE + ")")
+    @Reference(
+            target = "(|(" + ServiceUserMapped.SUBSERVICENAME + "=" + SERVICE_USER_CONSOLE + ")(!("
+                    + ServiceUserMapped.SUBSERVICENAME + "=*)))")
     private ServiceUserMapped consoleServiceUserMapped; // NOSONAR
 
     @Reference
@@ -103,7 +104,7 @@ public class WebConsolePlugin extends HttpServlet {
     /**
      * The default extensions
      */
-    private AtomicReference<String[]> defaultExtensions = new AtomicReference<>(); // NOSONAR
+    private AtomicReference<Collection<String>> defaultExtensions = new AtomicReference<>(); // NOSONAR
 
     /**
      * Activate this component.
@@ -112,7 +113,7 @@ public class WebConsolePlugin extends HttpServlet {
     @Modified
     protected void activate(final ResolverConfig config) {
         this.executionPaths.set(SlingServletResolver.getExecutionPaths(config.servletresolver_paths()));
-        this.defaultExtensions.set(config.servletresolver_defaultExtensions());
+        this.defaultExtensions.set(Arrays.asList(config.servletresolver_defaultExtensions()));
     }
 
     @Override
@@ -121,7 +122,7 @@ public class WebConsolePlugin extends HttpServlet {
         final String url = request.getParameter(PARAMETER_URL);
 
         String method = request.getParameter(PARAMETER_METHOD);
-        if (StringUtils.isBlank(method)) {
+        if (method == null || method.isBlank()) {
             method = "GET";
         }
 
@@ -132,23 +133,25 @@ public class WebConsolePlugin extends HttpServlet {
             final RequestPathInfo requestPathInfo = getRequestPathInfo(url, resourceResolver);
             if (requestURI.endsWith("json")) {
                 pw.println("{");
-                if (StringUtils.isNotBlank(url)) {
+                if (url != null && !url.isBlank()) {
                     printJSONDecomposedURLElement(pw, requestPathInfo);
                 }
-                if (StringUtils.isNotBlank(requestPathInfo.getResourcePath())) {
+                if (requestPathInfo.getResourcePath() != null
+                        && !requestPathInfo.getResourcePath().isBlank()) {
                     printJSONCandidatesElement(pw, resourceResolver, requestPathInfo, method);
                 }
-                pw.printf("  \"method\" : \"%s\"%n", StringEscapeUtils.escapeJson(method));
+                pw.printf("  \"method\" : \"%s\"%n", Encode.forJavaScript(method));
                 pw.print("}");
 
                 response.setContentType("application/json");
             } else {
                 printHTMLInputElements(pw, url);
-                if (StringUtils.isNotBlank(url)) {
+                if (url != null && !url.isBlank()) {
                     printHTMLDecomposedURLElement(pw, requestPathInfo);
                 }
 
-                if (StringUtils.isNotBlank(requestPathInfo.getResourcePath())) {
+                if (requestPathInfo.getResourcePath() != null
+                        && !requestPathInfo.getResourcePath().isBlank()) {
                     Resource resource = resourceResolver.resolve(requestPathInfo.getResourcePath());
                     final Collection<Resource> servlets =
                             resolveServlets(resourceResolver, requestPathInfo, resource, method);
@@ -162,11 +165,11 @@ public class WebConsolePlugin extends HttpServlet {
                         // check for non-existing resources
                         if (ResourceUtil.isNonExistingResource(resource)) {
                             pw.println("The resource given by path '");
-                            pw.println(ResponseUtil.escapeXml(resource.getPath()));
+                            pw.println(Encode.forHtml(resource.getPath()));
                             pw.println("' does not exist. Therefore no resource type could be determined!<br/>");
                         }
                         pw.print("Candidate servlets and scripts in order of preference for method ");
-                        pw.print(ResponseUtil.escapeXml(method));
+                        pw.print(Encode.forHtml(method));
                         pw.println(":<br/>");
                         pw.println("<ol class='servlets'>");
                         outputHTMLServlets(pw, servlets.iterator());
@@ -199,7 +202,7 @@ public class WebConsolePlugin extends HttpServlet {
             }
             first = false;
             sb.append("\"");
-            sb.append(StringEscapeUtils.escapeJson(s));
+            sb.append(Encode.forJavaScript(s));
             sb.append("\"");
         }
         sb.append("]");
@@ -236,16 +239,16 @@ public class WebConsolePlugin extends HttpServlet {
         pw.println("  \"decomposedURL\" : {");
         pw.printf(
                 "    \"path\" : \"%s\",%n",
-                StringEscapeUtils.escapeJson(StringUtils.defaultIfEmpty(requestPathInfo.getResourcePath(), "")));
+                requestPathInfo.getResourcePath() != null
+                        ? Encode.forJavaScript(requestPathInfo.getResourcePath())
+                        : "");
         pw.printf(
                 "    \"extension\" : \"%s\",%n",
-                StringEscapeUtils.escapeJson(StringUtils.defaultIfEmpty(requestPathInfo.getExtension(), "")));
-        pw.printf(
-                "    \"selectors\" : %s,%n",
-                StringUtils.defaultIfEmpty(formatArrayAsJSON(requestPathInfo.getSelectors()), ""));
+                requestPathInfo.getExtension() != null ? Encode.forJavaScript(requestPathInfo.getExtension()) : "");
+        pw.printf("    \"selectors\" : %s,%n", formatArrayAsJSON(requestPathInfo.getSelectors()));
         pw.printf(
                 "    \"suffix\" : \"%s\"%n",
-                StringEscapeUtils.escapeJson(StringUtils.defaultIfEmpty(requestPathInfo.getSuffix(), "")));
+                requestPathInfo.getSuffix() != null ? Encode.forJavaScript(requestPathInfo.getSuffix()) : "");
         pw.println("  },");
     }
 
@@ -262,7 +265,7 @@ public class WebConsolePlugin extends HttpServlet {
                         String.format(
                                 "The resource given by path " + "'%s' does not exist. Therefore no "
                                         + "resource type could be determined!",
-                                StringEscapeUtils.escapeJson(resource.getPath())));
+                                Encode.forJavaScript(resource.getPath())));
             }
 
             Map<String, List<String>> allowedAndDeniedServlets = getAllowedAndDeniedServlets(servlets);
@@ -292,7 +295,7 @@ public class WebConsolePlugin extends HttpServlet {
         pw.print(PARAMETER_URL);
         pw.print("' value='");
         if (url != null) {
-            pw.print(ResponseUtil.escapeXml(url));
+            pw.print(Encode.forHtml(url));
         }
         pw.println("' class='input' size='50'>");
         closeTd(pw);
@@ -321,7 +324,9 @@ public class WebConsolePlugin extends HttpServlet {
         pw.println("<dl>");
         pw.println("<dt>Path</dt>");
         dd(pw);
-        pw.print(ResponseUtil.escapeXml(requestPathInfo.getResourcePath()));
+        if (requestPathInfo.getResourcePath() != null) {
+            pw.print(Encode.forHtml(requestPathInfo.getResourcePath()));
+        }
         closeDd(pw);
         pw.println("<dt>Selectors</dt>");
         dd(pw);
@@ -329,19 +334,23 @@ public class WebConsolePlugin extends HttpServlet {
             pw.print("&lt;none&gt;");
         } else {
             pw.print("[");
-            pw.print(ResponseUtil.escapeXml(StringUtils.join(requestPathInfo.getSelectors(), ", ")));
+            pw.print(Encode.forHtml(String.join(", ", requestPathInfo.getSelectors())));
             pw.print("]");
         }
         closeDd(pw);
         pw.println("<dt>Extension</dt>");
         dd(pw);
-        pw.print(ResponseUtil.escapeXml(requestPathInfo.getExtension()));
+        if (requestPathInfo.getExtension() != null) {
+            pw.print(Encode.forHtml(requestPathInfo.getExtension()));
+        }
         closeDd(pw);
         pw.println("</dl>");
         closeDd(pw);
         pw.println("<dt>Suffix</dt>");
         dd(pw);
-        pw.print(ResponseUtil.escapeXml(requestPathInfo.getSuffix()));
+        if (requestPathInfo.getSuffix() != null) {
+            pw.print(Encode.forHtml(requestPathInfo.getSuffix()));
+        }
         closeDd(pw);
         pw.println("</dl>");
         closeTd(pw);
@@ -399,7 +408,7 @@ public class WebConsolePlugin extends HttpServlet {
 
     private void tdLabel(final PrintWriter pw, final String label) {
         pw.print("<td class='content'>");
-        pw.print(ResponseUtil.escapeXml(label));
+        pw.print(Encode.forHtml(label));
         pw.println("</td>");
     }
 
@@ -430,20 +439,19 @@ public class WebConsolePlugin extends HttpServlet {
     private String getServletDetails(Servlet servlet) {
         StringBuilder details = new StringBuilder();
         if (servlet instanceof SlingScript) {
-            SlingScript script = SlingScript.class.cast(servlet);
-            details.append(ResponseUtil.escapeXml(script.getScriptResource().getPath()));
+            final SlingScript script = SlingScript.class.cast(servlet);
+            details.append(Encode.forHtml(script.getScriptResource().getPath()));
             details.append(" (Resource Script)");
         } else {
             final Bundle bundle;
             if (servlet instanceof BundledScriptServlet) {
                 BundledScriptServlet script = BundledScriptServlet.class.cast(servlet);
                 bundle = script.getBundledRenderUnit().getBundle();
-                details.append(
-                        ResponseUtil.escapeXml(script.getBundledRenderUnit().getName()));
+                details.append(Encode.forHtml(script.getBundledRenderUnit().getName()));
                 details.append(" (Bundled Script)");
             } else {
                 final boolean isOptingServlet = servlet instanceof OptingServlet;
-                details.append(ResponseUtil.escapeXml(servlet.getClass().getName()));
+                details.append(Encode.forHtml(servlet.getClass().getName()));
                 if (isOptingServlet) {
                     details.append(" (OptingServlet)");
                 } else {
@@ -453,7 +461,7 @@ public class WebConsolePlugin extends HttpServlet {
             }
             if (bundle != null) {
                 details.append(" in bundle '")
-                        .append(bundle.getSymbolicName())
+                        .append(Encode.forHtml(bundle.getSymbolicName()))
                         .append("' (")
                         .append(bundle.getBundleId())
                         .append(")");
@@ -466,14 +474,14 @@ public class WebConsolePlugin extends HttpServlet {
     private void titleHtml(final PrintWriter pw, final String title, final String description) {
         tr(pw);
         pw.print("<th colspan='3' class='content container'>");
-        pw.print(ResponseUtil.escapeXml(title));
+        pw.print(Encode.forHtml(title));
         pw.println("</th>");
         closeTr(pw);
 
         if (description != null) {
             tr(pw);
             pw.print("<td colspan='3' class='content'>");
-            pw.print(ResponseUtil.escapeXml(description));
+            pw.print(Encode.forHtml(description));
             pw.println("</th>");
             closeTr(pw);
         }
