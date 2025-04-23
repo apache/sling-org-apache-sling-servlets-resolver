@@ -18,11 +18,10 @@
  */
 package org.apache.sling.servlets.resolver.internal.resource;
 
-import javax.servlet.Servlet;
-
 import java.util.Iterator;
 import java.util.Set;
 
+import jakarta.servlet.Servlet;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.spi.resource.provider.ResolveContext;
 import org.apache.sling.spi.resource.provider.ResourceContext;

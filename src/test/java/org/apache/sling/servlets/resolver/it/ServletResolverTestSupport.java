@@ -128,11 +128,12 @@ public class ServletResolverTestSupport extends TestSupport {
                 mavenBundle()
                         .groupId("org.apache.commons")
                         .artifactId("commons-lang3")
-                        .versionAsInProject(),
+                        .version("3.17.0"),
                 mavenBundle()
                         .groupId("org.apache.commons")
                         .artifactId("commons-collections4")
                         .version("4.4"),
+                mavenBundle().groupId("org.owasp.encoder").artifactId("encoder").versionAsInProject(),
                 mavenBundle()
                         .groupId("org.apache.sling")
                         .artifactId("org.apache.sling.commons.mime")
@@ -219,6 +220,7 @@ public class ServletResolverTestSupport extends TestSupport {
 
     protected SlingJakartaHttpServletResponse executeRequest(
             final String method, final String path, final int expectedStatus) throws Exception {
+        @SuppressWarnings("deprecation")
         final ResourceResolver resourceResolver = resourceResolverFactory.getAdministrativeResourceResolver(null);
         assertNotNull("Expecting ResourceResolver", resourceResolver);
         final Resource resource = new AbstractResource() {

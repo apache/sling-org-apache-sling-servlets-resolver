@@ -18,14 +18,12 @@
  */
 package org.apache.sling.servlets.resolver.internal.resource;
 
-import javax.servlet.Servlet;
-
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.commons.lang3.StringUtils;
+import jakarta.servlet.Servlet;
 import org.apache.sling.api.resource.AbstractResource;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceMetadata;
@@ -33,6 +31,7 @@ import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ValueMap;
 import org.apache.sling.api.wrappers.ValueMapDecorator;
 import org.apache.sling.scripting.spi.bundle.BundledRenderUnit;
+import org.apache.sling.servlets.resolver.internal.ServletWrapperUtil;
 import org.apache.sling.servlets.resolver.internal.bundle.BundledScriptServlet;
 
 public class ServletResource extends AbstractResource {
@@ -65,8 +64,9 @@ public class ServletResource extends AbstractResource {
         this.servlet = servlet;
         this.path = path;
         this.resourceType = ServletResourceProviderFactory.ensureServletNameExtension(path);
-        this.resourceSuperType =
-                StringUtils.isEmpty(resourceSuperType) ? DEFAULT_RESOURCE_SUPER_TYPE : resourceSuperType;
+        this.resourceSuperType = (resourceSuperType == null || resourceSuperType.isEmpty())
+                ? DEFAULT_RESOURCE_SUPER_TYPE
+                : resourceSuperType;
         this.metadata = new ResourceMetadata();
         this.metadata.put("sling.servlet.resource", "true");
     }
@@ -118,6 +118,19 @@ public class ServletResource extends AbstractResource {
         return servletName;
     }
 
+    private BundledScriptServlet isBundledScriptServlet() {
+        if (servlet instanceof BundledScriptServlet) {
+            return (BundledScriptServlet) servlet;
+        }
+        if (servlet instanceof ServletWrapperUtil.JakartaScriptServletWrapper) {
+            final javax.servlet.Servlet w = ((ServletWrapperUtil.JakartaScriptServletWrapper) servlet).servlet;
+            if (w instanceof BundledScriptServlet) {
+                return (BundledScriptServlet) w;
+            }
+        }
+        return null;
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public <T> T adaptTo(Class<T> type) {
@@ -125,15 +138,18 @@ public class ServletResource extends AbstractResource {
         if (type == Servlet.class && servlet != null) {
             return (T) servlet; // unchecked cast
         }
-        if (type == InputStream.class && servlet instanceof BundledScriptServlet) {
-            InputStream result = ((BundledScriptServlet) servlet).getInputStream();
+        if (type == javax.servlet.Servlet.class && servlet != null) {
+            return (T) ServletWrapperUtil.toJavaxServlet(servlet); // unchecked cast
+        }
+        if (type == InputStream.class && isBundledScriptServlet() != null) {
+            InputStream result = isBundledScriptServlet().getInputStream();
             if (result != null) {
                 return (T) result;
             }
         }
 
-        if (type == BundledRenderUnit.class && servlet instanceof BundledScriptServlet) {
-            return (T) ((BundledScriptServlet) servlet).getBundledRenderUnit();
+        if (type == BundledRenderUnit.class && isBundledScriptServlet() != null) {
+            return (T) isBundledScriptServlet().getBundledRenderUnit();
         }
 
         if (wrappedResource != null) {

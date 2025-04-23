@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import junit.framework.TestCase;
-import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.SlingJakartaHttpServletRequest;
 import org.apache.sling.api.request.builder.Builders;
 import org.apache.sling.api.request.builder.SlingHttpServletRequestBuilder;
 import org.apache.sling.api.resource.PersistenceException;
@@ -113,7 +113,7 @@ public abstract class HelperTestBase extends TestCase {
         return parent;
     }
 
-    protected SlingHttpServletRequest makeRequest(String method, String selectors, String extension) {
+    protected SlingJakartaHttpServletRequest makeRequest(String method, String selectors, String extension) {
         final Resource rsrc = Mockito.mock(Resource.class);
         final ResourceMetadata md = new ResourceMetadata();
         Mockito.when(rsrc.getResourceResolver()).thenReturn(resourceResolver);
@@ -135,7 +135,7 @@ public abstract class HelperTestBase extends TestCase {
             builder.withSelectors(selectors.split("\\."));
         }
         builder.withRequestMethod(method);
-        return builder.build();
+        return builder.buildJakartaRequest();
     }
 
     @Override

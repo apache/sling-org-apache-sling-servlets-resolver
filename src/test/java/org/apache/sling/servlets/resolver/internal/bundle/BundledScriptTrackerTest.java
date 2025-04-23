@@ -18,11 +18,10 @@
  */
 package org.apache.sling.servlets.resolver.internal.bundle;
 
-import javax.servlet.Servlet;
-
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.servlet.Servlet;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;

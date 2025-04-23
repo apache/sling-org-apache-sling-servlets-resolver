@@ -19,7 +19,6 @@
 package org.apache.sling.servlets.resolver.it;
 
 import javax.script.ScriptException;
-import javax.servlet.Servlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -31,6 +30,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.jar.JarInputStream;
 
+import jakarta.servlet.Servlet;
 import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
@@ -85,7 +85,8 @@ public class ServletResourceIT extends ServletResolverTestSupport {
 
     @Test
     public void testResourceAdaptsToBundledRenderedUnit() {
-        try (ResourceResolver resourceResolver = resourceResolverFactory.getAdministrativeResourceResolver(null)) {
+        try (@SuppressWarnings("deprecation")
+                ResourceResolver resourceResolver = resourceResolverFactory.getAdministrativeResourceResolver(null)) {
             Resource servletResource = resourceResolver.resolve("/apps/sling/bundled/test/GET.servlet");
             assertNotNull(servletResource);
             BundledRenderUnit unitFromResource = servletResource.adaptTo(BundledRenderUnit.class);

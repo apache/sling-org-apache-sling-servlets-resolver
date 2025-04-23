@@ -22,7 +22,6 @@ import jakarta.servlet.Servlet;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ValueMap;
 import org.apache.sling.api.wrappers.ValueMapDecorator;
-import org.apache.sling.servlets.resolver.internal.ServletWrapperUtil;
 
 public class MockJakartaServletResource extends org.apache.sling.servlets.resolver.internal.resource.ServletResource {
 
@@ -31,7 +30,7 @@ public class MockJakartaServletResource extends org.apache.sling.servlets.resolv
     private final Servlet servlet;
 
     public MockJakartaServletResource(ResourceResolver resourceResolver, Servlet servlet, String path) {
-        super(resourceResolver, ServletWrapperUtil.toJavaxServlet(servlet), path);
+        super(resourceResolver, servlet, path);
         this.servlet = servlet;
     }
 

@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.SlingJakartaHttpServletRequest;
 import org.apache.sling.api.request.builder.Builders;
 import org.apache.sling.api.resource.PersistenceException;
 import org.apache.sling.api.resource.Resource;
@@ -95,17 +95,17 @@ public class LocationCollectorTest {
                 parent, "page", Collections.singletonMap(ResourceResolver.PROPERTY_RESOURCE_TYPE, resourceType));
     }
 
-    protected SlingHttpServletRequest createRequest(final Resource r) {
+    protected SlingJakartaHttpServletRequest createRequest(final Resource r) {
         return Builders.newRequestBuilder(r)
                 .withExtension("html")
                 .withSelectors("print", "A4")
                 .withRequestMethod("GET")
-                .build();
+                .buildJakartaRequest();
     }
 
     @Test
     public void testSearchPathEmpty() {
-        final SlingHttpServletRequest request = this.createRequest(this.resource);
+        final SlingJakartaHttpServletRequest request = this.createRequest(this.resource);
         // expect path gets { "/" }
         searchPathOptions.setSearchPaths(null);
 
@@ -120,7 +120,7 @@ public class LocationCollectorTest {
 
     @Test
     public void testSearchPath1Element() {
-        final SlingHttpServletRequest request = this.createRequest(this.resource);
+        final SlingJakartaHttpServletRequest request = this.createRequest(this.resource);
         String root0 = "/apps/";
         searchPathOptions.setSearchPaths(new String[] {root0});
 
@@ -135,7 +135,7 @@ public class LocationCollectorTest {
 
     @Test
     public void testSearchPath2Elements() {
-        final SlingHttpServletRequest request = this.createRequest(this.resource);
+        final SlingJakartaHttpServletRequest request = this.createRequest(this.resource);
         String root0 = "/apps/";
         String root1 = "/libs/";
         searchPathOptions.setSearchPaths(new String[] {root0, root1});
@@ -174,7 +174,7 @@ public class LocationCollectorTest {
 
     @Test
     public void testSearchPathEmptyAbsoluteType() {
-        final SlingHttpServletRequest request = this.createRequest(this.resource);
+        final SlingJakartaHttpServletRequest request = this.createRequest(this.resource);
         // expect path gets { "/" }
         searchPathOptions.setSearchPaths(null);
 
@@ -194,7 +194,7 @@ public class LocationCollectorTest {
 
     @Test
     public void testSearchPath1ElementAbsoluteType() {
-        SlingHttpServletRequest request = this.createRequest(this.resource);
+        SlingJakartaHttpServletRequest request = this.createRequest(this.resource);
         String root0 = "/apps/";
         searchPathOptions.setSearchPaths(new String[] {root0});
 
@@ -214,7 +214,7 @@ public class LocationCollectorTest {
 
     @Test
     public void testSearchPath2ElementsAbsoluteType() {
-        SlingHttpServletRequest request = this.createRequest(this.resource);
+        SlingJakartaHttpServletRequest request = this.createRequest(this.resource);
         String root0 = "/apps/";
         String root1 = "/libs/";
         searchPathOptions.setSearchPaths(new String[] {root0, root1});
@@ -236,7 +236,7 @@ public class LocationCollectorTest {
 
     @Test
     public void testSearchPathEmptyWithSuper() {
-        SlingHttpServletRequest request = this.createRequest(this.resource);
+        SlingJakartaHttpServletRequest request = this.createRequest(this.resource);
         // expect path gets { "/" }
         searchPathOptions.setSearchPaths(null);
 
@@ -257,7 +257,7 @@ public class LocationCollectorTest {
 
     @Test
     public void testSearchPath1ElementWithSuper() {
-        SlingHttpServletRequest request = this.createRequest(this.resource);
+        SlingJakartaHttpServletRequest request = this.createRequest(this.resource);
         String root0 = "/apps/";
         searchPathOptions.setSearchPaths(new String[] {root0});
 
@@ -278,7 +278,7 @@ public class LocationCollectorTest {
 
     @Test
     public void testSearchPath2ElementsWithSuper() {
-        SlingHttpServletRequest request = this.createRequest(this.resource);
+        SlingJakartaHttpServletRequest request = this.createRequest(this.resource);
         String root0 = "/apps/";
         String root1 = "/libs/";
         searchPathOptions.setSearchPaths(new String[] {root0, root1});
@@ -303,7 +303,7 @@ public class LocationCollectorTest {
 
     @Test
     public void testSearchPathEmptyAbsoluteTypeWithSuper() {
-        SlingHttpServletRequest request = this.createRequest(this.resource);
+        SlingJakartaHttpServletRequest request = this.createRequest(this.resource);
         // expect path gets { "/" }
         searchPathOptions.setSearchPaths(null);
 
@@ -328,7 +328,7 @@ public class LocationCollectorTest {
 
     @Test
     public void testSearchPath1ElementAbsoluteTypeWithSuper() {
-        SlingHttpServletRequest request = this.createRequest(this.resource);
+        SlingJakartaHttpServletRequest request = this.createRequest(this.resource);
         String root0 = "/apps/";
         searchPathOptions.setSearchPaths(new String[] {root0});
 
@@ -353,7 +353,7 @@ public class LocationCollectorTest {
 
     @Test
     public void testSearchPath2ElementsAbsoluteTypeWithSuper() {
-        SlingHttpServletRequest request = this.createRequest(this.resource);
+        SlingJakartaHttpServletRequest request = this.createRequest(this.resource);
         String root0 = "/apps/";
         String root1 = "/libs/";
         searchPathOptions.setSearchPaths(new String[] {root0, root1});
@@ -381,7 +381,6 @@ public class LocationCollectorTest {
 
     @Test
     public void testScriptNameWithoutResourceType() {
-        final SlingHttpServletRequest request = this.createRequest(this.resource);
         String root0 = "/apps/";
         String root1 = "/libs/";
         searchPathOptions.setSearchPaths(new String[] {root0, root1});
@@ -533,9 +532,10 @@ public class LocationCollectorTest {
         assertThat(loc, isSameResourceList(expected));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void checkThatTheCacheIsUsed() {
-        final SlingHttpServletRequest request = this.createRequest(this.resource);
+        final SlingJakartaHttpServletRequest request = this.createRequest(this.resource);
 
         // skip if the test runs without caching
         if (!useResourceCaching) {
@@ -570,7 +570,7 @@ public class LocationCollectorTest {
 
     @Test
     public void testWithCacheMapKeyAlreadyUsed() {
-        final SlingHttpServletRequest request = this.createRequest(this.resource);
+        final SlingJakartaHttpServletRequest request = this.createRequest(this.resource);
         // if the cacheKey in the ResourceResolverMap is already used, make sure that it's not overwritten
         // this is an adapted copy of the testSearchPath1Element testcase
 

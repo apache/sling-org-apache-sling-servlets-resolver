@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceUtil;
@@ -116,7 +115,7 @@ public class LocationCollector {
 
         // add default resourceTypes
         final String defaultResourceTypeSuffix;
-        boolean blankResourceType = StringUtils.isBlank(resourceType);
+        boolean blankResourceType = resourceType == null || resourceType.isBlank();
         if (blankResourceType) {
             defaultResourceTypeSuffix = "";
         } else {
@@ -134,7 +133,7 @@ public class LocationCollector {
      * @return the resourceSuperType or null if the given resourceType does not have a resourceSuperType
      */
     private @Nullable String handleResourceType(@NotNull String resourceType) {
-        boolean isBlank = StringUtils.isBlank(resourceType);
+        boolean isBlank = resourceType == null || resourceType.isBlank();
         boolean isAbsoluteResourceType = resourceType.startsWith("/");
         String rst = null;
         if (!isBlank) {
@@ -264,6 +263,7 @@ public class LocationCollector {
                 .collect(Collectors.toList());
     }
 
+    @SuppressWarnings("unchecked")
     private static Map<String, Resource> getCacheMap(@NotNull ResourceResolver resolver) {
         Map<String, Resource> cacheMap;
         Object c = resolver.getPropertyMap().get(CACHE_KEY);
@@ -326,6 +326,7 @@ public class LocationCollector {
     public static void clearCache(ResourceResolver resolver) {
         Object cache = resolver.getPropertyMap().get(CACHE_KEY);
         if (cache instanceof Map) {
+            @SuppressWarnings("unchecked")
             Map<String, Resource> cacheMap = (Map<String, Resource>) cache;
             cacheMap.clear();
         }

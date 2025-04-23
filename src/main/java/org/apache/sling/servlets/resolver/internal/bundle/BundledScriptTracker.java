@@ -18,14 +18,6 @@
  */
 package org.apache.sling.servlets.resolver.internal.bundle;
 
-import javax.servlet.GenericServlet;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.Servlet;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -50,11 +42,16 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jakarta.servlet.GenericServlet;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.Servlet;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.sling.api.SlingConstants;
-import org.apache.sling.api.SlingHttpServletRequest;
-import org.apache.sling.api.SlingHttpServletResponse;
+import org.apache.sling.api.SlingJakartaHttpServletRequest;
+import org.apache.sling.api.SlingJakartaHttpServletResponse;
 import org.apache.sling.api.request.RequestDispatcherOptions;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.resource.type.ResourceType;
@@ -238,7 +235,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
             properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES, resourceTypesRegistrationValue);
 
             String extension = bundledRenderUnitCapability.getExtension();
-            if (!StringUtils.isEmpty(extension)) {
+            if (extension != null && !extension.isEmpty()) {
                 properties.put(ServletResolverConstants.SLING_SERVLET_EXTENSIONS, extension);
             }
 
@@ -248,12 +245,13 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         bundledRenderUnitCapability.getSelectors().toArray());
             }
 
-            if (StringUtils.isNotEmpty(bundledRenderUnitCapability.getMethod())) {
+            if (bundledRenderUnitCapability.getMethod() != null
+                    && !bundledRenderUnitCapability.getMethod().isEmpty()) {
                 properties.put(ServletResolverConstants.SLING_SERVLET_METHODS, bundledRenderUnitCapability.getMethod());
             }
 
             String extendedResourceTypeString = bundledRenderUnitCapability.getExtendedResourceType();
-            if (StringUtils.isNotEmpty(extendedResourceTypeString)) {
+            if (extendedResourceTypeString != null && !extendedResourceTypeString.isEmpty()) {
                 collectInheritanceChain(inheritanceChain, bundleWiring, extendedResourceTypeString, cache);
                 inheritanceChain.stream()
                         .filter(typeProvider ->
@@ -282,8 +280,10 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
             } else {
                 executable = bundledRenderUnitFinder.findUnit(bundle.getBundleContext(), inheritanceChain, aggregate);
             }
-        } else if (StringUtils.isNotEmpty(bundledRenderUnitCapability.getPath())
-                && StringUtils.isNotEmpty(bundledRenderUnitCapability.getScriptEngineName())) {
+        } else if (bundledRenderUnitCapability.getPath() != null
+                && !bundledRenderUnitCapability.getPath().isEmpty()
+                && bundledRenderUnitCapability.getScriptEngineName() != null
+                && !bundledRenderUnitCapability.getScriptEngineName().isEmpty()) {
             Set<TypeProvider> aggregate = Stream.concat(inheritanceChain.stream(), requiresChain.stream())
                     .collect(Collectors.toCollection(LinkedHashSet::new));
             executable = bundledRenderUnitFinder.findUnit(bundle.getBundleContext(), baseTypeProvider, aggregate);
@@ -298,8 +298,10 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
             } else {
                 if (!bundledRenderUnitCapability.getResourceTypes().isEmpty()
                         && bundledRenderUnitCapability.getSelectors().isEmpty()
-                        && StringUtils.isEmpty(bundledRenderUnitCapability.getExtension())
-                        && StringUtils.isEmpty(bundledRenderUnitCapability.getMethod())) {
+                        && (bundledRenderUnitCapability.getExtension() == null
+                                || bundledRenderUnitCapability.getExtension().isEmpty())
+                        && (bundledRenderUnitCapability.getMethod() == null
+                                || bundledRenderUnitCapability.getMethod().isEmpty())) {
                     String scriptName = FilenameUtils.getName(executable.getPath());
                     String scriptNameNoExtension = scriptName.substring(0, scriptName.lastIndexOf('.'));
                     boolean noMatch = bundledRenderUnitCapability.getResourceTypes().stream()
@@ -326,8 +328,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                             } else {
                                 label = resourceTypePath;
                             }
-                            if (StringUtils.isNotEmpty(executableParentPath)
-                                    && executableParentPath.equals(resourceTypePath)) {
+                            if (executableParentPath != null && executableParentPath.equals(resourceTypePath)) {
                                 paths.add(resourceTypePath + "/" + label + ".servlet");
                             }
                         });
@@ -353,8 +354,9 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                 }
                 if (!properties.containsKey(ServletResolverConstants.SLING_SERVLET_PATHS)) {
                     bundledRenderUnitCapability.getResourceTypes().forEach(resourceType -> {
-                        if (StringUtils.isNotEmpty(executableParentPath)
-                                && (executableParentPath + "/").startsWith(resourceType.toString() + "/")) {
+                        if (executableParentPath != null
+                                && (executableParentPath.concat("/"))
+                                        .startsWith(resourceType.toString().concat("/"))) {
                             properties.put(ServletResolverConstants.SLING_SERVLET_PATHS, executablePath);
                         }
                     });
@@ -460,7 +462,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         }
                     });
 
-            mounter.bindServlet(servlet, reference);
+            mounter.bindJakartaServlet(servlet, reference);
 
             @SuppressWarnings("unchecked")
             ServiceRegistration<Servlet> newProxyInstance = (ServiceRegistration<Servlet>) Proxy.newProxyInstance(
@@ -473,7 +475,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                                     ServiceRegistration.class.getMethod("setProperties", Dictionary.class))) {
                                 return null;
                             } else if (method.equals(ServiceRegistration.class.getMethod("unregister"))) {
-                                mounter.unbindServlet(reference);
+                                mounter.unbindJakartaServlet(reference);
                                 return null;
                             } else if (method.getName().equals("equals")
                                     && Arrays.equals(method.getParameterTypes(), new Class[] {Object.class})) {
@@ -619,7 +621,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         @Override
         public void service(ServletRequest req, ServletResponse res) throws ServletException, IOException {
 
-            SlingHttpServletRequest slingRequest = (SlingHttpServletRequest) req;
+            SlingJakartaHttpServletRequest slingRequest = (SlingJakartaHttpServletRequest) req;
 
             Map<Bundle, List<ServiceRegistration<Servlet>>> tracked;
             BundleTracker<List<ServiceRegistration<Servlet>>> bt = tracker.get();
@@ -690,7 +692,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                                 .getProperty(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES))
                         .to(String[].class);
                 if (targetRT.length == 0) {
-                    ((SlingHttpServletResponse) res).sendError(HttpServletResponse.SC_NOT_FOUND);
+                    ((SlingJakartaHttpServletResponse) res).sendError(HttpServletResponse.SC_NOT_FOUND);
                 } else {
                     String rt = targetRT[0];
                     RequestDispatcherOptions options = new RequestDispatcherOptions();
@@ -699,7 +701,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                     RequestDispatcher dispatcher =
                             slingRequest.getRequestDispatcher(slingRequest.getResource(), options);
                     if (dispatcher != null) {
-                        if (slingRequest.getAttribute(SlingConstants.ATTR_INCLUDE_SERVLET_PATH) == null) {
+                        if (slingRequest.getAttribute(RequestDispatcher.INCLUDE_SERVLET_PATH) == null) {
                             final String contentType = slingRequest.getResponseContentType();
                             if (contentType != null) {
                                 res.setContentType(contentType);
@@ -710,11 +712,11 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         }
                         dispatcher.include(req, res);
                     } else {
-                        ((SlingHttpServletResponse) res).sendError(HttpServletResponse.SC_NOT_FOUND);
+                        ((SlingJakartaHttpServletResponse) res).sendError(HttpServletResponse.SC_NOT_FOUND);
                     }
                 }
             } else {
-                ((SlingHttpServletResponse) res).sendError(HttpServletResponse.SC_NOT_FOUND);
+                ((SlingJakartaHttpServletResponse) res).sendError(HttpServletResponse.SC_NOT_FOUND);
             }
         }
     }
@@ -756,7 +758,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         Bundle providingBundle = wire.getProvider().getBundle();
                         providers.add(new TypeProviderImpl(wiredCapability, providingBundle));
                         String wiredExtends = wiredCapability.getExtendedResourceType();
-                        if (StringUtils.isNotEmpty(wiredExtends)) {
+                        if (wiredExtends != null && !wiredExtends.isEmpty()) {
                             collectInheritanceChain(providers, wire.getProviderWiring(), wiredExtends, cache);
                         }
                     }

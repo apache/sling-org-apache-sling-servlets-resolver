@@ -18,10 +18,6 @@
  */
 package org.apache.sling.servlets.resolver.internal.console;
 
-import javax.servlet.Servlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -30,6 +26,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jakarta.json.Json;
+import jakarta.servlet.Servlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
@@ -269,7 +268,7 @@ public class WebConsolePluginTest {
                         + "json</dd></dl>\n"
                         + "</dd><dt>Suffix</dt>\n"
                         + "<dd>\n"
-                        + "null</dd></dl>\n"
+                        + "</dd></dl>\n"
                         + "</td></tr>")
                 .replace("\n", System.lineSeparator());
         assertThat(htmlString, CoreMatchers.containsString(expectedDecomposedURLHTML));
@@ -309,7 +308,7 @@ public class WebConsolePluginTest {
                                 + "</tr>\n"
                                 + "<tr class='content'>\n"
                                 + "<td colspan='3' class='content'>To check which servlet is responsible for rendering a response, "
-                                + "enter a request path into the field and click &apos;Resolve&apos; to resolve it.</th>\n"
+                                + "enter a request path into the field and click &#39;Resolve&#39; to resolve it.</th>\n"
                                 + "</tr>\n"
                                 + "<tr class='content'>\n"
                                 + "<td class='content'>URL</td>\n"

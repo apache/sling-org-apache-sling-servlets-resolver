@@ -18,15 +18,14 @@
  */
 package org.apache.sling.servlets.resolver.internal.defaults;
 
-import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 
-import org.apache.sling.api.SlingHttpServletRequest;
-import org.apache.sling.api.SlingHttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
+import org.apache.sling.api.SlingJakartaHttpServletRequest;
+import org.apache.sling.api.SlingJakartaHttpServletResponse;
 import org.apache.sling.api.resource.NonExistingResource;
 import org.apache.sling.api.resource.Resource;
-import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
+import org.apache.sling.api.servlets.SlingJakartaSafeMethodsServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,14 +35,15 @@ import org.slf4j.LoggerFactory;
  * The default servlet is not registered to handle any concrete resource type.
  * Rather it is used internally on demand.
  */
-public class DefaultServlet extends SlingSafeMethodsServlet {
+public class DefaultServlet extends SlingJakartaSafeMethodsServlet {
 
     private static final long serialVersionUID = 3806788918045433043L;
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultServlet.class);
 
     @Override
-    protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) throws IOException {
+    protected void doGet(SlingJakartaHttpServletRequest request, SlingJakartaHttpServletResponse response)
+            throws IOException {
 
         Resource resource = request.getResource();
 

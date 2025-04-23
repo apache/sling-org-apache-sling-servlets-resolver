@@ -46,6 +46,7 @@ public class AbstractResourceCollectorTest {
         context.create().resource("/parent/child3");
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testGetChildrenWithCachingEnabled() {
 
@@ -111,7 +112,7 @@ public class AbstractResourceCollectorTest {
 
         // cache miss
         Resource res3 = AbstractResourceCollector.getResourceOrNull(spyResolver, "/parent/child2", true);
-        assertNotNull(res2);
+        assertNotNull(res3);
         Mockito.verify(spyResolver, Mockito.times(1)).getResource("/parent/child2");
 
         // cache miss
@@ -135,8 +136,8 @@ public class AbstractResourceCollectorTest {
         spyResolver.getPropertyMap().put(AbstractResourceCollector.CACHE_KEY_RESOURCES, payload);
 
         // not yet initialized
-        Resource res1 = AbstractResourceCollector.getResourceOrNull(spyResolver, "/parent/child1", true);
-        Resource res2 = AbstractResourceCollector.getResourceOrNull(spyResolver, "/parent/child1", true);
+        AbstractResourceCollector.getResourceOrNull(spyResolver, "/parent/child1", true);
+        AbstractResourceCollector.getResourceOrNull(spyResolver, "/parent/child1", true);
         Mockito.verify(spyResolver, Mockito.times(2)).getResource("/parent/child1");
 
         assertEquals(payload, spyResolver.getPropertyMap().get(AbstractResourceCollector.CACHE_KEY_RESOURCES));

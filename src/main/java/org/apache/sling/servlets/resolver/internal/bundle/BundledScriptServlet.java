@@ -18,22 +18,23 @@
  */
 package org.apache.sling.servlets.resolver.internal.bundle;
 
-import javax.servlet.GenericServlet;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.sling.api.SlingConstants;
+import jakarta.servlet.GenericServlet;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import org.apache.sling.api.SlingException;
-import org.apache.sling.api.SlingHttpServletRequest;
-import org.apache.sling.api.SlingHttpServletResponse;
+import org.apache.sling.api.SlingJakartaHttpServletRequest;
+import org.apache.sling.api.SlingJakartaHttpServletResponse;
 import org.apache.sling.api.resource.type.ResourceType;
+import org.apache.sling.api.wrappers.JakartaToJavaxRequestWrapper;
+import org.apache.sling.api.wrappers.JakartaToJavaxResponseWrapper;
 import org.apache.sling.scripting.spi.bundle.BundledRenderUnit;
 import org.apache.sling.scripting.spi.bundle.TypeProvider;
 import org.jetbrains.annotations.NotNull;
@@ -61,11 +62,11 @@ public class BundledScriptServlet extends GenericServlet {
 
     @Override
     public void service(ServletRequest req, ServletResponse res) throws ServletException, IOException {
-        if ((req instanceof SlingHttpServletRequest) && (res instanceof SlingHttpServletResponse)) {
-            SlingHttpServletRequest request = (SlingHttpServletRequest) req;
-            SlingHttpServletResponse response = (SlingHttpServletResponse) res;
+        if ((req instanceof SlingJakartaHttpServletRequest) && (res instanceof SlingJakartaHttpServletResponse)) {
+            SlingJakartaHttpServletRequest request = (SlingJakartaHttpServletRequest) req;
+            SlingJakartaHttpServletResponse response = (SlingJakartaHttpServletResponse) res;
 
-            if (request.getAttribute(SlingConstants.ATTR_INCLUDE_SERVLET_PATH) == null) {
+            if (request.getAttribute(RequestDispatcher.INCLUDE_SERVLET_PATH) == null) {
                 final String contentType = request.getResponseContentType();
                 if (contentType != null) {
                     response.setContentType(contentType);
@@ -77,7 +78,9 @@ public class BundledScriptServlet extends GenericServlet {
 
             RequestWrapper requestWrapper = new RequestWrapper(request, types);
             try {
-                executable.eval(requestWrapper, response);
+                executable.eval(
+                        JakartaToJavaxRequestWrapper.toJavaxRequest(requestWrapper),
+                        JakartaToJavaxResponseWrapper.toJavaxResponse(response));
             } catch (RuntimeException see) {
 
                 // log in the request progress tracker
@@ -101,7 +104,7 @@ public class BundledScriptServlet extends GenericServlet {
      * Logs the error caused by executing the script in the request progress
      * tracker.
      */
-    private void logScriptError(SlingHttpServletRequest request, Throwable throwable) {
+    private void logScriptError(SlingJakartaHttpServletRequest request, Throwable throwable) {
         String message = throwable.getMessage();
         if (message != null) {
             message = throwable.getMessage().replace('\n', '/');

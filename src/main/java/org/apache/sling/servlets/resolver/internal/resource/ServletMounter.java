@@ -18,10 +18,6 @@
  */
 package org.apache.sling.servlets.resolver.internal.resource;
 
-import javax.servlet.Servlet;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Dictionary;
@@ -33,6 +29,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import jakarta.servlet.Servlet;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
 import org.apache.sling.api.request.RequestUtil;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.servlets.ServletResolver;
@@ -170,41 +169,41 @@ public class ServletMounter {
         }
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     @Reference(
             name = REF_SERVLET,
+            service = javax.servlet.Servlet.class,
+            cardinality = ReferenceCardinality.MULTIPLE,
+            policy = ReferencePolicy.DYNAMIC,
+            target = "(|(" + ServletResolverConstants.SLING_SERVLET_PATHS + "=*)("
+                    + ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES + "=*))")
+    public void bindServlet(
+            final javax.servlet.Servlet servlet, final ServiceReference<javax.servlet.Servlet> reference) {
+        if (this.active) {
+            createServlet(ServletWrapperUtil.toJakartaServlet(servlet), servlet, (ServiceReference) reference);
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public void unbindServlet(final ServiceReference<javax.servlet.Servlet> reference) {
+        destroyServlet((ServiceReference) reference);
+    }
+
+    @Reference(
+            name = "JakartaServlet",
             service = Servlet.class,
             cardinality = ReferenceCardinality.MULTIPLE,
             policy = ReferencePolicy.DYNAMIC,
             target = "(|(" + ServletResolverConstants.SLING_SERVLET_PATHS + "=*)("
                     + ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES + "=*))")
-    public void bindServlet(final Servlet servlet, final ServiceReference<Servlet> reference) {
+    public void bindJakartaServlet(final Servlet servlet, final ServiceReference<Servlet> reference) {
         if (this.active) {
-            createServlet(servlet, reference);
+            createServlet(servlet, null, reference);
         }
     }
 
-    public void unbindServlet(final ServiceReference<Servlet> reference) {
-        destroyServlet(reference);
-    }
-
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    @Reference(
-            name = "JakartaServlet",
-            service = jakarta.servlet.Servlet.class,
-            cardinality = ReferenceCardinality.MULTIPLE,
-            policy = ReferencePolicy.DYNAMIC,
-            target = "(|(" + ServletResolverConstants.SLING_SERVLET_PATHS + "=*)("
-                    + ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES + "=*))")
-    public void bindJakartaServlet(
-            final jakarta.servlet.Servlet servlet, final ServiceReference<jakarta.servlet.Servlet> reference) {
-        if (this.active) {
-            createServlet(ServletWrapperUtil.toJavaxServlet(servlet), (ServiceReference) reference);
-        }
-    }
-
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public void unbindJakartaServlet(final ServiceReference<jakarta.servlet.Servlet> reference) {
-        destroyServlet((ServiceReference) reference);
+        destroyServlet(reference);
     }
 
     public boolean mountProviders() {
@@ -229,7 +228,10 @@ public class ServletMounter {
         }
     }
 
-    private boolean createServlet(final Servlet servlet, final ServiceReference<Servlet> reference) {
+    private boolean createServlet(
+            final Servlet servlet,
+            final javax.servlet.Servlet javaxServlet,
+            final ServiceReference<Servlet> reference) {
         // check for a name, this is required
         final String name = getName(reference);
 
@@ -242,7 +244,12 @@ public class ServletMounter {
 
         // initialize now
         try {
-            servlet.init(new SlingServletConfig(servletContext, reference, name));
+            final SlingServletConfig servletConfig = new SlingServletConfig(servletContext, reference, name);
+            if (javaxServlet != null) {
+                javaxServlet.init(new JavaxSlingServletConfig(servletConfig));
+            } else {
+                servlet.init(servletConfig);
+            }
             logger.debug("bindServlet: Servlet {} initialized", name);
         } catch (final ServletException ce) {
             logger.error(

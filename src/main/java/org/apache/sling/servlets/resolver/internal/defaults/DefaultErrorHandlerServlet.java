@@ -18,25 +18,24 @@
  */
 package org.apache.sling.servlets.resolver.internal.defaults;
 
-import javax.servlet.GenericServlet;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.Servlet;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import jakarta.json.Json;
 import jakarta.json.stream.JsonGenerator;
-import org.apache.sling.api.SlingHttpServletRequest;
+import jakarta.servlet.GenericServlet;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.Servlet;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.apache.sling.api.SlingJakartaHttpServletRequest;
 import org.apache.sling.api.request.RequestProgressTracker;
 import org.apache.sling.api.request.ResponseUtil;
-import org.apache.sling.api.request.header.MediaRangeList;
+import org.apache.sling.api.request.header.JakartaMediaRangeList;
 import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Component;
 import org.slf4j.Logger;
@@ -80,8 +79,8 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
 
         // properly consider the 'Accept' header conditions to decide whether to send json or html back
         if (req instanceof HttpServletRequest
-                && JSON_CONTENT_TYPE.equals(
-                        new MediaRangeList((HttpServletRequest) req).prefer(HTML_CONTENT_TYPE, JSON_CONTENT_TYPE))) {
+                && JSON_CONTENT_TYPE.equals(new JakartaMediaRangeList((HttpServletRequest) req)
+                        .prefer(HTML_CONTENT_TYPE, JSON_CONTENT_TYPE))) {
             renderJson(req, res, statusMessage, requestUri, servletName, statusCode);
         } else {
             // default to HTML rendering
@@ -118,8 +117,8 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
         }
 
         // dump the request progress tracker
-        if (req instanceof SlingHttpServletRequest) {
-            final RequestProgressTracker tracker = ((SlingHttpServletRequest) req).getRequestProgressTracker();
+        if (req instanceof SlingJakartaHttpServletRequest) {
+            final RequestProgressTracker tracker = ((SlingJakartaHttpServletRequest) req).getRequestProgressTracker();
             pw.println("<h3>Request Progress:</h3>");
             pw.println("<pre>");
             pw.flush();
@@ -190,9 +189,10 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
             }
 
             // dump the request progress tracker
-            if (req instanceof SlingHttpServletRequest) {
+            if (req instanceof SlingJakartaHttpServletRequest) {
                 // dump the request progress tracker
-                final RequestProgressTracker tracker = ((SlingHttpServletRequest) req).getRequestProgressTracker();
+                final RequestProgressTracker tracker =
+                        ((SlingJakartaHttpServletRequest) req).getRequestProgressTracker();
                 StringWriter strWriter = new StringWriter();
                 try (PrintWriter progressWriter = new PrintWriter(strWriter)) {
                     tracker.dump(progressWriter);

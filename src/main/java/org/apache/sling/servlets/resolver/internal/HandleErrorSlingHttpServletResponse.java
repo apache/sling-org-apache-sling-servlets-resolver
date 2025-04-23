@@ -21,17 +21,17 @@ package org.apache.sling.servlets.resolver.internal;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-import org.apache.sling.api.SlingHttpServletResponse;
-import org.apache.sling.api.wrappers.SlingHttpServletResponseWrapper;
+import org.apache.sling.api.SlingJakartaHttpServletResponse;
+import org.apache.sling.api.wrappers.SlingJakartaHttpServletResponseWrapper;
 
 /**
  * wrap the original response so we can monitor if the writer
  * has been closed
  */
-final class HandleErrorSlingHttpServletResponse extends SlingHttpServletResponseWrapper {
+final class HandleErrorSlingHttpServletResponse extends SlingJakartaHttpServletResponseWrapper {
     private HandleErrorResponseWriter writer = null;
 
-    HandleErrorSlingHttpServletResponse(SlingHttpServletResponse response) {
+    HandleErrorSlingHttpServletResponse(SlingJakartaHttpServletResponse response) {
         super(response);
     }
 

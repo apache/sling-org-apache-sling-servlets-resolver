@@ -22,7 +22,6 @@ import javax.management.NotCompliantMBeanException;
 import javax.management.StandardMBean;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
-import javax.servlet.Servlet;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,6 +32,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jakarta.servlet.Servlet;
 import org.apache.sling.api.resource.observation.ExternalResourceChangeListener;
 import org.apache.sling.api.resource.observation.ResourceChange;
 import org.apache.sling.api.resource.observation.ResourceChangeListener;

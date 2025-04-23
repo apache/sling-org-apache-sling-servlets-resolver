@@ -21,7 +21,7 @@ package org.apache.sling.servlets.resolver.internal.helper;
 import java.util.Collection;
 import java.util.Collections;
 
-import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.SlingJakartaHttpServletRequest;
 import org.apache.sling.api.resource.Resource;
 
 /** Various tests that explain and demonstrate how scripts are
@@ -64,8 +64,8 @@ public class ScriptSelectionTest extends HelperTestBase {
         }
 
         // Create mock request and get scripts from ResourceCollector
-        final SlingHttpServletRequest req = makeRequest(method, selectors, extension);
-        final ResourceCollector u = ResourceCollector.create(req, null, new String[] {"html"}, true);
+        final SlingJakartaHttpServletRequest req = makeRequest(method, selectors, extension);
+        final ResourceCollector u = ResourceCollector.create(req, null, Collections.singleton("html"), true);
         final Collection<Resource> s = u.getServlets(req.getResourceResolver(), Collections.emptyList());
 
         if (expectedScript == null) {

@@ -16,21 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sling.servlets.resolver.internal;
+package org.apache.sling.servlets.resolver.internal.resource;
 
-import org.apache.sling.api.SlingJakartaHttpServletResponse;
-import org.junit.Test;
-import org.mockito.Mockito;
+import org.apache.felix.http.javaxwrappers.ServletConfigWrapper;
 
-import static org.junit.Assert.assertFalse;
+public class JavaxSlingServletConfig extends ServletConfigWrapper {
 
-public class HandleErrorSlingHttpServletResponseTest {
+    private final SlingServletConfig cfg;
 
-    @Test
-    public void testIsClosed() {
-        final SlingJakartaHttpServletResponse orig = Mockito.mock(SlingJakartaHttpServletResponse.class);
+    public JavaxSlingServletConfig(final SlingServletConfig cfg) {
+        super(cfg);
+        this.cfg = cfg;
+    }
 
-        final HandleErrorSlingHttpServletResponse resp = new HandleErrorSlingHttpServletResponse(orig);
-        assertFalse(resp.isOpen());
+    public SlingServletConfig getSlingServletConfig() {
+        return cfg;
     }
 }

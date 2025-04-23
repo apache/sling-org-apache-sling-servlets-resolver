@@ -18,14 +18,14 @@
  */
 package org.apache.sling.servlets.resolver.internal;
 
-import javax.servlet.Servlet;
-import javax.servlet.ServletConfig;
-
 import java.util.Arrays;
 
-import org.apache.sling.api.SlingHttpServletRequest;
+import jakarta.servlet.Servlet;
+import jakarta.servlet.ServletConfig;
+import org.apache.sling.api.SlingJakartaHttpServletRequest;
 import org.apache.sling.api.request.RequestUtil;
 import org.apache.sling.api.servlets.ServletResolverConstants;
+import org.apache.sling.servlets.resolver.internal.resource.JavaxSlingServletConfig;
 import org.apache.sling.servlets.resolver.internal.resource.SlingServletConfig;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -38,9 +38,6 @@ import org.slf4j.LoggerFactory;
  */
 class PathBasedServletAcceptor {
     public static final Logger LOGGER = LoggerFactory.getLogger(PathBasedServletAcceptor.class);
-
-    // TODO should be in ServletResolverConstants
-    private static final String STRICT_PATHS_SERVICE_PROPERTY = "sling.servlet.paths.strict";
 
     // Used to indicate "accept only an empty set of selectors or extensions - should not be
     // a valid selector or extension to avoid collisions
@@ -56,19 +53,36 @@ class PathBasedServletAcceptor {
         }
     }
 
-    boolean accept(SlingHttpServletRequest request, Servlet servlet) {
+    SlingServletConfig getSlingServletConfig(final ServletConfig cfg, final Servlet servlet) {
+        if (cfg instanceof SlingServletConfig) {
+            return (SlingServletConfig) cfg;
+        }
+        final javax.servlet.Servlet s;
+        if (servlet instanceof ServletWrapperUtil.JakartaScriptOptingServletWrapper) {
+            s = ((ServletWrapperUtil.JakartaScriptOptingServletWrapper) servlet).servlet;
+        } else if (servlet instanceof ServletWrapperUtil.JakartaScriptServletWrapper) {
+            s = ((ServletWrapperUtil.JakartaScriptServletWrapper) servlet).servlet;
+        } else {
+            s = null;
+        }
+        if (s != null && s.getServletConfig() instanceof JavaxSlingServletConfig) {
+            return ((JavaxSlingServletConfig) s.getServletConfig()).getSlingServletConfig();
+        }
+        return null;
+    }
+
+    boolean accept(SlingJakartaHttpServletRequest request, Servlet servlet) {
+        final String servletName = RequestUtil.getServletName(servlet);
         // Get OSGi service properties from the SlingServletConfig
-        final ServletConfig rawCfg = servlet.getServletConfig();
-        if (!(rawCfg instanceof SlingServletConfig)) {
-            LOGGER.debug("Did not get a SlingServletConfig for {}", RequestUtil.getServletName(servlet));
+        final SlingServletConfig config = getSlingServletConfig(servlet.getServletConfig(), servlet);
+        if (config == null) {
+            LOGGER.debug("Did not get a SlingServletConfig for {}", servletName);
             return true;
         }
-        final SlingServletConfig config = (SlingServletConfig) rawCfg;
-        final String servletName = RequestUtil.getServletName(servlet);
 
         // If the servlet properties have the "extpaths" option, check extension, selector etc.
         boolean accepted = true;
-        final Object strictPaths = config.getServiceProperty(STRICT_PATHS_SERVICE_PROPERTY);
+        final Object strictPaths = config.getServiceProperty(ServletResolverConstants.SLING_SERVLET_PATHS_STRICT);
         if (strictPaths != null && Boolean.valueOf(strictPaths.toString())) {
             accepted = accept(
                             servletName,

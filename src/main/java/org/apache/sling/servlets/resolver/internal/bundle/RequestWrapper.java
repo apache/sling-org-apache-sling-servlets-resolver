@@ -18,22 +18,20 @@
  */
 package org.apache.sling.servlets.resolver.internal.bundle;
 
-import javax.servlet.RequestDispatcher;
-
 import java.util.Set;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.sling.api.SlingHttpServletRequest;
+import jakarta.servlet.RequestDispatcher;
+import org.apache.sling.api.SlingJakartaHttpServletRequest;
 import org.apache.sling.api.request.RequestDispatcherOptions;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.type.ResourceType;
-import org.apache.sling.api.wrappers.SlingHttpServletRequestWrapper;
+import org.apache.sling.api.wrappers.SlingJakartaHttpServletRequestWrapper;
 
-public class RequestWrapper extends SlingHttpServletRequestWrapper {
+public class RequestWrapper extends SlingJakartaHttpServletRequestWrapper {
 
     private final Set<ResourceType> wiredResourceTypes;
 
-    public RequestWrapper(SlingHttpServletRequest wrappedRequest, Set<ResourceType> wiredResourceTypes) {
+    public RequestWrapper(SlingJakartaHttpServletRequest wrappedRequest, Set<ResourceType> wiredResourceTypes) {
         super(wrappedRequest);
         this.wiredResourceTypes = wiredResourceTypes;
     }
@@ -43,7 +41,7 @@ public class RequestWrapper extends SlingHttpServletRequestWrapper {
         if (resource == null) {
             return null;
         }
-        if (options != null && StringUtils.isEmpty(options.getForceResourceType())) {
+        if (options != null && options.getForceResourceType().isEmpty()) {
             options.setForceResourceType(resource.getResourceType());
         }
         RequestDispatcherOptions processedOptions = processOptions(options);
@@ -67,7 +65,7 @@ public class RequestWrapper extends SlingHttpServletRequestWrapper {
             requestDispatcherOptions.setReplaceSelectors(options.getReplaceSelectors());
             requestDispatcherOptions.setReplaceSuffix(options.getReplaceSuffix());
             String forcedResourceType = options.getForceResourceType();
-            if (StringUtils.isNotEmpty(forcedResourceType)) {
+            if (forcedResourceType != null && !forcedResourceType.isEmpty()) {
                 for (ResourceType wiredResourceType : wiredResourceTypes) {
                     String type = wiredResourceType.getType();
                     if (type.equals(forcedResourceType)) {

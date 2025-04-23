@@ -30,13 +30,14 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.sling.api.SlingJakartaHttpServletRequest;
 import org.apache.sling.api.SlingJakartaHttpServletResponse;
 import org.apache.sling.api.request.builder.Builders;
 import org.apache.sling.api.resource.Resource;
-import org.apache.sling.api.wrappers.JakartaToJavaxRequestWrapper;
-import org.apache.sling.api.wrappers.JakartaToJavaxResponseWrapper;
 import org.apache.sling.api.wrappers.SlingJakartaHttpServletRequestWrapper;
 import org.apache.sling.api.wrappers.SlingJakartaHttpServletResponseWrapper;
 import org.junit.Test;
@@ -50,15 +51,13 @@ import static org.junit.Assert.assertTrue;
  */
 public class DefaultErrorHandlerJakartaServletTest {
 
-    protected void assertJsonErrorResponse(SlingJakartaHttpServletRequest req)
-            throws javax.servlet.ServletException, IOException {
+    protected void assertJsonErrorResponse(SlingJakartaHttpServletRequest req) throws IOException, ServletException {
         MockErrorSlingHttpServletResponse res = new MockErrorSlingHttpServletResponse(
                 Builders.newResponseBuilder().buildJakartaResponseResult(), false);
 
         DefaultErrorHandlerServlet errorServlet = new DefaultErrorHandlerServlet();
         errorServlet.init(new MockServletConfig());
-        errorServlet.service(
-                JakartaToJavaxRequestWrapper.toJavaxRequest(req), JakartaToJavaxResponseWrapper.toJavaxResponse(res));
+        errorServlet.service(req, res);
 
         // verify we got json back
         assertEquals("application/json;charset=UTF-8", res.getContentType());
@@ -78,7 +77,7 @@ public class DefaultErrorHandlerJakartaServletTest {
     }
 
     @Test
-    public void testJsonErrorResponse() throws IOException, javax.servlet.ServletException {
+    public void testJsonErrorResponse() throws IOException, ServletException {
         final Resource resource = Mockito.mock(Resource.class);
         final SlingJakartaHttpServletRequest request =
                 Builders.newRequestBuilder(resource).buildJakartaRequest();
@@ -94,8 +93,7 @@ public class DefaultErrorHandlerJakartaServletTest {
      * Class object instead of a String, it still produces a valid error response
      */
     @Test
-    public void testJsonErrorResponseWithClassExceptionTypeAttributeValue()
-            throws IOException, javax.servlet.ServletException {
+    public void testJsonErrorResponseWithClassExceptionTypeAttributeValue() throws IOException, ServletException {
         final Resource resource = Mockito.mock(Resource.class);
         final SlingJakartaHttpServletRequest request =
                 Builders.newRequestBuilder(resource).buildJakartaRequest();
@@ -116,7 +114,7 @@ public class DefaultErrorHandlerJakartaServletTest {
     }
 
     @Test
-    public void testHtmlErrorResponse() throws IOException, javax.servlet.ServletException {
+    public void testHtmlErrorResponse() throws IOException, ServletException {
         final Resource resource = Mockito.mock(Resource.class);
         final SlingJakartaHttpServletRequest request =
                 Builders.newRequestBuilder(resource).buildJakartaRequest();
@@ -129,8 +127,7 @@ public class DefaultErrorHandlerJakartaServletTest {
 
         DefaultErrorHandlerServlet errorServlet = new DefaultErrorHandlerServlet();
         errorServlet.init(new MockServletConfig());
-        errorServlet.service(
-                JakartaToJavaxRequestWrapper.toJavaxRequest(req), JakartaToJavaxResponseWrapper.toJavaxResponse(res));
+        errorServlet.service(req, res);
 
         // verify we got html back
         assertEquals("text/html;charset=UTF-8", res.getContentType());
@@ -148,7 +145,7 @@ public class DefaultErrorHandlerJakartaServletTest {
      * Mock impl to simulate enough of a servlet context to satisfy what is used
      * by DefaultErrorHandlerServlet
      */
-    private static final class MockServletConfig implements javax.servlet.ServletConfig {
+    private static final class MockServletConfig implements ServletConfig {
 
         @Override
         public String getServletName() {
@@ -156,8 +153,8 @@ public class DefaultErrorHandlerJakartaServletTest {
         }
 
         @Override
-        public javax.servlet.ServletContext getServletContext() {
-            final javax.servlet.ServletContext ctx = Mockito.mock(javax.servlet.ServletContext.class);
+        public ServletContext getServletContext() {
+            final ServletContext ctx = Mockito.mock(ServletContext.class);
             Mockito.when(ctx.getServerInfo()).thenReturn("Test Server Info");
             return ctx;
         }

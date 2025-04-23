@@ -18,10 +18,6 @@
  */
 package org.apache.sling.servlets.resolver.internal;
 
-import javax.servlet.Servlet;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,7 +25,10 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
 
-import org.apache.sling.api.SlingHttpServletRequest;
+import jakarta.servlet.Servlet;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletContext;
+import org.apache.sling.api.SlingJakartaHttpServletRequest;
 import org.apache.sling.api.request.RequestPathInfo;
 import org.apache.sling.servlets.resolver.internal.resource.SlingServletConfig;
 import org.apache.sling.servlets.resolver.it.ServletResolverTestSupport;
@@ -102,7 +101,7 @@ public class PathBasedServletAcceptorTest {
 
             // Wire the Servlet to our ServiceReference
             final ServletContext sc = mock(ServletContext.class);
-            final SlingServletConfig ssc = new SlingServletConfig(sc, reference, "42");
+            final ServletConfig ssc = new SlingServletConfig(sc, reference, "42");
             final Servlet servlet = mock(Servlet.class);
             when(servlet.getServletConfig()).thenReturn(ssc);
 
@@ -111,7 +110,7 @@ public class PathBasedServletAcceptorTest {
             when(rpi.getExtension()).thenReturn(extension);
             when(rpi.getSelectors()).thenReturn(selectors.toArray(STRING_ARRAY));
 
-            final SlingHttpServletRequest request = mock(SlingHttpServletRequest.class);
+            final SlingJakartaHttpServletRequest request = mock(SlingJakartaHttpServletRequest.class);
             when(request.getRequestPathInfo()).thenReturn(rpi);
             when(request.getMethod()).thenReturn(method);
 

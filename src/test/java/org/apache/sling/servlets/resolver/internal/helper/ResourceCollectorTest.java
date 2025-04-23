@@ -26,7 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.SlingJakartaHttpServletRequest;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceUtil;
 
@@ -42,7 +42,7 @@ public class ResourceCollectorTest extends HelperTestBase {
     }
 
     public void testGetServlets0() {
-        SlingHttpServletRequest req = makeRequest("GET", "print.a4", "html");
+        SlingJakartaHttpServletRequest req = makeRequest("GET", "print.a4", "html");
         String[] names = {
             "/" + label + ".esp", // 0
             "/GET.esp", // 1
@@ -61,7 +61,7 @@ public class ResourceCollectorTest extends HelperTestBase {
     }
 
     public void testGetServlets1() {
-        SlingHttpServletRequest req = makeRequest("GET", "print.a4", "html");
+        SlingJakartaHttpServletRequest req = makeRequest("GET", "print.a4", "html");
         String[] names = {
             "/" + label + ".esp", // 0
             "/GET.esp", // 1
@@ -80,7 +80,7 @@ public class ResourceCollectorTest extends HelperTestBase {
     }
 
     public void testGetServlets2() {
-        SlingHttpServletRequest req = makeRequest("GET", "print.a4", "html");
+        SlingJakartaHttpServletRequest req = makeRequest("GET", "print.a4", "html");
         String[] names = {
             "/" + label + ".esp", // 0
             "/GET.esp", // 1
@@ -100,7 +100,7 @@ public class ResourceCollectorTest extends HelperTestBase {
     }
 
     public void testGetServlets3() {
-        SlingHttpServletRequest req = makeRequest("GET", "print.a4", "html");
+        SlingJakartaHttpServletRequest req = makeRequest("GET", "print.a4", "html");
         String[] names = {
             ".servlet", // 0
             "/" + label + ".esp", // 1
@@ -121,7 +121,7 @@ public class ResourceCollectorTest extends HelperTestBase {
     }
 
     public void testGetServlets4() {
-        SlingHttpServletRequest req = makeRequest("GET", "print.a4", "html");
+        SlingJakartaHttpServletRequest req = makeRequest("GET", "print.a4", "html");
         String[] names = {
             ".servlet", // 0
             "/" + label + ".esp", // 1
@@ -143,7 +143,7 @@ public class ResourceCollectorTest extends HelperTestBase {
     }
 
     public void testGetServletsWithMethod() {
-        SlingHttpServletRequest req = makeRequest("GET", "print.a4", "html");
+        SlingJakartaHttpServletRequest req = makeRequest("GET", "print.a4", "html");
         String[] names = {
             "/html.servlet", // 7
             "/html.GET.servlet"
@@ -156,7 +156,7 @@ public class ResourceCollectorTest extends HelperTestBase {
     }
 
     public void testGetServletsScriptExtensionsPriority() {
-        SlingHttpServletRequest req = makeRequest("GET", "print.a4", "html");
+        SlingJakartaHttpServletRequest req = makeRequest("GET", "print.a4", "html");
         String[] names = {
             ".servlet", // 0
             "/" + label + ".esp", // 1
@@ -190,7 +190,7 @@ public class ResourceCollectorTest extends HelperTestBase {
     }
 
     public void testGetServletsScriptExtensionsPriority2() {
-        SlingHttpServletRequest req = makeRequest("GET", "print.a4", "html");
+        SlingJakartaHttpServletRequest req = makeRequest("GET", "print.a4", "html");
         // scripts with extensions not registered by script engine factories
         String[] names = {
             ".servlet", // 0
@@ -224,7 +224,7 @@ public class ResourceCollectorTest extends HelperTestBase {
     }
 
     public void testGetServletsScriptExtensionsPriority3() {
-        SlingHttpServletRequest req = makeRequest("GET", "print.a4", "html");
+        SlingJakartaHttpServletRequest req = makeRequest("GET", "print.a4", "html");
         // scripts with extensions not registered by script engine factories
         String[] names = {
             ".servlet", // 0
@@ -259,7 +259,7 @@ public class ResourceCollectorTest extends HelperTestBase {
 
     public void testAnyServlets0() {
         // use a request with another request method "ANY"
-        SlingHttpServletRequest req = makeRequest("ANY", "print.a4", "html");
+        SlingJakartaHttpServletRequest req = makeRequest("ANY", "print.a4", "html");
 
         String[] names = {
             "/" + label + ".ANY.esp", // 0
@@ -280,7 +280,7 @@ public class ResourceCollectorTest extends HelperTestBase {
 
     public void testAnyServlets1() {
         // use a request with another request method "ANY"
-        SlingHttpServletRequest req = makeRequest("ANY", "print.a4", "html");
+        SlingJakartaHttpServletRequest req = makeRequest("ANY", "print.a4", "html");
 
         String[] names = {
             "/" + label + ".ANY.esp", // 0
@@ -301,7 +301,7 @@ public class ResourceCollectorTest extends HelperTestBase {
 
     public void testAnyServlets2() {
         // use a request with another request method "ANY"
-        SlingHttpServletRequest req = makeRequest("ANY", "print.a4", "html");
+        SlingJakartaHttpServletRequest req = makeRequest("ANY", "print.a4", "html");
 
         String[] names = {
             "/" + label + ".ANY.esp", // 0
@@ -323,7 +323,7 @@ public class ResourceCollectorTest extends HelperTestBase {
 
     public void testAnyServlets3() {
         // use a request with another request method "ANY"
-        SlingHttpServletRequest req = makeRequest("ANY", "print.a4", "html");
+        SlingJakartaHttpServletRequest req = makeRequest("ANY", "print.a4", "html");
 
         String[] names = {
             ".servlet", // 0
@@ -346,7 +346,7 @@ public class ResourceCollectorTest extends HelperTestBase {
 
     public void testAnyServlets4() {
         // use a request with another request method "ANY"
-        SlingHttpServletRequest req = makeRequest("ANY", "print.a4", "html");
+        SlingJakartaHttpServletRequest req = makeRequest("ANY", "print.a4", "html");
 
         String[] names = {
             ".servlet", // 0
@@ -370,7 +370,7 @@ public class ResourceCollectorTest extends HelperTestBase {
 
     public void testAnyServletsScriptExtensionsPriority() {
         // use a request with another request method "ANY"
-        SlingHttpServletRequest req = makeRequest("ANY", "print.a4", "html");
+        SlingJakartaHttpServletRequest req = makeRequest("ANY", "print.a4", "html");
 
         String[] names = {
             ".servlet", // 0
@@ -404,12 +404,12 @@ public class ResourceCollectorTest extends HelperTestBase {
         });
     }
 
-    protected void effectiveTest(SlingHttpServletRequest r, String[] names, int[] baseIdxs, int[] indices) {
+    protected void effectiveTest(SlingJakartaHttpServletRequest r, String[] names, int[] baseIdxs, int[] indices) {
         effectiveTest(r, names, baseIdxs, indices, null);
     }
 
     protected void effectiveTest(
-            SlingHttpServletRequest r,
+            SlingJakartaHttpServletRequest r,
             String[] names,
             int[] baseIdxs,
             int[] indices,
@@ -427,7 +427,7 @@ public class ResourceCollectorTest extends HelperTestBase {
             pathMap.put(name, path);
         }
 
-        ResourceCollector lu = ResourceCollector.create(r, null, new String[] {"html"}, true);
+        ResourceCollector lu = ResourceCollector.create(r, null, Collections.singleton("html"), true);
         Collection<Resource> res;
         if (scriptEngineExtensions != null) {
             res = lu.getServlets(r.getResourceResolver(), scriptEngineExtensions);

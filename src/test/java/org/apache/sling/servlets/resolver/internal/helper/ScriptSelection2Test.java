@@ -26,10 +26,11 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
-import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.SlingJakartaHttpServletRequest;
 import org.apache.sling.api.resource.PersistenceException;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.api.wrappers.JavaxToJakartaRequestWrapper;
 import org.apache.sling.jcr.resource.api.JcrResourceConstants;
 import org.apache.sling.testing.mock.sling.junit.SlingContext;
 import org.apache.sling.testing.mock.sling.servlet.MockRequestPathInfo;
@@ -221,9 +222,9 @@ public class ScriptSelection2Test {
             String extension,
             List<String> scriptEngineFactoriesExtensions,
             String... expectedScripts) {
-        SlingHttpServletRequest request = prepareRequest(method, contentResource, selectors, extension);
+        SlingJakartaHttpServletRequest request = prepareRequest(method, contentResource, selectors, extension);
         final ResourceCollector collector = ResourceCollector.create(
-                request, context.resourceResolver().getSearchPath(), new String[] {"html"}, true);
+                request, context.resourceResolver().getSearchPath(), Collections.singleton("html"), true);
         final Collection<Resource> s =
                 collector.getServlets(request.getResourceResolver(), scriptEngineFactoriesExtensions);
         if (expectedScripts == null || expectedScripts.length == 0) {
@@ -249,7 +250,7 @@ public class ScriptSelection2Test {
     }
 
     @NotNull
-    private SlingHttpServletRequest prepareRequest(
+    private SlingJakartaHttpServletRequest prepareRequest(
             @Nullable String method,
             @NotNull Resource resource,
             @Nullable String selectorString,
@@ -267,6 +268,6 @@ public class ScriptSelection2Test {
             requestPathInfo.setSelectorString(selectorString);
         }
         requestPathInfo.setExtension(extension);
-        return request;
+        return JavaxToJakartaRequestWrapper.toJakartaRequest(request);
     }
 }

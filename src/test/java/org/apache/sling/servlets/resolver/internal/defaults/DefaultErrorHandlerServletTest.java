@@ -18,8 +18,6 @@
  */
 package org.apache.sling.servlets.resolver.internal.defaults;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
@@ -33,11 +31,16 @@ import java.util.regex.Pattern;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.request.builder.Builders;
 import org.apache.sling.api.resource.Resource;
+import org.apache.sling.api.wrappers.JavaxToJakartaRequestWrapper;
+import org.apache.sling.api.wrappers.JavaxToJakartaResponseWrapper;
 import org.apache.sling.api.wrappers.SlingHttpServletRequestWrapper;
 import org.apache.sling.api.wrappers.SlingHttpServletResponseWrapper;
 import org.junit.Test;
@@ -58,7 +61,9 @@ public class DefaultErrorHandlerServletTest {
 
         DefaultErrorHandlerServlet errorServlet = new DefaultErrorHandlerServlet();
         errorServlet.init(new MockServletConfig());
-        errorServlet.service(req, res);
+        errorServlet.service(
+                JavaxToJakartaRequestWrapper.toJakartaRequest(req),
+                JavaxToJakartaResponseWrapper.toJakartaResponse(res));
 
         // verify we got json back
         assertEquals("application/json;charset=UTF-8", res.getContentType());
@@ -127,7 +132,9 @@ public class DefaultErrorHandlerServletTest {
 
         DefaultErrorHandlerServlet errorServlet = new DefaultErrorHandlerServlet();
         errorServlet.init(new MockServletConfig());
-        errorServlet.service(req, res);
+        errorServlet.service(
+                JavaxToJakartaRequestWrapper.toJakartaRequest(req),
+                JavaxToJakartaResponseWrapper.toJakartaResponse(res));
 
         // verify we got html back
         assertEquals("text/html;charset=UTF-8", res.getContentType());
@@ -145,7 +152,7 @@ public class DefaultErrorHandlerServletTest {
      * Mock impl to simulate enough of a servlet context to satisfy what is used
      * by DefaultErrorHandlerServlet
      */
-    private static final class MockServletConfig implements javax.servlet.ServletConfig {
+    private static final class MockServletConfig implements ServletConfig {
 
         @Override
         public String getServletName() {
@@ -154,12 +161,9 @@ public class DefaultErrorHandlerServletTest {
 
         @Override
         public ServletContext getServletContext() {
-            return new org.apache.sling.servlethelpers.MockServletContext() {
-                @Override
-                public String getServerInfo() {
-                    return "Test Server Info";
-                }
-            };
+            final ServletContext ctx = Mockito.mock(ServletContext.class);
+            Mockito.when(ctx.getServerInfo()).thenReturn("Test Server Info");
+            return ctx;
         }
 
         @Override

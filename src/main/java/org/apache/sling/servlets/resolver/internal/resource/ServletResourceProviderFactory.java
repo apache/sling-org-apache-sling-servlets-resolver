@@ -18,14 +18,12 @@
  */
 package org.apache.sling.servlets.resolver.internal.resource;
 
-import javax.servlet.Servlet;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import jakarta.servlet.Servlet;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.servlets.HttpConstants;
 import org.osgi.framework.Bundle;
@@ -149,7 +147,8 @@ public class ServletResourceProviderFactory {
                 .convert(ref.getProperty(SLING_SERVLET_RESOURCE_SUPER_TYPE))
                 .to(String.class);
         Set<String> resourceSuperTypeMarkers = new HashSet<>();
-        if (StringUtils.isNotEmpty(resourceSuperType)
+        if (resourceSuperType != null
+                && !resourceSuperType.isEmpty()
                 && !ServletResource.DEFAULT_RESOURCE_SUPER_TYPE.equals(resourceSuperType)) {
             for (String rt : Converters.standardConverter()
                     .convert(ref.getProperty(SLING_SERVLET_RESOURCE_TYPES))
@@ -230,8 +229,8 @@ public class ServletResourceProviderFactory {
             String[] types = Converters.standardConverter()
                     .convert(ref.getProperty(SLING_SERVLET_RESOURCE_TYPES))
                     .to(String[].class);
-
-            if ((types.length == 0) || StringUtils.isEmpty(FilenameUtils.getExtension(path))) {
+            final String ext = FilenameUtils.getExtension(path);
+            if ((types.length == 0) || ext == null || ext.isEmpty()) {
                 // ensure we have another entry which has the .servlet ext. if there wasn't one to begin with
                 // Radu says: this will make sure that scripts are equal to servlets in the resolution process
                 pathSet.add(ensureServletNameExtension(path));

@@ -18,18 +18,18 @@
  */
 package org.apache.sling.servlets.resolver.internal;
 
-import javax.servlet.Servlet;
-
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
+import jakarta.servlet.Servlet;
 import org.apache.sling.api.resource.AbstractResource;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceMetadata;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.resource.ResourceWrapper;
+import org.apache.sling.api.scripting.SlingJakartaScript;
 import org.apache.sling.api.scripting.SlingScript;
 import org.apache.sling.servlets.resolver.internal.resource.ServletResource;
 
@@ -102,10 +102,21 @@ public class ScriptResource extends AbstractResource {
     /**
      * @see org.apache.sling.api.adapter.SlingAdaptable#adaptTo(java.lang.Class)
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "deprecation"})
     @Override
     public <T> T adaptTo(final Class<T> type) {
-        if (type == Servlet.class) {
+        if (type == javax.servlet.Servlet.class) {
+            Resource activeResource = this.getActiveResource();
+            while (activeResource instanceof ResourceWrapper) {
+                activeResource = ((ResourceWrapper) activeResource).getResource();
+            }
+            if (!(activeResource instanceof ServletResource)) {
+                final javax.servlet.Servlet s = (javax.servlet.Servlet) super.adaptTo(type);
+                if (s != null) {
+                    return (T) s;
+                }
+            }
+        } else if (type == Servlet.class) {
             Resource activeResource = this.getActiveResource();
             while (activeResource instanceof ResourceWrapper) {
                 activeResource = ((ResourceWrapper) activeResource).getResource();
@@ -115,6 +126,15 @@ public class ScriptResource extends AbstractResource {
                 if (s != null) {
                     return (T) s;
                 }
+            }
+        } else if (type == SlingJakartaScript.class) {
+            final SlingJakartaScript s = (SlingJakartaScript) super.adaptTo(type);
+            if (s != null) {
+                return (T) s;
+            }
+            final SlingScript legacy = (SlingScript) super.adaptTo(SlingScript.class);
+            if (legacy != null) {
+                return (T) new SlingScriptWrapper(legacy);
             }
         } else if (type == SlingScript.class) {
             final SlingScript s = (SlingScript) super.adaptTo(type);
