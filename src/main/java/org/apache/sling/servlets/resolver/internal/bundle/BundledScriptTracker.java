@@ -235,7 +235,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
             properties.put(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES, resourceTypesRegistrationValue);
 
             String extension = bundledRenderUnitCapability.getExtension();
-            if (extension != null && !extension.isEmpty()) {
+            if (extension != null) {
                 properties.put(ServletResolverConstants.SLING_SERVLET_EXTENSIONS, extension);
             }
 
@@ -245,13 +245,12 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         bundledRenderUnitCapability.getSelectors().toArray());
             }
 
-            if (bundledRenderUnitCapability.getMethod() != null
-                    && !bundledRenderUnitCapability.getMethod().isEmpty()) {
+            if (bundledRenderUnitCapability.getMethod() != null) {
                 properties.put(ServletResolverConstants.SLING_SERVLET_METHODS, bundledRenderUnitCapability.getMethod());
             }
 
             String extendedResourceTypeString = bundledRenderUnitCapability.getExtendedResourceType();
-            if (extendedResourceTypeString != null && !extendedResourceTypeString.isEmpty()) {
+            if (extendedResourceTypeString != null) {
                 collectInheritanceChain(inheritanceChain, bundleWiring, extendedResourceTypeString, cache);
                 inheritanceChain.stream()
                         .filter(typeProvider ->
@@ -281,9 +280,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                 executable = bundledRenderUnitFinder.findUnit(bundle.getBundleContext(), inheritanceChain, aggregate);
             }
         } else if (bundledRenderUnitCapability.getPath() != null
-                && !bundledRenderUnitCapability.getPath().isEmpty()
-                && bundledRenderUnitCapability.getScriptEngineName() != null
-                && !bundledRenderUnitCapability.getScriptEngineName().isEmpty()) {
+                && bundledRenderUnitCapability.getScriptEngineName() != null) {
             Set<TypeProvider> aggregate = Stream.concat(inheritanceChain.stream(), requiresChain.stream())
                     .collect(Collectors.toCollection(LinkedHashSet::new));
             executable = bundledRenderUnitFinder.findUnit(bundle.getBundleContext(), baseTypeProvider, aggregate);
@@ -298,10 +295,8 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
             } else {
                 if (!bundledRenderUnitCapability.getResourceTypes().isEmpty()
                         && bundledRenderUnitCapability.getSelectors().isEmpty()
-                        && (bundledRenderUnitCapability.getExtension() == null
-                                || bundledRenderUnitCapability.getExtension().isEmpty())
-                        && (bundledRenderUnitCapability.getMethod() == null
-                                || bundledRenderUnitCapability.getMethod().isEmpty())) {
+                        && bundledRenderUnitCapability.getExtension() == null
+                        && bundledRenderUnitCapability.getMethod() == null) {
                     String scriptName = FilenameUtils.getName(executable.getPath());
                     String scriptNameNoExtension = scriptName.substring(0, scriptName.lastIndexOf('.'));
                     boolean noMatch = bundledRenderUnitCapability.getResourceTypes().stream()
@@ -758,7 +753,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
                         Bundle providingBundle = wire.getProvider().getBundle();
                         providers.add(new TypeProviderImpl(wiredCapability, providingBundle));
                         String wiredExtends = wiredCapability.getExtendedResourceType();
-                        if (wiredExtends != null && !wiredExtends.isEmpty()) {
+                        if (wiredExtends != null) {
                             collectInheritanceChain(providers, wire.getProviderWiring(), wiredExtends, cache);
                         }
                     }

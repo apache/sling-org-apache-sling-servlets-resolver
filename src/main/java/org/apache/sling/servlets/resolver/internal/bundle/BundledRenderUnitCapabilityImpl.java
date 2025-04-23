@@ -56,13 +56,14 @@ class BundledRenderUnitCapabilityImpl implements BundledRenderUnitCapability {
             @Nullable String scriptEngineName,
             @Nullable String scriptExtension) {
         this.resourceTypes = resourceTypes;
-        this.path = path;
+        this.path = path != null && path.isEmpty() ? null : path;
         this.selectors = selectors;
-        this.extension = extension;
-        this.method = method;
-        this.extendedResourceType = extendedResourceType;
-        this.scriptEngineName = scriptEngineName;
-        this.scriptExtension = scriptExtension;
+        this.extension = extension != null && extension.isEmpty() ? null : extension;
+        this.method = method != null && method.isEmpty() ? null : method;
+        this.extendedResourceType =
+                extendedResourceType != null && extendedResourceType.isEmpty() ? null : extendedResourceType;
+        this.scriptEngineName = scriptEngineName != null && scriptEngineName.isEmpty() ? null : scriptEngineName;
+        this.scriptExtension = scriptExtension != null && scriptExtension.isEmpty() ? null : scriptExtension;
     }
 
     @Override
@@ -159,34 +160,34 @@ class BundledRenderUnitCapabilityImpl implements BundledRenderUnitCapability {
                     .append("=")
                     .append(selectors);
         }
-        if (extension != null && !extension.isEmpty()) {
+        if (extension != null) {
             sb.append("; ")
                     .append(ServletResolverConstants.SLING_SERVLET_EXTENSIONS)
                     .append("=")
                     .append(extension);
         }
-        if (method != null && !method.isEmpty()) {
+        if (method != null) {
             sb.append("; ")
                     .append(ServletResolverConstants.SLING_SERVLET_METHODS)
                     .append("=")
                     .append(method);
         }
-        if (path != null && !path.isEmpty()) {
+        if (path != null) {
             sb.append("; ")
                     .append(ServletResolverConstants.SLING_SERVLET_PATHS)
                     .append("=")
                     .append(path);
         }
-        if (extendedResourceType != null && !extendedResourceType.isEmpty()) {
+        if (extendedResourceType != null) {
             sb.append("; ").append(BundledScriptTracker.AT_EXTENDS).append("=").append(extendedResourceType);
         }
-        if (scriptEngineName != null && !scriptEngineName.isEmpty()) {
+        if (scriptEngineName != null) {
             sb.append("; ")
                     .append(BundledScriptTracker.AT_SCRIPT_ENGINE)
                     .append("=")
                     .append(scriptEngineName);
         }
-        if (scriptExtension != null && !scriptExtension.isEmpty()) {
+        if (scriptExtension != null) {
             sb.append("; ")
                     .append(BundledScriptTracker.AT_SCRIPT_EXTENSION)
                     .append("=")
