@@ -34,7 +34,7 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
-@Component
+@Component(service = ResourceDecorator.class)
 public class ScriptResourceDecorator implements ResourceDecorator {
     private final MergingServletResourceProvider provider;
 
@@ -44,7 +44,7 @@ public class ScriptResourceDecorator implements ResourceDecorator {
     }
 
     @Override
-    public Resource decorate(Resource resource) {
+    public Resource decorate(final Resource resource) {
         String path = ResourceUtil.normalize(resource.getPath());
         if (this.provider.isRootOf(path)) {
             String resolutionPath = resource.getResourceMetadata().getResolutionPath();
@@ -73,7 +73,7 @@ public class ScriptResourceDecorator implements ResourceDecorator {
         return decorate(resource);
     }
 
-    private Resource getResource(Resource resource, String path) {
+    private Resource getResource(final Resource resource, final String path) {
         return provider.getResource(
                 new ResolveContext<Void>() {
                     @Override
