@@ -115,6 +115,10 @@ public class ScriptResource extends AbstractResource {
                 if (s != null) {
                     return (T) s;
                 }
+                final Servlet sj = (Servlet) super.adaptTo(Servlet.class);
+                if (sj != null) {
+                    return (T) ServletWrapperUtil.toJavaxServlet(sj);
+                }
             }
         } else if (type == Servlet.class) {
             Resource activeResource = this.getActiveResource();
@@ -125,6 +129,10 @@ public class ScriptResource extends AbstractResource {
                 final Servlet s = (Servlet) super.adaptTo(type);
                 if (s != null) {
                     return (T) s;
+                }
+                final javax.servlet.Servlet sx = (javax.servlet.Servlet) super.adaptTo(javax.servlet.Servlet.class);
+                if (sx != null) {
+                    return (T) ServletWrapperUtil.toJakartaServlet(sx);
                 }
             }
         } else if (type == SlingJakartaScript.class) {
