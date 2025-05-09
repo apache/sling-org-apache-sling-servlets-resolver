@@ -33,8 +33,6 @@ import org.apache.sling.api.SlingException;
 import org.apache.sling.api.SlingJakartaHttpServletRequest;
 import org.apache.sling.api.SlingJakartaHttpServletResponse;
 import org.apache.sling.api.resource.type.ResourceType;
-import org.apache.sling.api.wrappers.JakartaToJavaxRequestWrapper;
-import org.apache.sling.api.wrappers.JakartaToJavaxResponseWrapper;
 import org.apache.sling.scripting.spi.bundle.BundledRenderUnit;
 import org.apache.sling.scripting.spi.bundle.TypeProvider;
 import org.jetbrains.annotations.NotNull;
@@ -78,9 +76,7 @@ public class BundledScriptServlet extends GenericServlet {
 
             RequestWrapper requestWrapper = new RequestWrapper(request, types);
             try {
-                executable.eval(
-                        JakartaToJavaxRequestWrapper.toJavaxRequest(requestWrapper),
-                        JakartaToJavaxResponseWrapper.toJavaxResponse(response));
+                executable.eval(requestWrapper, response);
             } catch (RuntimeException see) {
 
                 // log in the request progress tracker
