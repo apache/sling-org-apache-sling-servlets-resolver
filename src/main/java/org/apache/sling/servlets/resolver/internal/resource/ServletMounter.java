@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.sling.api.request.RequestUtil;
 import org.apache.sling.api.resource.ResourceResolverFactory;
@@ -90,6 +92,7 @@ public class ServletMounter {
     private final MergingServletResourceProvider provider;
 
     private final Set<ServiceRegistration<?>> providerRegs;
+    private final Lock providerRegsLock = new ReentrantLock(); // to guard concurrent access to the providerRegs
 
     private final ConcurrentHashMap<ResolutionCache, ResolutionCache> resolutionCaches = new ConcurrentHashMap<>();
 
@@ -249,20 +252,27 @@ public class ServletMounter {
                     if (this.provider != null) {
                         this.provider.add(srProvider, reference);
                         if (pathProviders) {
-                            outer:
-                            for (final String path : srProvider.getServletPaths()) {
-                                String root =
-                                        path.indexOf('/', 1) != -1 ? path.substring(0, path.indexOf('/', 1) + 1) : path;
-                                for (ServiceRegistration<?> reg : providerRegs) {
-                                    if (root.equals(reg.getReference().getProperty(ResourceProvider.PROPERTY_ROOT))) {
-                                        continue outer;
+                            providerRegsLock.lock();
+                            try {
+                                outer:
+                                for (final String path : srProvider.getServletPaths()) {
+                                    String root = path.indexOf('/', 1) != -1
+                                            ? path.substring(0, path.indexOf('/', 1) + 1)
+                                            : path;
+                                    for (ServiceRegistration<?> reg : providerRegs) {
+                                        if (root.equals(
+                                                reg.getReference().getProperty(ResourceProvider.PROPERTY_ROOT))) {
+                                            continue outer;
+                                        }
                                     }
+                                    final Dictionary<String, Object> params = new Hashtable<>();
+                                    params.put(ResourceProvider.PROPERTY_ROOT, root);
+                                    params.put(Constants.SERVICE_DESCRIPTION, "ServletResourceProvider for Servlets");
+                                    params.put(ResourceProvider.PROPERTY_MODE, ResourceProvider.MODE_PASSTHROUGH);
+                                    providerRegs.add(context.registerService(ResourceProvider.class, provider, params));
                                 }
-                                final Dictionary<String, Object> params = new Hashtable<>();
-                                params.put(ResourceProvider.PROPERTY_ROOT, root);
-                                params.put(Constants.SERVICE_DESCRIPTION, "ServletResourceProvider for Servlets");
-                                params.put(ResourceProvider.PROPERTY_MODE, ResourceProvider.MODE_PASSTHROUGH);
-                                providerRegs.add(context.registerService(ResourceProvider.class, provider, params));
+                            } finally {
+                                providerRegsLock.unlock();
                             }
                         }
                         resolutionCaches.values().forEach(ResolutionCache::flushCache);
