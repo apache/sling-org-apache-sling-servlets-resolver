@@ -56,12 +56,12 @@ public class TestServlet extends HttpServlet {
         doGet(req, resp);
     }
 
-    TestServlet with(String key, Object value) {
+    public TestServlet with(String key, Object value) {
         properties.put(key, value);
         return this;
     }
 
-    void register(BundleContext context) {
+    public void register(BundleContext context) {
         context.registerService(Servlet.class.getName(), this, properties);
     }
 }
