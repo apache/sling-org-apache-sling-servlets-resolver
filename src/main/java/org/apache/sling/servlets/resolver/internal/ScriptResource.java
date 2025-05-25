@@ -29,7 +29,6 @@ import org.apache.sling.api.resource.ResourceMetadata;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.resource.ResourceWrapper;
-import org.apache.sling.api.scripting.SlingJakartaScript;
 import org.apache.sling.api.scripting.SlingScript;
 import org.apache.sling.servlets.resolver.internal.resource.ServletResource;
 
@@ -102,7 +101,6 @@ public class ScriptResource extends AbstractResource {
     /**
      * @see org.apache.sling.api.adapter.SlingAdaptable#adaptTo(java.lang.Class)
      */
-    @SuppressWarnings({"unchecked", "deprecation"})
     @Override
     public <T> T adaptTo(final Class<T> type) {
         if (type == javax.servlet.Servlet.class) {
@@ -135,14 +133,10 @@ public class ScriptResource extends AbstractResource {
                     return (T) ServletWrapperUtil.toJakartaServlet(sx);
                 }
             }
-        } else if (type == SlingJakartaScript.class) {
-            final SlingJakartaScript s = (SlingJakartaScript) super.adaptTo(type);
+        } else if (type == SlingScript.class) {
+            final SlingScript s = (SlingScript) super.adaptTo(type);
             if (s != null) {
                 return (T) s;
-            }
-            final SlingScript legacy = (SlingScript) super.adaptTo(SlingScript.class);
-            if (legacy != null) {
-                return (T) new SlingScriptWrapper(legacy);
             }
         } else if (type == SlingScript.class) {
             final SlingScript s = (SlingScript) super.adaptTo(type);

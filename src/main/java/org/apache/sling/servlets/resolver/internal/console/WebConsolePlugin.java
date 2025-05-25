@@ -43,7 +43,7 @@ import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.resource.ResourceUtil;
-import org.apache.sling.api.scripting.SlingJakartaScript;
+import org.apache.sling.api.scripting.SlingScript;
 import org.apache.sling.api.servlets.JakartaOptingServlet;
 import org.apache.sling.api.uri.SlingUriBuilder;
 import org.apache.sling.serviceusermapping.ServiceUserMapped;
@@ -437,8 +437,8 @@ public class WebConsolePlugin extends HttpServlet {
 
     private String getServletDetails(Servlet servlet) {
         StringBuilder details = new StringBuilder();
-        if (servlet instanceof SlingJakartaScript) {
-            final SlingJakartaScript script = SlingJakartaScript.class.cast(servlet);
+        if (servlet instanceof SlingScript) {
+            final SlingScript script = SlingScript.class.cast(servlet);
             details.append(Encode.forHtml(script.getScriptResource().getPath()));
             details.append(" (Resource Script)");
         } else {

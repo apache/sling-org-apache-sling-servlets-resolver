@@ -24,7 +24,6 @@ import org.apache.sling.api.adapter.SlingAdaptable;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceWrapper;
-import org.apache.sling.api.scripting.SlingJakartaScript;
 import org.apache.sling.api.scripting.SlingScript;
 import org.apache.sling.servlets.resolver.internal.resource.ServletResource;
 import org.junit.Test;
@@ -160,31 +159,6 @@ public class ScriptResourceTest {
         SlingAdaptable.setAdapterManager(adapterManager);
 
         SlingScript adaptedScript = scriptResource.adaptTo(SlingScript.class);
-        assertEquals(script, adaptedScript);
-    }
-
-    @Test
-    public void testAdaptToSlingJakartaScript() {
-        final String resourcePath = "/sling/test/test.html";
-        ResourceResolver perThreadRR = mock(ResourceResolver.class);
-        ResourceResolver sharedRR = mock(ResourceResolver.class);
-        Resource resource = mock(Resource.class);
-        when(resource.getPath()).thenReturn(resourcePath);
-
-        SlingJakartaScript script = mock(SlingJakartaScript.class);
-
-        Resource wrappedResource = new ResourceWrapper(resource);
-        when(perThreadRR.getResource(resourcePath)).thenReturn(wrappedResource);
-        when(perThreadRR.isLive()).thenReturn(true);
-
-        ScriptResource scriptResource = new ScriptResource(resource, () -> perThreadRR, sharedRR);
-
-        AdapterManager adapterManager = mock(AdapterManager.class);
-        when(adapterManager.getAdapter(scriptResource, SlingJakartaScript.class))
-                .thenReturn(script);
-        SlingAdaptable.setAdapterManager(adapterManager);
-
-        SlingJakartaScript adaptedScript = scriptResource.adaptTo(SlingJakartaScript.class);
         assertEquals(script, adaptedScript);
     }
 }
