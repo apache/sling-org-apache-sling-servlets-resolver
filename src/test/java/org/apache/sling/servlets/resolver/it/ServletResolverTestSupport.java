@@ -168,7 +168,7 @@ public class ServletResolverTestSupport extends TestSupport {
                 mavenBundle()
                         .groupId("commons-fileupload")
                         .artifactId("commons-fileupload")
-                        .version("1.5"),
+                        .version("1.6.0"),
                 mavenBundle()
                         .groupId("org.apache.sling")
                         .artifactId("org.apache.sling.engine")
