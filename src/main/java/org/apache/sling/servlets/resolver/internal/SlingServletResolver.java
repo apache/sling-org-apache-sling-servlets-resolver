@@ -470,7 +470,7 @@ public class SlingServletResolver implements ServletResolver, SlingRequestListen
     }
 
     /** @return true if the given Resource is hidden by our resourceHidingPredicate */
-    private boolean isHidden(Resource r) {
+    private boolean isHidden(@NotNull Resource r) {
         final boolean result =
                 r != null && resourceHidingPredicate != null && resourceHidingPredicate.test(r.getPath());
         if (result && LOGGER.isDebugEnabled()) {
