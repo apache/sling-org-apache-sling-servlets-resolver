@@ -21,6 +21,16 @@ package org.apache.sling.servlets.resolver.api;
 import java.util.function.Predicate;
 
 import org.apache.sling.api.resource.Resource;
+import org.osgi.annotation.versioning.ConsumerType;
 
+/** Created for https://issues.apache.org/jira/browse/SLING-12739
+ *  to hide specific scripts or servlets from the resolution
+ *  mechanism. Can be used for "soft deprecation" of scripts and
+ *  servlets for example.
+ *
+ *  @returns true if the supplied Resource must be ignored by
+ *  the servlets resolver.
+ */
+@ConsumerType
 public interface ResourcePredicate extends Predicate<Resource> {
 }
