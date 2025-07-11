@@ -34,12 +34,12 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
 
 import javax.servlet.Servlet;
 
 import org.apache.sling.api.resource.PersistenceException;
 import org.osgi.framework.Bundle;
+import org.apache.sling.servlets.resolver.api.IgnoredServletResourcePredicate;
 import org.apache.sling.servlets.resolver.internal.resource.MockServletResource;
 
 public class AbsoluteResourceTypeTest extends SlingServletResolverTestBase {
@@ -114,8 +114,8 @@ public class AbsoluteResourceTypeTest extends SlingServletResolverTestBase {
 
   @Test
   public void testAbsolutePathHiddenByPredicate() throws Exception {
-    final Predicate<String> hideAbsolutePath = path -> absolutePath.equals(path);
-    final Field f = servletResolver.getClass().getDeclaredField("resourceHidingPredicate");
+    final IgnoredServletResourcePredicate hideAbsolutePath = r -> r.getPath().equals(absolutePath);
+    final Field f = servletResolver.getClass().getDeclaredField("ignoredResourcePredicate");
     f.setAccessible(true);
     f.set(servletResolver, hideAbsolutePath);
     try {

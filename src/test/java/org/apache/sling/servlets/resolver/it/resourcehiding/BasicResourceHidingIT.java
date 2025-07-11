@@ -35,7 +35,7 @@ public class BasicResourceHidingIT extends ResourceHidingITBase {
 
     @Before
     public void setupPredicate() {
-        registerPredicate((path) -> path.contains(EXT_B));
+        registerPredicate(r -> r.getPath().contains(EXT_B));
     }
 
     @Test

@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletContext;
@@ -55,6 +54,7 @@ import org.apache.sling.api.servlets.OptingServlet;
 import org.apache.sling.api.servlets.ServletResolver;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.serviceusermapping.ServiceUserMapped;
+import org.apache.sling.servlets.resolver.api.IgnoredServletResourcePredicate;
 import org.apache.sling.servlets.resolver.internal.defaults.DefaultErrorHandlerServlet;
 import org.apache.sling.servlets.resolver.internal.defaults.DefaultServlet;
 import org.apache.sling.servlets.resolver.internal.helper.AbstractResourceCollector;
@@ -134,11 +134,10 @@ public class SlingServletResolver
     private final ThreadLocal<ResourceResolver> perThreadScriptResolver = new ThreadLocal<>();
 
     @Reference(
-        target = "(name=sling.servlet.resolver.resource.hiding)",
         policy = ReferencePolicy.DYNAMIC,
         cardinality = ReferenceCardinality.OPTIONAL
     )
-    private volatile Predicate<String> resourceHidingPredicate;
+    private volatile IgnoredServletResourcePredicate ignoredResourcePredicate;
 
     /**
      * The allowed execution paths.
@@ -453,11 +452,11 @@ public class SlingServletResolver
         return res;
     }
 
-    /** @return true if the given Resource is hidden by our resourceHidingPredicate */
-    private boolean isHidden(@NotNull Resource r) {
-        final boolean result = r != null && resourceHidingPredicate != null && resourceHidingPredicate.test(r.getPath());
+    /** @return true if the IgnoredResourcePredicate is set and returns true for the supplied Resource */
+    private boolean ignoreResource(@NotNull Resource r) {
+        final boolean result = r != null && ignoredResourcePredicate != null && ignoredResourcePredicate.test(r);
         if(result && LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Resource hidden by resource hiding predicate: {}", r.getPath());
+            LOGGER.debug("IgnoredResourcePredicate causes Resource to be ignored: {}", r.getPath());
         }
         return result;
     }
@@ -488,7 +487,7 @@ public class SlingServletResolver
             final String scriptPath = ResourceUtil.normalize(scriptNameOrResourceType);
             if (scriptPath != null &&  isPathAllowed(scriptPath, this.executionPaths.get()) ) {
                 final Resource res = AbstractResourceCollector.getResourceOrNull(resolver,scriptPath,useResourceCaching);
-                servlet = isHidden(res) ? null : this.getServlet(res);
+                servlet = ignoreResource(res) ? null : this.getServlet(res);
                 if (servlet != null && !pathBasedServletAcceptor.accept(request, servlet)) {
                     if(LOGGER.isDebugEnabled()) {
                         LOGGER.debug("Servlet {} rejected by {} returning FORBIDDEN status", RequestUtil.getServletName(servlet),
@@ -556,7 +555,7 @@ public class SlingServletResolver
         }
 
         final Collection<Resource> candidates = locationUtil.getServlets(resolver, localCache.getScriptEngineExtensions());
-        candidates.removeIf(r -> isHidden(r));
+        candidates.removeIf(r -> ignoreResource(r));
 
         if (LOGGER.isDebugEnabled()) {
             if (candidates.isEmpty()) {

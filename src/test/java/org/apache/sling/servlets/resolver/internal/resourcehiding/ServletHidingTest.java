@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Predicate;
 
 import javax.servlet.Servlet;
 
@@ -36,6 +35,7 @@ import org.apache.sling.api.resource.PersistenceException;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
 import org.apache.sling.commons.testing.sling.MockSlingHttpServletRequest;
+import org.apache.sling.servlets.resolver.api.IgnoredServletResourcePredicate;
 import org.apache.sling.servlets.resolver.internal.SlingServletResolverTestBase;
 import org.apache.sling.servlets.resolver.internal.helper.HelperTestBase;
 import org.apache.sling.servlets.resolver.internal.resource.MockServletResource;
@@ -58,8 +58,8 @@ public class ServletHidingTest extends SlingServletResolverTestBase {
         }
     }
 
-    private void setServletHidingFilter(Predicate<String> predicate) throws Exception {
-        final Field predicateField = servletResolver.getClass().getDeclaredField("resourceHidingPredicate");
+    private void setServletHidingFilter(IgnoredServletResourcePredicate predicate) throws Exception {
+        final Field predicateField = servletResolver.getClass().getDeclaredField("ignoredResourcePredicate");
         predicateField.setAccessible(true);
         predicateField.set(servletResolver, predicate);
     }
@@ -101,7 +101,7 @@ public class ServletHidingTest extends SlingServletResolverTestBase {
     @Test
     public void testHideAndSeek() throws Exception {
         final AtomicBoolean hide = new AtomicBoolean();
-        final Predicate<String> pred = (ignoredPath) -> hide.get();
+        final IgnoredServletResourcePredicate pred = r -> hide.get();
 
         // No filtering
         setServletHidingFilter(null);
