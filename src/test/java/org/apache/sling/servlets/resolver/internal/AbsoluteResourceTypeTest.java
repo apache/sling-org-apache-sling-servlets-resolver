@@ -39,7 +39,7 @@ import javax.servlet.Servlet;
 
 import org.apache.sling.api.resource.PersistenceException;
 import org.osgi.framework.Bundle;
-import org.apache.sling.servlets.resolver.api.ResourcePredicate;
+import org.apache.sling.servlets.resolver.api.IgnoredResourcePredicate;
 import org.apache.sling.servlets.resolver.internal.resource.MockServletResource;
 
 public class AbsoluteResourceTypeTest extends SlingServletResolverTestBase {
@@ -114,8 +114,8 @@ public class AbsoluteResourceTypeTest extends SlingServletResolverTestBase {
 
   @Test
   public void testAbsolutePathHiddenByPredicate() throws Exception {
-    final ResourcePredicate hideAbsolutePath = r -> r.getPath().equals(absolutePath);
-    final Field f = servletResolver.getClass().getDeclaredField("resourceHidingPredicate");
+    final IgnoredResourcePredicate hideAbsolutePath = r -> r.getPath().equals(absolutePath);
+    final Field f = servletResolver.getClass().getDeclaredField("ignoredResourcePredicate");
     f.setAccessible(true);
     f.set(servletResolver, hideAbsolutePath);
     try {

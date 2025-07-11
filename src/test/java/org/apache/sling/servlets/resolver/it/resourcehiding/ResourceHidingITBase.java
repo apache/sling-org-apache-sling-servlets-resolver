@@ -21,7 +21,7 @@ package org.apache.sling.servlets.resolver.it.resourcehiding;
 import java.util.UUID;
 
 import org.apache.sling.api.resource.Resource;
-import org.apache.sling.servlets.resolver.api.ResourcePredicate;
+import org.apache.sling.servlets.resolver.api.IgnoredResourcePredicate;
 import org.apache.sling.servlets.resolver.it.ServletResolverTestSupport;
 import org.apache.sling.servlets.resolver.it.TestServlet;
 import org.junit.Before;
@@ -64,8 +64,8 @@ public class ResourceHidingITBase extends ServletResolverTestSupport {
         .register(bundleContext);
     }
 
-    protected void registerPredicate(ResourcePredicate p) {
-        final ResourcePredicate wrappedPredicate = new ResourcePredicate() {
+    protected void registerPredicate(IgnoredResourcePredicate p) {
+        final IgnoredResourcePredicate wrappedPredicate = new IgnoredResourcePredicate() {
             @Override
             public boolean test(Resource r) {
                 final boolean result = p.test(r);
@@ -75,6 +75,6 @@ public class ResourceHidingITBase extends ServletResolverTestSupport {
                 return result;
             }
         };
-        bundleContext.registerService(ResourcePredicate.class.getName(), wrappedPredicate, null);
+        bundleContext.registerService(IgnoredResourcePredicate.class.getName(), wrappedPredicate, null);
     }
 }

@@ -32,5 +32,5 @@ import org.osgi.annotation.versioning.ConsumerType;
  *  the servlets resolver.
  */
 @ConsumerType
-public interface ResourcePredicate extends Predicate<Resource> {
+public interface IgnoredResourcePredicate extends Predicate<Resource> {
 }
