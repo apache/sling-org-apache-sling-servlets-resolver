@@ -54,7 +54,7 @@ import org.apache.sling.api.servlets.OptingServlet;
 import org.apache.sling.api.servlets.ServletResolver;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.serviceusermapping.ServiceUserMapped;
-import org.apache.sling.servlets.resolver.api.IgnoredResourcePredicate;
+import org.apache.sling.servlets.resolver.api.IgnoredServletResourcePredicate;
 import org.apache.sling.servlets.resolver.internal.defaults.DefaultErrorHandlerServlet;
 import org.apache.sling.servlets.resolver.internal.defaults.DefaultServlet;
 import org.apache.sling.servlets.resolver.internal.helper.AbstractResourceCollector;
@@ -137,7 +137,7 @@ public class SlingServletResolver
         policy = ReferencePolicy.DYNAMIC,
         cardinality = ReferenceCardinality.OPTIONAL
     )
-    private volatile IgnoredResourcePredicate ignoredResourcePredicate;
+    private volatile IgnoredServletResourcePredicate ignoredResourcePredicate;
 
     /**
      * The allowed execution paths.

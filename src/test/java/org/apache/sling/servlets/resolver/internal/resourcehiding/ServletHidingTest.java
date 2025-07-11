@@ -35,7 +35,7 @@ import org.apache.sling.api.resource.PersistenceException;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
 import org.apache.sling.commons.testing.sling.MockSlingHttpServletRequest;
-import org.apache.sling.servlets.resolver.api.IgnoredResourcePredicate;
+import org.apache.sling.servlets.resolver.api.IgnoredServletResourcePredicate;
 import org.apache.sling.servlets.resolver.internal.SlingServletResolverTestBase;
 import org.apache.sling.servlets.resolver.internal.helper.HelperTestBase;
 import org.apache.sling.servlets.resolver.internal.resource.MockServletResource;
@@ -58,7 +58,7 @@ public class ServletHidingTest extends SlingServletResolverTestBase {
         }
     }
 
-    private void setServletHidingFilter(IgnoredResourcePredicate predicate) throws Exception {
+    private void setServletHidingFilter(IgnoredServletResourcePredicate predicate) throws Exception {
         final Field predicateField = servletResolver.getClass().getDeclaredField("ignoredResourcePredicate");
         predicateField.setAccessible(true);
         predicateField.set(servletResolver, predicate);
@@ -101,7 +101,7 @@ public class ServletHidingTest extends SlingServletResolverTestBase {
     @Test
     public void testHideAndSeek() throws Exception {
         final AtomicBoolean hide = new AtomicBoolean();
-        final IgnoredResourcePredicate pred = r -> hide.get();
+        final IgnoredServletResourcePredicate pred = r -> hide.get();
 
         // No filtering
         setServletHidingFilter(null);
