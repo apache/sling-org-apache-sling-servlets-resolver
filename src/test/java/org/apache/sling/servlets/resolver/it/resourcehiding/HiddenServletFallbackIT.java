@@ -33,7 +33,7 @@ public class HiddenServletFallbackIT extends ResourceHidingITBase {
 
     @Before
     public void setupPredicate() {
-        registerPredicate((path) -> path.contains(SEL_A));
+        registerPredicate(r -> r.getPath().contains(SEL_A));
     }
 
     @Test

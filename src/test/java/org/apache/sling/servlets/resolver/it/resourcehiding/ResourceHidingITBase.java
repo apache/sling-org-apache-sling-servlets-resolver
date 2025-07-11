@@ -18,13 +18,12 @@
  */
 package org.apache.sling.servlets.resolver.it.resourcehiding;
 
-import java.util.Hashtable;
 import java.util.UUID;
-import java.util.function.Predicate;
 
+import org.apache.sling.api.resource.Resource;
+import org.apache.sling.servlets.resolver.api.ResourcePredicate;
 import org.apache.sling.servlets.resolver.it.ServletResolverTestSupport;
 import org.apache.sling.servlets.resolver.it.TestServlet;
-import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 
 /** Base for all our hiding tests, so that they all use the same set of servlets  */
@@ -34,8 +33,6 @@ public class ResourceHidingITBase extends ServletResolverTestSupport {
     protected final static String EXT_B = "EXT_B" + UUID.randomUUID();
     protected final static String SEL_A = "SEL_A" + UUID.randomUUID();
     protected int hiddenResourcesCount = 0;
-
-    public final static String PREDICATE_NAME = "sling.servlet.resolver.resource.hiding";
 
     @Before
     public void reset() {
@@ -67,23 +64,17 @@ public class ResourceHidingITBase extends ServletResolverTestSupport {
         .register(bundleContext);
     }
 
-    protected void registerPredicate(Predicate<String> p) {
-        registerPredicate(p, null);
-    }
-
-    protected void registerPredicate(Predicate<String> p, @Nullable String name) {
-        final Predicate<String> wrappedPredicate = new Predicate<String>() {
+    protected void registerPredicate(ResourcePredicate p) {
+        final ResourcePredicate wrappedPredicate = new ResourcePredicate() {
             @Override
-            public boolean test(String path) {
-                final boolean result = p.test(path);
+            public boolean test(Resource r) {
+                final boolean result = p.test(r);
                 if(result) {
                     hiddenResourcesCount++;
                 }
                 return result;
             }
         };
-        final Hashtable<String,String> props = new Hashtable<>();
-        props.put("name", name != null ? name : PREDICATE_NAME);
-        bundleContext.registerService(Predicate.class.getName(), wrappedPredicate, props);
+        bundleContext.registerService(ResourcePredicate.class.getName(), wrappedPredicate, null);
     }
 }
