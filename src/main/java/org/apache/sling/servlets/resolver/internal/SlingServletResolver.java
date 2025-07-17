@@ -51,6 +51,7 @@ import org.apache.sling.api.servlets.ServletResolver;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.api.wrappers.JavaxToJakartaRequestWrapper;
 import org.apache.sling.serviceusermapping.ServiceUserMapped;
+import org.apache.sling.servlets.resolver.api.IgnoredServletResourcePredicate;
 import org.apache.sling.servlets.resolver.internal.defaults.DefaultErrorHandlerServlet;
 import org.apache.sling.servlets.resolver.internal.defaults.DefaultServlet;
 import org.apache.sling.servlets.resolver.internal.helper.AbstractResourceCollector;
@@ -69,6 +70,8 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.service.metatype.annotations.Designate;
 import org.osgi.util.tracker.ServiceTracker;
 import org.slf4j.Logger;
@@ -129,6 +132,9 @@ public class SlingServletResolver implements ServletResolver, SlingJakartaReques
     private AtomicReference<ResourceResolver> sharedScriptResolver = new AtomicReference<>();
 
     private final ThreadLocal<ResourceResolver> perThreadScriptResolver = new ThreadLocal<>();
+
+    @Reference(policy = ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL)
+    private volatile IgnoredServletResourcePredicate ignoredResourcePredicate;
 
     /**
      * The allowed execution paths.
@@ -449,6 +455,15 @@ public class SlingServletResolver implements ServletResolver, SlingJakartaReques
         return res;
     }
 
+    /** @return true if the IgnoredResourcePredicate is set and returns true for the supplied Resource */
+    private boolean ignoreResource(@NotNull Resource r) {
+        final boolean result = r != null && ignoredResourcePredicate != null && ignoredResourcePredicate.test(r);
+        if (result && LOGGER.isDebugEnabled()) {
+            LOGGER.debug("IgnoredResourcePredicate causes Resource to be ignored: {}", r.getPath());
+        }
+        return result;
+    }
+
     /**
      * Resolve an appropriate servlet for a given request and resource type
      * using the provided ResourceResolver
@@ -477,7 +492,7 @@ public class SlingServletResolver implements ServletResolver, SlingJakartaReques
             if (scriptPath != null && isPathAllowed(scriptPath, this.executionPaths.get())) {
                 final Resource res =
                         AbstractResourceCollector.getResourceOrNull(resolver, scriptPath, useResourceCaching);
-                servlet = this.getServlet(res);
+                servlet = ignoreResource(res) ? null : this.getServlet(res);
                 if (servlet != null && !pathBasedServletAcceptor.accept(request, servlet)) {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug(
@@ -553,6 +568,7 @@ public class SlingServletResolver implements ServletResolver, SlingJakartaReques
 
         final Collection<Resource> candidates =
                 locationUtil.getServlets(resolver, localCache.getScriptEngineExtensions());
+        candidates.removeIf(r -> ignoreResource(r));
 
         if (LOGGER.isDebugEnabled()) {
             if (candidates.isEmpty()) {
