@@ -42,7 +42,9 @@ public class RequestWrapper extends SlingHttpServletRequestWrapper {
         if (resource == null) {
             return null;
         }
-        if (options != null && options.getForceResourceType().isEmpty()) {
+        if (options != null
+                && (options.getForceResourceType() == null
+                        || options.getForceResourceType().isEmpty())) {
             options.setForceResourceType(resource.getResourceType());
         }
         RequestDispatcherOptions processedOptions = processOptions(options);
