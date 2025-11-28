@@ -28,7 +28,7 @@
     </parent>
 
     <artifactId>org.apache.sling.servlets.resolver</artifactId>
-    <version>3.0.4</version>
+    <version>3.0.5-SNAPSHOT</version>
 
     <name>Apache Sling Servlets Resolver</name>
     <description>Bundle implementing the Sling API ServletResolver.</description>
@@ -36,12 +36,12 @@
     <scm>
         <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-servlets-resolver.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-servlets-resolver.git</developerConnection>
-        <tag>org.apache.sling.servlets.resolver-3.0.4</tag>
+        <tag>HEAD</tag>
         <url>https://github.com/apache/sling-org-apache-sling-servlets-resolver.git</url>
     </scm>
 
     <properties>
-        <project.build.outputTimestamp>2025-11-28T15:15:19Z</project.build.outputTimestamp>
+        <project.build.outputTimestamp>2025-11-28T15:15:58Z</project.build.outputTimestamp>
         <site.jira.version.id>12314292</site.jira.version.id>
         <sling.java.version>17</sling.java.version>
         <org.ops4j.pax.exam.version>4.14.0</org.ops4j.pax.exam.version>
