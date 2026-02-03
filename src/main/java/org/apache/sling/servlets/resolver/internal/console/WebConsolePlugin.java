@@ -451,13 +451,14 @@ public class WebConsolePlugin extends HttpServlet {
                 details.append(" (Bundled Script)");
             } else {
                 final boolean isOptingServlet = servlet instanceof OptingServlet;
-                details.append(Encode.forHtml(servlet.getClass().getName()));
+                final Class<?> servletClass = servlet.getClass();
+                details.append(Encode.forHtml(servletClass.getName()));
                 if (isOptingServlet) {
                     details.append(" (OptingServlet)");
                 } else {
                     details.append(" (Servlet)");
                 }
-                bundle = FrameworkUtil.getBundle(servlet.getClass());
+                bundle = FrameworkUtil.getBundle(servletClass);
             }
             if (bundle != null) {
                 details.append(" in bundle '")
