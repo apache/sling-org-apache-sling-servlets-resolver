@@ -48,6 +48,7 @@ import org.apache.sling.api.servlets.JakartaOptingServlet;
 import org.apache.sling.api.uri.SlingUriBuilder;
 import org.apache.sling.serviceusermapping.ServiceUserMapped;
 import org.apache.sling.servlets.resolver.internal.ResolverConfig;
+import org.apache.sling.servlets.resolver.internal.ServletWrapperUtil;
 import org.apache.sling.servlets.resolver.internal.SlingServletResolver;
 import org.apache.sling.servlets.resolver.internal.bundle.BundledScriptServlet;
 import org.apache.sling.servlets.resolver.internal.helper.ResourceCollector;
@@ -450,13 +451,28 @@ public class WebConsolePlugin extends HttpServlet {
                 details.append(" (Bundled Script)");
             } else {
                 final boolean isOptingServlet = servlet instanceof JakartaOptingServlet;
-                details.append(Encode.forHtml(servlet.getClass().getName()));
+                final Class<?> servletClass;
+                javax.servlet.Servlet javaxServlet = null;
+                // unwrap Jakarta wrappers
+                if (servlet instanceof ServletWrapperUtil.JakartaScriptServletWrapper wrapper) {
+                    javaxServlet = wrapper.servlet;
+
+                } else if (servlet instanceof ServletWrapperUtil.JakartaScriptOptingServletWrapper wrapper) {
+                    javaxServlet = wrapper.servlet;
+                }
+                if (javaxServlet != null) {
+                    servletClass = javaxServlet.getClass();
+                    details.append("Jakarta wrapper for ");
+                } else {
+                    servletClass = servlet.getClass();
+                }
+                details.append(Encode.forHtml(servletClass.getName()));
                 if (isOptingServlet) {
                     details.append(" (OptingServlet)");
                 } else {
                     details.append(" (Servlet)");
                 }
-                bundle = FrameworkUtil.getBundle(servlet.getClass());
+                bundle = FrameworkUtil.getBundle(servletClass);
             }
             if (bundle != null) {
                 details.append(" in bundle '")
