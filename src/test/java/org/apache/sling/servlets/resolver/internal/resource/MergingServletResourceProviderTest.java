@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jakarta.servlet.GenericServlet;
 import jakarta.servlet.Servlet;
@@ -181,6 +182,99 @@ public class MergingServletResourceProviderTest {
         final Resource overridden = childByPath(children, "/apps/parent/child-1200");
         assertNotNull(overridden);
         assertTrue(overridden instanceof ServletResource);
+    }
+
+    /**
+     * Ensures the merged iterator behaves in a streaming fashion by verifying that reading only the first result does
+     * not force full consumption of the parent iterator, which protects callers that stop early from paying the full
+     * cost of enumerating all parent children.
+     */
+    @Test
+    public void testListChildrenStreamsWithoutConsumingAllParentChildrenForFirstResult() {
+        final ResourceResolver resolver = Mockito.mock(ResourceResolver.class);
+        final Resource parent = new SyntheticResource(resolver, "/apps/parent", "type");
+
+        final int count = 5000;
+        final List<Resource> parentChildren = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            parentChildren.add(mockParentChild("/apps/parent/child-" + i, null));
+        }
+        final AtomicInteger consumed = new AtomicInteger();
+        final Iterator<Resource> countingIterator = new Iterator<Resource>() {
+            private final Iterator<Resource> delegate = parentChildren.iterator();
+
+            @Override
+            public boolean hasNext() {
+                return delegate.hasNext();
+            }
+
+            @Override
+            public Resource next() {
+                consumed.incrementAndGet();
+                return delegate.next();
+            }
+        };
+
+        @SuppressWarnings("unchecked")
+        final ResourceProvider<Object> parentProvider = Mockito.mock(ResourceProvider.class);
+        Mockito.when(parentProvider.listChildren(Mockito.any(), Mockito.eq(parent)))
+                .thenReturn(countingIterator);
+
+        final ResolveContext<Object> parentCtx = Mockito.mock(ResolveContext.class);
+        final ResolveContext<Object> ctx = mockContext(resolver, parentProvider, parentCtx);
+        final MergingServletResourceProvider mergingProvider = new MergingServletResourceProvider();
+        addProvider(mergingProvider, "/apps/parent/overlay-only");
+
+        final Iterator<Resource> children = mergingProvider.listChildren(ctx, parent);
+
+        assertTrue(children.hasNext());
+        assertEquals("/apps/parent/child-0", children.next().getPath());
+        assertEquals(1, consumed.get());
+        assertTrue(consumed.get() < count);
+    }
+
+    /**
+     * Validates MergingChildrenIterator semantics from its javadoc: (1) Phase 1 — parent children in order, with
+     * overlay paths replaced by servlet/synthetic and marked processed, others emitted as-is. (2) Phase 2 — after
+     * parent exhausted, overlay-only paths emitted. (3) No path emitted twice (processedPaths deduplication).
+     */
+    @Test
+    public void testMergingChildrenIteratorPhaseOrderAndNoDuplicatePaths() {
+        final ResourceResolver resolver = Mockito.mock(ResourceResolver.class);
+        final Resource parent = new SyntheticResource(resolver, "/apps/merge", "type");
+        final Resource parentA = mockParentChild("/apps/merge/a", null);
+        final Resource parentB = mockParentChild("/apps/merge/b", null);
+        final Resource parentC = mockParentChild("/apps/merge/c", null);
+
+        @SuppressWarnings("unchecked")
+        final ResourceProvider<Object> parentProvider = Mockito.mock(ResourceProvider.class);
+        Mockito.when(parentProvider.listChildren(Mockito.any(), Mockito.eq(parent)))
+                .thenReturn(List.of(parentA, parentB, parentC).iterator());
+
+        final ResolveContext<Object> parentCtx = Mockito.mock(ResolveContext.class);
+        final ResolveContext<Object> ctx = mockContext(resolver, parentProvider, parentCtx);
+        final MergingServletResourceProvider mergingProvider = new MergingServletResourceProvider();
+        // Overlay: b (replacement for parent b), d (overlay-only).
+        addProvider(mergingProvider, "/apps/merge/b", "/apps/merge/d");
+
+        final List<Resource> children = toList(mergingProvider.listChildren(ctx, parent));
+        final List<String> paths = new ArrayList<>();
+        for (Resource r : children) {
+            paths.add(r.getPath());
+        }
+
+        // Phase 1 order: parent a (as-is), parent b replaced by servlet, parent c (as-is). Phase 2: overlay-only d.
+        assertEquals(4, children.size());
+        assertEquals("/apps/merge/a", paths.get(0));
+        assertEquals("/apps/merge/b", paths.get(1));
+        assertEquals("/apps/merge/c", paths.get(2));
+        assertEquals("/apps/merge/d", paths.get(3));
+
+        assertTrue(children.get(1) instanceof ServletResource);
+        assertTrue(children.get(3) instanceof ServletResource);
+
+        // processedPaths: no path emitted twice.
+        assertEquals("no duplicate paths", paths.size(), new LinkedHashSet<>(paths).size());
     }
 
     private static boolean pathExists(List<Resource> resources, String path) {
