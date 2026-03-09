@@ -247,44 +247,47 @@ public class MergingServletResourceProvider extends ResourceProvider<Object> {
         }
 
         /**
-         * Returns the next merged child, or null when exhausted. Two phases:
-         * (1) Advance the parent iterator; foreach parent child path that is also in the overlay set
-         * (pendingPaths), try to replace it with the servlet or synthetic resource and mark that path as
-         * processed; otherwise emit the parent child as-is.
-         * (2) After parent is exhausted, iterate overlay paths and emit any that were not already processed
-         * (overlay-only children, as synthetic or from provider). processedPaths ensures we do not emit the
-         * same path twice.
+         * Returns the next merged child, or null when exhausted, either from parent iterator or
+         * from overlay paths not yet processed.
          */
-        @SuppressWarnings("unchecked")
         private Resource fetchNext() {
-            if (parentIterator != null) {
-                while (parentIterator.hasNext()) {
-                    Resource parentChild = parentIterator.next();
-                    String path = parentChild.getPath();
-                    // If this path is in the overlay set, try to replace with servlet/synthetic (original used a map
-                    // and overwrote by path); otherwise emit parent child as-is.
-                    if (pendingPaths.contains(path)) {
-                        processedPaths.add(path);
-                        Map.Entry<ServletResourceProvider, ServiceReference<?>> provider = localProviders.get(path);
-                        if (provider != null) {
-                            Resource resource =
-                                    provider.getKey().getResource((ResolveContext<Object>) ctx, path, null, parent);
-                            if (resource != null) {
-                                if (resource instanceof ServletResource) {
-                                    ((ServletResource) resource).setWrappedResource(parentChild);
-                                }
-                                return resource;
-                            }
-                        }
-                        // No overlay replacement (provider null or getResource null): keep parent child.
+            Resource fromParent = tryNextFromParent();
+            if (fromParent != null) {
+                return fromParent;
+            }
+            return tryNextFromOverlay();
+        }
+
+        /** advance parent iterator; emit overlay replacement or parent child per path. */
+        @SuppressWarnings("unchecked")
+        private Resource tryNextFromParent() {
+            if (parentIterator == null || !parentIterator.hasNext()) {
+                return null;
+            }
+            Resource parentChild = parentIterator.next();
+            String path = parentChild.getPath();
+            if (!pendingPaths.contains(path)) {
+                return parentChild;
+            }
+            processedPaths.add(path);
+            Map.Entry<ServletResourceProvider, ServiceReference<?>> provider = localProviders.get(path);
+            if (provider != null) {
+                Resource resource = provider.getKey().getResource((ResolveContext<Object>) ctx, path, null, parent);
+                if (resource != null) {
+                    if (resource instanceof ServletResource) {
+                        ((ServletResource) resource).setWrappedResource(parentChild);
                     }
-                    return parentChild;
+                    return resource;
                 }
             }
+            return parentChild;
+        }
 
+        /** emit overlay-only paths (not already processed) as servlet or synthetic. */
+        @SuppressWarnings("unchecked")
+        private Resource tryNextFromOverlay() {
             while (overlayIterator.hasNext()) {
                 String path = overlayIterator.next();
-                // avoid duplicates
                 if (processedPaths.contains(path)) {
                     continue;
                 }

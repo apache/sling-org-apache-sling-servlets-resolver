@@ -50,7 +50,9 @@ public class MergingServletResourceProviderTest {
         private static final long serialVersionUID = 1L;
 
         @Override
-        public void service(ServletRequest req, ServletResponse res) {}
+        public void service(ServletRequest req, ServletResponse res) {
+            // nothing do do
+        }
     };
 
     private interface Marker {}
