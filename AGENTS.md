@@ -99,3 +99,10 @@ target/                                     Build output — do not edit
 - **OSGi baseline check:** Adding or changing exported types without bumping the package version causes a build failure. Run `mvn verify` to catch this early.
 - **Pax Exam memory:** The forked OSGi container starts with `-Xmx512M` by default. Override with `-Dpax.vm.options` if tests OOM.
 - **`ResolutionCache`** is a required OSGi service dependency of `SlingServletResolver`. In tests that mock the resolver, this must be provided or the component will not activate.
+
+# Security
+
+<!-- sling-security-default:start -->
+The threat model for this project is https://github.com/apache/sling/blob/master/docs/threat-model.md .
+<!-- sling-security-default:end -->
+
