@@ -6,5 +6,51 @@
 
 This module is part of the [Apache Sling](https://sling.apache.org) project.
 
-Bundle implementing the Sling API ServletResolver. See the [servlets](https://sling.apache.org/documentation/the-sling-engine/servlets.html) and [scripts](https://sling.apache.org/documentation/bundles/scripting.html) documentation for how this works.
+This OSGi bundle implements Sling's servlet and script resolution services:
 
+- `org.apache.sling.api.servlets.ServletResolver` via `SlingServletResolver`
+- `org.apache.sling.api.scripting.SlingScriptResolver` via `SlingScriptResolverImpl` (deprecated API bridge)
+- `org.apache.sling.api.servlets.JakartaErrorHandler` for error handling using Sling's resolution algorithm
+
+See the [servlets](https://sling.apache.org/documentation/the-sling-engine/servlets.html) and [scripts](https://sling.apache.org/documentation/bundles/scripting.html) documentation for resolution behavior.
+
+## Highlights
+
+- Supports both `javax.servlet` (4.x) and `jakarta.servlet` (6.1) APIs
+- Resolves scripts and servlets across resource-type hierarchies with selector/extension/method matching
+- Mounts OSGi servlet services into the resource tree through dedicated resource providers
+- Tracks bundled scripts contributed through OSGi capabilities (`sling.servlet`)
+- Includes resolver diagnostics through a Felix Web Console plugin
+- Supports optional servlet/script hiding via `IgnoredServletResourcePredicate`
+- Provides a configurable bundled-script health check (`BundledScriptTrackerHC`)
+
+## Build and test
+
+This module requires **Java 17** and uses Maven.
+
+- Build bundle (skip tests): `mvn clean package -DskipTests`
+- Run unit tests: `mvn test`
+- Run full verification (unit + integration tests): `mvn verify`
+- Run integration tests only: `mvn verify -Dsurefire.skip=true`
+- Run SpotBugs check: `mvn spotbugs:check`
+
+## Project structure
+
+```text
+src/main/java/org/apache/sling/servlets/resolver/
+  internal/
+    SlingServletResolver.java
+    SlingScriptResolverImpl.java
+    ResolverConfig.java
+    helper/      (resource and location collectors)
+    resource/    (servlet mounting/resource providers)
+    bundle/      (bundled script tracking and servlet wrapper support)
+    defaults/    (default and error handler servlets)
+    console/     (Web Console diagnostics)
+  jmx/
+    SlingServletResolverCacheMBean.java
+
+src/test/java/org/apache/sling/servlets/resolver/
+  internal/      (unit tests)
+  it/            (Pax Exam integration tests)
+```
