@@ -297,7 +297,13 @@ public class ResolutionCache
      * @return the current cache generation, to be passed to {@link #put(long, AbstractResourceCollector, Servlet)}
      */
     public long getGeneration() {
-        return this.generation.get();
+        // read lock so the capture cannot observe a generation mid-flush
+        this.cacheLock.readLock().lock();
+        try {
+            return this.generation.get();
+        } finally {
+            this.cacheLock.readLock().unlock();
+        }
     }
 
     /**
