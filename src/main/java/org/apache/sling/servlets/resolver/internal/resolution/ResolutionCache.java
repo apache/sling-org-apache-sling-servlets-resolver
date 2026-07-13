@@ -31,7 +31,10 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.sling.api.resource.observation.ExternalResourceChangeListener;
 import org.apache.sling.api.resource.observation.ResourceChange;
@@ -77,6 +80,12 @@ public class ResolutionCache
 
     /** The script resolution cache. */
     private final AtomicReference<Map<AbstractResourceCollector, Servlet>> cache = new AtomicReference<>();
+
+    /** Incremented on every flush; used to reject entries resolved before a flush. */
+    private final AtomicLong generation = new AtomicLong();
+
+    /** Shared by puts, held exclusively by flushes, so a generation check and insert cannot straddle a flush. */
+    private final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
 
     /** The cache size. */
     private volatile int cacheSize;
@@ -228,11 +237,17 @@ public class ResolutionCache
     }
 
     public void flushCache() {
-        // use local variable to avoid racing with deactivate
-        final Map<AbstractResourceCollector, Servlet> localCache = this.cache.get();
-        if (localCache != null) {
-            localCache.clear();
-            this.logCacheSizeWarning = true;
+        this.cacheLock.writeLock().lock();
+        try {
+            this.generation.incrementAndGet();
+            // use local variable to avoid racing with deactivate
+            final Map<AbstractResourceCollector, Servlet> localCache = this.cache.get();
+            if (localCache != null) {
+                localCache.clear();
+                this.logCacheSizeWarning = true;
+            }
+        } finally {
+            this.cacheLock.writeLock().unlock();
         }
     }
 
@@ -278,17 +293,39 @@ public class ResolutionCache
         return null;
     }
 
-    public void put(final AbstractResourceCollector context, final Servlet candidate) {
-        final Map<AbstractResourceCollector, Servlet> localCache = this.cache.get();
-        if (localCache != null) {
-            if (localCache.size() < this.cacheSize) {
-                localCache.put(context, candidate);
-            } else if (this.logCacheSizeWarning) {
-                this.logCacheSizeWarning = false;
-                logger.warn(
-                        "Script cache has reached its limit of {}. You might want to increase the cache size for the servlet resolver.",
-                        this.cacheSize);
+    /**
+     * @return the current cache generation, to be passed to {@link #put(long, AbstractResourceCollector, Servlet)}
+     */
+    public long getGeneration() {
+        // read lock so the capture cannot observe a generation mid-flush
+        this.cacheLock.readLock().lock();
+        try {
+            return this.generation.get();
+        } finally {
+            this.cacheLock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Caches the candidate unless the cache has been flushed since {@code generation} was obtained,
+     * i.e. the resolution that produced the candidate may be based on stale data.
+     */
+    public void put(final long generation, final AbstractResourceCollector context, final Servlet candidate) {
+        this.cacheLock.readLock().lock();
+        try {
+            final Map<AbstractResourceCollector, Servlet> localCache = this.cache.get();
+            if (localCache != null && this.generation.get() == generation) {
+                if (localCache.size() < this.cacheSize) {
+                    localCache.put(context, candidate);
+                } else if (this.logCacheSizeWarning) {
+                    this.logCacheSizeWarning = false;
+                    logger.warn(
+                            "Script cache has reached its limit of {}. You might want to increase the cache size for the servlet resolver.",
+                            this.cacheSize);
+                }
             }
+        } finally {
+            this.cacheLock.readLock().unlock();
         }
     }
 }

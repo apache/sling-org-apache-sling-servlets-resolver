@@ -18,6 +18,11 @@
  */
 package org.apache.sling.servlets.resolver.internal.resource;
 
+import javax.servlet.GenericServlet;
+import javax.servlet.Servlet;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -26,10 +31,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jakarta.servlet.GenericServlet;
-import jakarta.servlet.Servlet;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.SyntheticResource;
