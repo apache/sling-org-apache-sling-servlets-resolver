@@ -558,6 +558,8 @@ public class SlingServletResolver implements ServletResolver, SlingJakartaReques
             final ResourceResolver resolver) {
         // use local variable to avoid race condition with activate
         final ResolutionCache localCache = this.resolutionCache;
+        // capture before resolving, so a flush during resolution rejects the stale result
+        final long cacheGeneration = localCache.getGeneration();
         final Servlet scriptServlet = localCache.get(locationUtil);
         if (scriptServlet != null) {
             if (LOGGER.isDebugEnabled()) {
@@ -593,7 +595,7 @@ public class SlingServletResolver implements ServletResolver, SlingJakartaReques
                         !isOptingServlet || (request != null && ((JakartaOptingServlet) candidate).accepts(request));
                 if (servletAcceptsRequest) {
                     if (!hasOptingServlet && !isOptingServlet) {
-                        localCache.put(locationUtil, candidate);
+                        localCache.put(cacheGeneration, locationUtil, candidate);
                     }
                     LOGGER.debug("Using servlet provided by candidate resource {}", candidateResource.getPath());
                     return candidate;
