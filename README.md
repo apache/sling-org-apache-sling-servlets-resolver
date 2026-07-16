@@ -21,6 +21,7 @@ See the [servlets](https://sling.apache.org/documentation/the-sling-engine/servl
 - Mounts OSGi servlet services into the resource tree through dedicated resource providers
 - Tracks bundled scripts contributed through OSGi capabilities (`sling.servlet`)
 - Maintains servlet/script resolution caches with JMX inspection and cache management support
+- Hardens cache concurrency with generation-aware cache writes to prevent stale servlet re-population after cache flushes
 - Includes resolver diagnostics through a Felix Web Console plugin
 - Supports optional servlet/script hiding via `IgnoredServletResourcePredicate`
 - Provides a configurable bundled-script health check (`BundledScriptTrackerHC`)
@@ -36,6 +37,7 @@ This module requires **Java 17** and uses Maven.
 - Run verification without integration tests: `mvn verify -DskipITs`
 - Run SpotBugs check: `mvn spotbugs:check`
 - Run a single unit test class: `mvn test -Dtest=ResourceCollectorTest`
+- Run cache race-condition regression test: `mvn test -Dtest=ResolutionCacheRaceConditionTest`
 - Run a single integration test class: `mvn verify -Dit.test=ServletSelectionIT`
 
 ## Project structure
@@ -58,7 +60,7 @@ src/main/java/org/apache/sling/servlets/resolver/
     console/     (Web Console diagnostics)
 
 src/test/java/org/apache/sling/servlets/resolver/
-  internal/      (unit tests)
+  internal/      (unit tests, including ResolutionCacheRaceConditionTest)
   internal/resourcehiding/  (unit tests for hiding predicate behavior)
   it/            (Pax Exam integration tests)
   it/resourcehiding/  (integration tests for hidden servlet fallback behavior)
