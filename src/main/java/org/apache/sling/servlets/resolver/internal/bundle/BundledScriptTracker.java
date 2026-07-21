@@ -112,7 +112,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     private BundledRenderUnitFinder bundledRenderUnitFinder;
 
     @Reference
-    private ServletMounter mounter;
+    ServletMounter mounter; // package-private for tests; injected by the OSGi runtime
 
     private final AtomicReference<BundleContext> bundleContext = new AtomicReference<>();
     private final AtomicReference<BundleTracker<List<ServiceRegistration<Servlet>>>> tracker = new AtomicReference<>();
@@ -490,7 +490,9 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         }
     }
 
-    private void refreshDispatcher(List<ServiceRegistration<Servlet>> regs) {
+    // addingBundle/removedBundle may be dispatched on different threads, so force a synchronized run.
+    // package-private rather than private so it can be exercised directly from tests.
+    synchronized void refreshDispatcher(List<ServiceRegistration<Servlet>> regs) {
         BundleContext bc = bundleContext.get();
         Map<Bundle, List<ServiceRegistration<Servlet>>> tracked;
         BundleTracker<List<ServiceRegistration<Servlet>>> bt = tracker.get();
@@ -499,7 +501,14 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         } else {
             tracked = Collections.emptyMap();
         }
-        Map<Set<String>, ServiceRegistration<Servlet>> oldDispatchers = dispatchers.get();
+        // Work on a copy of the published map: the reuse bookkeeping below removes entries, so mutating the
+        // published map in place would let other threads observe it half-drained. It is swapped in atomically
+        // at the end instead. A null map means the tracker has been deactivated - nothing to (re)register.
+        final Map<Set<String>, ServiceRegistration<Servlet>> published = dispatchers.get();
+        if (published == null) {
+            return;
+        }
+        Map<Set<String>, ServiceRegistration<Servlet>> oldDispatchers = new HashMap<>(published);
         Map<Set<String>, ServiceRegistration<Servlet>> newDispatchers = new HashMap<>();
         final Converter c = Converters.standardConverter();
         Stream.concat(tracked.values().stream(), Stream.of(regs))
