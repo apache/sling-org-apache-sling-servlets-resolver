@@ -131,8 +131,9 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         bt.open();
     }
 
+    // synchronized against refreshDispatcher so a concurrent refresh cannot re-publish dispatchers after shutdown
     @Deactivate
-    protected void deactivate() {
+    protected synchronized void deactivate() {
         BundleTracker<List<ServiceRegistration<Servlet>>> bt = tracker.getAndSet(null);
         if (bt != null) {
             bt.close();
