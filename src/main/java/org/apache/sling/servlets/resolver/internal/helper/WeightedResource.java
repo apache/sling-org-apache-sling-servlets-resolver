@@ -25,7 +25,7 @@ import org.apache.sling.api.resource.ResourceWrapper;
  * The <code>WeightedResource</code> is a <code>Resource</code> which is
  * attributed with weight values to make it a <code>Comparable</code> to be
  * used to build the result collection returned by
- * {@link ResourceCollector#getServlets(Resource)}.
+ * {@link AbstractResourceCollector#getServlets(org.apache.sling.api.resource.ResourceResolver, java.util.List)}.
  * <p>
  * The order amongst <code>WeightedResource</code> instances is defined as
  * follows and implemented in the {@link #compareTo(WeightedResource)} method:

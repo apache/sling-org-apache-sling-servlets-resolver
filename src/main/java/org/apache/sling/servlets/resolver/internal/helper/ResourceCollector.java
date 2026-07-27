@@ -33,18 +33,16 @@ import org.apache.sling.servlets.resolver.internal.resource.ServletResourceProvi
 
 /**
  * The <code>ResourceCollector</code> class provides a single public method -
- * {@link #getServlets(ResourceResolver)} - which is used to find an ordered
+ * {@link #getServlets(ResourceResolver, List)} - which is used to find an ordered
  * collection of <code>Resource</code> instances which may be used to find a
  * servlet or script to handle a request to the given resource.
  */
 public class ResourceCollector extends AbstractResourceCollector {
 
     /**
-     * The special value returned by
-     * {@link #calculatePrefixMethodWeight(Resource, String, boolean)} if the
-     * resource is not suitable to handle the request according to the location
-     * prefix, request selectors and request extension (value is
-     * <code>Integer.MIN_VALUE</code>).
+     * The special value indicating that the resource is not suitable to handle
+     * the request according to the location prefix, request selectors and
+     * request extension (value is <code>Integer.MIN_VALUE</code>).
      */
     protected static final int WEIGHT_NO_MATCH = Integer.MIN_VALUE;
 
@@ -123,12 +121,12 @@ public class ResourceCollector extends AbstractResourceCollector {
      * @param baseResourceType The basic resource type to use as a final
      *            resource super type. If this is <code>null</code> the default
      *            value
-     *            {@link org.apache.sling.servlets.resolver.internal.ServletResolverConstants#DEFAULT_SERVLET_NAME}
+     *            {@link ServletResolverConstants#DEFAULT_RESOURCE_TYPE}
      *            is assumed.
      * @param resource the resource to invoke, the resource type and resource
      *            super type are taken from this resource.
      * @param executionPaths the execution paths to consider
-     * @deprecated use {@link #ResourceCollector(String, String, Resource, String, String[])} instead.
+     * @deprecated use {@link #ResourceCollector(String, String, Resource, String, String[], boolean)} instead.
      */
     @Deprecated
     public ResourceCollector(
@@ -148,7 +146,7 @@ public class ResourceCollector extends AbstractResourceCollector {
      * @param baseResourceType The basic resource type to use as a final
      *            resource super type. If this is <code>null</code> the default
      *            value
-     *            {@link org.apache.sling.servlets.resolver.internal.ServletResolverConstants#DEFAULT_SERVLET_NAME}
+     *            {@link ServletResolverConstants#DEFAULT_RESOURCE_TYPE}
      *            is assumed.
      * @param resource the resource to invoke, the resource type and resource
      *            super type are taken from this resource.
@@ -193,11 +191,6 @@ public class ResourceCollector extends AbstractResourceCollector {
      *
      * @param methodName The <code>methodName</code> used to find scripts for.
      *            This must not be <code>null</code>.
-     * @param baseResourceType The basic resource type to use as a final
-     *            resource super type. If this is <code>null</code> the default
-     *            value
-     *            {@link org.apache.sling.servlets.resolver.internal.ServletResolverConstants#DEFAULT_SERVLET_NAME}
-     *            is assumed.
      */
     private ResourceCollector(
             final Resource resource,

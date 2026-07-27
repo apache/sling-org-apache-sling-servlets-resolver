@@ -27,9 +27,9 @@ import org.osgi.annotation.versioning.ConsumerType;
  *  to hide specific scripts or servlets from the resolution
  *  mechanism. Can be used for "soft deprecation" of scripts and
  *  servlets for example.
- *
- *  @returns true if the supplied Resource must be ignored by
- *  the servlets resolver.
+ *  <p>
+ *  The predicate returns {@code true} if the supplied Resource must be
+ *  ignored by the servlets resolver.
  */
 @ConsumerType
 public interface IgnoredServletResourcePredicate extends Predicate<Resource> {}

@@ -29,7 +29,7 @@ import org.apache.sling.servlets.resolver.internal.SlingServletResolver;
 
 /**
  * The <code>ResourceCollector</code> class provides a single public method -
- * {@link #getServlets(ResourceResolver)} - which is used to find an ordered collection
+ * {@link #getServlets(ResourceResolver, List)} - which is used to find an ordered collection
  * of <code>Resource</code> instances which may be used to find a servlet or
  * script to handle a request to the given resource.
  */
