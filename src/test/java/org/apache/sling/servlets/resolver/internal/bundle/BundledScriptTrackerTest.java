@@ -18,7 +18,6 @@
  */
 package org.apache.sling.servlets.resolver.internal.bundle;
 
-import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Dictionary;
@@ -492,7 +491,11 @@ public class BundledScriptTrackerTest {
 
     // workaround: osgi-mocks only support parameters in the order ServiceReference, Servlet and not the reverse
     private static class OSGiMockFriendlyServletMounter extends ServletMounter {
-        public OSGiMockFriendlyServletMounter(BundleContext context, ResourceResolverFactory resourceResolverFactory, ServletContext servletContext, ResolverConfig config) {
+        public OSGiMockFriendlyServletMounter(
+                BundleContext context,
+                ResourceResolverFactory resourceResolverFactory,
+                ServletContext servletContext,
+                ResolverConfig config) {
             super(context, resourceResolverFactory, servletContext, config);
         }
 
