@@ -195,7 +195,8 @@ public class BundledScriptTrackerTest {
 
     private static <T> ServiceRegistration<T> createMockServiceRegistration() {
         final ServiceRegistration<T> registration = mock();
-        when(registration.getReference()).thenReturn(mock());
+        final ServiceReference<T> reference = mock();
+        when(registration.getReference()).thenReturn(reference);
         return registration;
     }
 
@@ -315,7 +316,7 @@ public class BundledScriptTrackerTest {
         final ArgumentCaptor<Servlet> servletCaptor = ArgumentCaptor.forClass(Servlet.class);
         verify(mounter, atLeastOnce()).bindJakartaServlet(servletCaptor.capture(), any());
         final Servlet dispatcher = servletCaptor.getAllValues().stream()
-                .filter(servlet -> "DispatcherServlet".equals(servlet.getClass().getSimpleName()))
+                .filter(BundledScriptTracker.DispatcherServlet.class::isInstance)
                 .findFirst()
                 .orElse(null);
         assertNotNull("a dispatcher servlet must be registered for the resource type", dispatcher);
@@ -394,7 +395,8 @@ public class BundledScriptTrackerTest {
         final BundleWire wire = mock(BundleWire.class);
         when(wire.getCapability()).thenReturn(capability);
         final BundleRevision revision = mock(BundleRevision.class);
-        when(revision.getBundle()).thenReturn(mock(Bundle.class));
+        Bundle bundle = mock(Bundle.class);
+        when(revision.getBundle()).thenReturn(bundle);
         when(wire.getProvider()).thenReturn(revision);
         return wire;
     }

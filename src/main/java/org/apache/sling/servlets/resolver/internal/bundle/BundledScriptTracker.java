@@ -658,7 +658,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         return Collections.unmodifiableSet(registeredBundles);
     }
 
-    private class DispatcherServlet extends GenericServlet {
+    class DispatcherServlet extends GenericServlet {
         private static final long serialVersionUID = -1917128676758775458L;
         private final Set<String> resourceType;
 
