@@ -22,11 +22,12 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Verifies how {@link BundledScriptTracker#getBundledScriptsRanking(Bundle)} interprets the optional
@@ -75,9 +76,9 @@ public class BundledScriptsRankingHeaderTest {
         if (value != null) {
             headers.put(BundledScriptTracker.HEADER_SCRIPTS_RANKING, value);
         }
-        final Bundle bundle = Mockito.mock(Bundle.class);
-        Mockito.when(bundle.getHeaders()).thenReturn(headers);
-        Mockito.when(bundle.getSymbolicName()).thenReturn("com.example.test");
+        final Bundle bundle = mock();
+        when(bundle.getHeaders()).thenReturn(headers);
+        when(bundle.getSymbolicName()).thenReturn("com.example.test");
         return bundle;
     }
 }

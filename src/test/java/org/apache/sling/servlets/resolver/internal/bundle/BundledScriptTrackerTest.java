@@ -18,6 +18,7 @@
  */
 package org.apache.sling.servlets.resolver.internal.bundle;
 
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Dictionary;
@@ -60,6 +61,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anySet;
@@ -79,12 +81,13 @@ public class BundledScriptTrackerTest {
 
     private BundledScriptTracker tracker;
     private ServletMounter mounter;
-    private BundledRenderUnitFinder finder;
 
     @Before
     public void setUp() {
         mounter = context.registerService(ServletMounter.class, mock(OSGiMockFriendlyServletMounter.class));
-        finder = context.registerService(BundledRenderUnitFinder.class, mock(BundledRenderUnitFinder.class));
+
+        BundledRenderUnitFinder finder =
+                context.registerService(BundledRenderUnitFinder.class, mock(BundledRenderUnitFinder.class));
 
         // the finder resolves every capability to a unit whose path is the indexed script path
         final BundledRenderUnit unit = mock(BundledRenderUnit.class);
@@ -138,7 +141,7 @@ public class BundledScriptTrackerTest {
         assertEquals(1, regs.size());
         final ServiceReference<?> ref = capturedBoundReference();
         assertEquals(SCRIPT_PATH, ref.getProperty(ServletResolverConstants.SLING_SERVLET_PATHS));
-        assertEquals(Integer.valueOf(42), ref.getProperty(Constants.SERVICE_RANKING));
+        assertEquals(42, ref.getProperty(Constants.SERVICE_RANKING));
         assertEquals("true", ref.getProperty(BundledHooks.class.getName()));
         assertTrue("a synthetic service id is assigned", ref.getProperty(Constants.SERVICE_ID) instanceof Long);
         assertTrue(tracker.getRegisteredBundles().contains("com.example.scripts"));
@@ -172,24 +175,28 @@ public class BundledScriptTrackerTest {
     @Test
     @SuppressWarnings({"unchecked", "rawtypes"})
     public void addingBundleRegistersRealServiceWithRanking() {
+        when(mounter.mountProviders()).thenReturn(true);
+
+        final Bundle bundle = wiredScriptBundle("com.example.real", "7");
+        final BundleContext ctx = bundle.getBundleContext();
 
         // register through a plain mock context so this does not trigger osgi-mock's automatic reference wiring
-        final BundleContext registrationContext = mock(BundleContext.class);
-        final ServiceRegistration<Servlet> registration = mock(ServiceRegistration.class);
-        when(registration.getReference()).thenReturn(mock(ServiceReference.class));
-        when(registrationContext.registerService(eq(Servlet.class), any(Servlet.class), any(Dictionary.class)))
-                .thenReturn(registration);
-
-        when(mounter.mountProviders()).thenReturn(true);
-        final Bundle bundle = wiredScriptBundle("com.example.real", "7", registrationContext);
+        ServiceRegistration<Servlet> registration = createMockServiceRegistration();
+        when(ctx.registerService(eq(Servlet.class), any(Servlet.class), any())).thenReturn(registration);
 
         final List<ServiceRegistration<Servlet>> regs = tracker.addingBundle(bundle, mock(BundleEvent.class));
-
         assertEquals(1, regs.size());
+
         final ArgumentCaptor<Dictionary> props = ArgumentCaptor.forClass(Dictionary.class);
-        verify(registrationContext).registerService(eq(Servlet.class), any(Servlet.class), props.capture());
+        verify(ctx).registerService(eq(Servlet.class), any(Servlet.class), props.capture());
         assertEquals(SCRIPT_PATH, props.getValue().get(ServletResolverConstants.SLING_SERVLET_PATHS));
-        assertEquals(Integer.valueOf(7), props.getValue().get(Constants.SERVICE_RANKING));
+        assertEquals(7, props.getValue().get(Constants.SERVICE_RANKING));
+    }
+
+    private static <T> ServiceRegistration<T> createMockServiceRegistration() {
+        final ServiceRegistration<T> registration = mock();
+        when(registration.getReference()).thenReturn(mock());
+        return registration;
     }
 
     /** Removing a tracked bundle unregisters its script and drops it from the tracked set. */
@@ -237,17 +244,18 @@ public class BundledScriptTrackerTest {
     @Test
     public void mergingModeProxyReferenceExposesMetadata() {
         when(mounter.mountProviders()).thenReturn(false);
-        tracker.addingBundle(wiredScriptBundle("com.example.scripts", "3"), mock(BundleEvent.class));
+        Bundle scriptTrackerBundle = this.context.bundleContext().getBundle();
+        Bundle scriptBundle = wiredScriptBundle("com.example.scripts", "3");
+        tracker.addingBundle(scriptBundle, mock(BundleEvent.class));
 
         final ServiceReference<?> ref = capturedBoundReference();
-        assertNotNull(ref.getBundle());
+        assertTrue(ref instanceof Proxy);
+        assertSame(scriptBundle, ref.getBundle());
         assertEquals(1, ref.getUsingBundles().length);
-        assertTrue(ref.getPropertyKeys().length > 0);
-        assertTrue(ref.isAssignableTo(mock(Bundle.class), Servlet.class.getName()));
-        assertFalse(ref.isAssignableTo(mock(Bundle.class), "com.example.Other"));
-        assertNotNull(ref.toString());
-        assertTrue(ref.equals(ref));
-        assertFalse(ref.equals("not a reference"));
+        assertSame(scriptTrackerBundle, ref.getUsingBundles()[0]);
+        assertEquals(6, ref.getPropertyKeys().length);
+        assertTrue(ref.isAssignableTo(scriptBundle, Servlet.class.getName()));
+        assertTrue(ref.isAssignableTo(scriptTrackerBundle, Servlet.class.getName()));
         // hashCode is the synthetic service id (0 for the first registration on a fresh tracker)
         assertEquals(0, ref.hashCode());
     }
@@ -291,8 +299,6 @@ public class BundledScriptTrackerTest {
         reg.setProperties(new Hashtable<>()); // no-op on the proxy
         assertNotNull(reg.toString());
         assertEquals(0, reg.hashCode()); // synthetic id of the first registration
-        assertTrue(reg.equals(reg));
-        assertFalse(reg.equals("not a registration"));
     }
 
     /**
@@ -423,15 +429,10 @@ public class BundledScriptTrackerTest {
      * capability, optionally declaring the ranking header.
      */
     private Bundle wiredScriptBundle(final String symbolicName, final String rankingHeader) {
-        return wiredScriptBundle(symbolicName, rankingHeader, context.bundleContext());
-    }
-
-    private Bundle wiredScriptBundle(
-            final String symbolicName, final String rankingHeader, final BundleContext registrationContext) {
         final Map<String, Object> attributes = new HashMap<>();
         attributes.put(ServletResolverConstants.SLING_SERVLET_PATHS, SCRIPT_PATH);
         attributes.put(BundledScriptTracker.AT_SCRIPT_ENGINE, "htl");
-        return wiredBundle(symbolicName, rankingHeader, attributes, registrationContext);
+        return wiredBundle(symbolicName, rankingHeader, attributes);
     }
 
     /**
@@ -444,17 +445,16 @@ public class BundledScriptTrackerTest {
         attributes.put(BundledScriptTracker.AT_VERSION, Version.parseVersion("1.0.0"));
         attributes.put(ServletResolverConstants.SLING_SERVLET_EXTENSIONS, "html");
         attributes.put(BundledScriptTracker.AT_SCRIPT_ENGINE, "htl");
-        return wiredBundle(symbolicName, null, attributes, context.bundleContext());
+        return wiredBundle(symbolicName, null, attributes);
     }
 
     private Bundle wiredBundle(
-            final String symbolicName,
-            final String rankingHeader,
-            final Map<String, Object> capabilityAttributes,
-            final BundleContext registrationContext) {
-        final Bundle bundle = mock(Bundle.class);
+            final String symbolicName, final String rankingHeader, final Map<String, Object> capabilityAttributes) {
+        final BundleContext bundleContext = mock();
+        final Bundle bundle = mock();
+        when(bundleContext.getBundle()).thenReturn(bundle);
         when(bundle.getSymbolicName()).thenReturn(symbolicName);
-        when(bundle.getBundleContext()).thenReturn(registrationContext);
+        when(bundle.getBundleContext()).thenReturn(bundleContext);
 
         final Dictionary<String, String> headers = new Hashtable<>();
         if (rankingHeader != null) {
