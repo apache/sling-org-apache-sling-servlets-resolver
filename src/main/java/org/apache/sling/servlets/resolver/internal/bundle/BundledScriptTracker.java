@@ -108,6 +108,14 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
     public static final String AT_SCRIPT_EXTENSION = "scriptExtension";
     public static final String AT_EXTENDS = "extends";
 
+    /**
+     * Optional manifest header a bundle may declare to influence the OSGi {@code service.ranking} property of
+     * every bundled script/servlet it contributes. Its value must be an integer; an absent or non-integer value
+     * maintains the previous behaviour, where the services are registered without a {@code service.ranking}
+     * property.
+     */
+    static final String HEADER_SCRIPTS_RANKING = "Sling-Bundled-Scripts-Ranking";
+
     @Reference
     private BundledRenderUnitFinder bundledRenderUnitFinder;
 
@@ -183,11 +191,17 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
             Set<TypeProvider> requiresChain = collectRequiresChain(bundleWiring, cache);
             if (!capabilities.isEmpty()) {
                 Instant registerStart = Instant.now();
+                final Integer scriptsRanking = getBundledScriptsRanking(bundle);
                 Set<BundledRenderUnitCapability> bundledRenderUnitCapabilities = new HashSet<>(cache.values());
                 bundledRenderUnitCapabilities = reduce(bundledRenderUnitCapabilities);
                 List<ServiceRegistration<Servlet>> serviceRegistrations = bundledRenderUnitCapabilities.stream()
                         .flatMap(bundledRenderUnitCapability -> registerServicesWithinBundle(
-                                bundle, bundleWiring, cache, requiresChain, bundledRenderUnitCapability))
+                                bundle,
+                                bundleWiring,
+                                cache,
+                                requiresChain,
+                                bundledRenderUnitCapability,
+                                scriptsRanking))
                         .collect(Collectors.toList());
                 refreshDispatcher(serviceRegistrations);
                 long duration = Duration.between(registerStart, Instant.now()).toMillis();
@@ -206,13 +220,42 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         }
     }
 
+    /**
+     * Reads the optional {@link #HEADER_SCRIPTS_RANKING} manifest header of the given bundle.
+     *
+     * @param bundle the bundle contributing bundled scripts
+     * @return the header value as an {@link Integer}, or {@code null} if the header is absent or its value cannot
+     *         be coerced to an {@link Integer}
+     */
+    static @Nullable Integer getBundledScriptsRanking(final Bundle bundle) {
+        final String value = bundle.getHeaders().get(HEADER_SCRIPTS_RANKING);
+        if (value == null) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(value.trim());
+        } catch (final NumberFormatException e) {
+            LOGGER.warn(
+                    "Ignoring manifest header {} of bundle {}: value '{}' cannot be coerced to an Integer.",
+                    HEADER_SCRIPTS_RANKING,
+                    bundle.getSymbolicName(),
+                    value);
+            return null;
+        }
+    }
+
     Stream<? extends ServiceRegistration<Servlet>> registerServicesWithinBundle(
             Bundle bundle,
             BundleWiring bundleWiring,
             Map<BundleCapability, BundledRenderUnitCapability> cache,
             Set<TypeProvider> requiresChain,
-            BundledRenderUnitCapability bundledRenderUnitCapability) {
+            BundledRenderUnitCapability bundledRenderUnitCapability,
+            @Nullable Integer serviceRanking) {
         Hashtable<String, Object> properties = new Hashtable<>();
+        if (serviceRanking != null) {
+            properties.put(Constants.SERVICE_RANKING, serviceRanking);
+        }
+
         BundledRenderUnit executable = null;
         TypeProvider baseTypeProvider = new TypeProviderImpl(bundledRenderUnitCapability, bundle);
         LinkedHashSet<TypeProvider> inheritanceChain = new LinkedHashSet<>();
@@ -616,7 +659,7 @@ public class BundledScriptTracker implements BundleTrackerCustomizer<List<Servic
         return Collections.unmodifiableSet(registeredBundles);
     }
 
-    private class DispatcherServlet extends GenericServlet {
+    class DispatcherServlet extends GenericServlet {
         private static final long serialVersionUID = -1917128676758775458L;
         private final Set<String> resourceType;
 
