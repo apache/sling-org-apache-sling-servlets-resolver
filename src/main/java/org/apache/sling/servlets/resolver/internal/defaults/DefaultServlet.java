@@ -18,9 +18,9 @@
  */
 package org.apache.sling.servlets.resolver.internal.defaults;
 
-import java.io.IOException;
-
 import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
 
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
@@ -39,12 +39,11 @@ import org.slf4j.LoggerFactory;
 public class DefaultServlet extends SlingSafeMethodsServlet {
 
     private static final long serialVersionUID = 3806788918045433043L;
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(DefaultServlet.class);
 
     @Override
-    protected void doGet(SlingHttpServletRequest request,
-            SlingHttpServletResponse response) throws IOException {
+    protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) throws IOException {
 
         Resource resource = request.getResource();
 
@@ -54,12 +53,11 @@ public class DefaultServlet extends SlingSafeMethodsServlet {
             // cannot handle the request for missing resources
             String msg = String.format("Resource not found at path %s", resource.getPath());
             LOG.error(msg);
-            response.sendError(HttpServletResponse.SC_NOT_FOUND,msg);
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, msg);
         } else {
             String msg = String.format("Cannot find servlet to handle resource %s", resource.getPath());
             LOG.error(msg);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,msg);
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
         }
     }
-
 }

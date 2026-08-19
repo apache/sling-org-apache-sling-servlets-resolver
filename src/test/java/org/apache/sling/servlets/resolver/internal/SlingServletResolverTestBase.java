@@ -18,10 +18,10 @@
  */
 package org.apache.sling.servlets.resolver.internal;
 
+import javax.servlet.Servlet;
+
 import java.lang.reflect.Field;
 import java.util.Map;
-
-import javax.servlet.Servlet;
 
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
@@ -45,10 +45,9 @@ public abstract class SlingServletResolverTestBase {
      */
     private static final class ServletMockResourceFactory extends DefaultMockResourceFactory {
         @Override
-        public Resource newMockResource(String path, Map<String, Object> properties,
-                ResourceResolver resolver) {
+        public Resource newMockResource(String path, Map<String, Object> properties, ResourceResolver resolver) {
             if (path.endsWith(".servlet")) {
-                Servlet servlet = (Servlet)properties.get(MockServletResource.PROP_SERVLET);
+                Servlet servlet = (Servlet) properties.get(MockServletResource.PROP_SERVLET);
                 return new MockServletResource(resolver, servlet, path);
             }
             return super.newMockResource(path, properties, resolver);
@@ -59,16 +58,17 @@ public abstract class SlingServletResolverTestBase {
 
     protected ResourceResolver mockResourceResolver;
 
-    @Before public void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         final ResolverConfig config = Mockito.mock(ResolverConfig.class);
         Mockito.when(config.servletresolver_servletRoot()).thenReturn("0");
-        Mockito.when(config.servletresolver_paths()).thenReturn(new String[] { "/"});
+        Mockito.when(config.servletresolver_paths()).thenReturn(new String[] {"/"});
         Mockito.when(config.servletresolver_defaultExtensions()).thenReturn(new String[] {"html"});
         Mockito.when(config.servletresolver_cacheSize()).thenReturn(200);
 
         MockResourceResolverFactoryOptions options = new MockResourceResolverFactoryOptions()
-            .setSearchPaths(new String[] {"/"})
-            .setMockResourceFactory(new ServletMockResourceFactory());
+                .setSearchPaths(new String[] {"/"})
+                .setMockResourceFactory(new ServletMockResourceFactory());
 
         MockResourceResolverFactory factory = new MockResourceResolverFactory(options);
         mockResourceResolver = new ResourceResolverWrapper(factory.getResourceResolver(null));
@@ -95,7 +95,6 @@ public abstract class SlingServletResolverTestBase {
 
         defineTestServlets(bundle);
         servletResolver.activate(bundleContext, config);
-
     }
 
     protected abstract void defineTestServlets(Bundle bundle);
@@ -103,5 +102,4 @@ public abstract class SlingServletResolverTestBase {
     protected String getRequestWorkspaceName() {
         return "fromRequest";
     }
-
 }

@@ -18,7 +18,19 @@
  */
 package org.apache.sling.servlets.resolver.internal.resource;
 
-import org.apache.commons.lang3.tuple.Pair;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.apache.sling.api.resource.NonExistingResource;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.SyntheticResource;
@@ -30,41 +42,31 @@ import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceReference;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
-
 public class MergingServletResourceProvider extends ResourceProvider<Object> {
-    private final List<Pair<ServletResourceProvider, ServiceReference<?>>> registrations = new ArrayList<>();
+    private final List<Map.Entry<ServletResourceProvider, ServiceReference<?>>> registrations = new ArrayList<>();
 
-    private final AtomicReference<ConcurrentHashMap<String, Set<String>>> tree = new AtomicReference<>(new ConcurrentHashMap<>());
-    private final AtomicReference<ConcurrentHashMap<String, Pair<ServletResourceProvider, ServiceReference<?>>>> providers = new AtomicReference<>(new ConcurrentHashMap<>());
+    private final AtomicReference<ConcurrentHashMap<String, Set<String>>> tree =
+            new AtomicReference<>(new ConcurrentHashMap<>());
+    private final AtomicReference<ConcurrentHashMap<String, Map.Entry<ServletResourceProvider, ServiceReference<?>>>>
+            providers = new AtomicReference<>(new ConcurrentHashMap<>());
 
     synchronized void add(ServletResourceProvider provider, ServiceReference<?> reference) {
-        registrations.add(Pair.of(provider, reference));
+        registrations.add(Map.entry(provider, reference));
         ConcurrentHashMap<String, Set<String>> localTree = tree.get();
-        ConcurrentHashMap<String, Pair<ServletResourceProvider, ServiceReference<?>>> localProvs = providers.get();
+        ConcurrentHashMap<String, Map.Entry<ServletResourceProvider, ServiceReference<?>>> localProvs = providers.get();
         index(localTree, localProvs, Arrays.asList(registrations.get(registrations.size() - 1)));
     }
 
     synchronized boolean remove(ServletResourceProvider provider) {
         boolean found = false;
-        for (Iterator<Pair<ServletResourceProvider, ServiceReference<?>>> regIter = registrations.iterator(); regIter.hasNext(); ) {
-            Pair<ServletResourceProvider, ServiceReference<?>> reg = regIter.next();
-            if (reg.getLeft() == provider) {
+        for (Iterator<Map.Entry<ServletResourceProvider, ServiceReference<?>>> regIter = registrations.iterator();
+                regIter.hasNext(); ) {
+            Map.Entry<ServletResourceProvider, ServiceReference<?>> reg = regIter.next();
+            if (reg.getKey() == provider) {
                 regIter.remove();
                 found = true;
-            }
-            else {
-                Bundle bundle = reg.getRight().getBundle();
+            } else {
+                Bundle bundle = reg.getValue().getBundle();
                 if (bundle == null || bundle.getState() == Bundle.STOPPING) {
                     regIter.remove();
                     found = true;
@@ -73,7 +75,8 @@ public class MergingServletResourceProvider extends ResourceProvider<Object> {
         }
         if (found) {
             ConcurrentHashMap<String, Set<String>> localTree = new ConcurrentHashMap<>();
-            ConcurrentHashMap<String, Pair<ServletResourceProvider, ServiceReference<?>>> localProvs = new ConcurrentHashMap<>();
+            ConcurrentHashMap<String, Map.Entry<ServletResourceProvider, ServiceReference<?>>> localProvs =
+                    new ConcurrentHashMap<>();
             index(localTree, localProvs, registrations);
             tree.set(localTree);
             providers.set(localProvs);
@@ -87,12 +90,16 @@ public class MergingServletResourceProvider extends ResourceProvider<Object> {
         providers.set(new ConcurrentHashMap<>());
     }
 
-    private void index(ConcurrentHashMap<String, Set<String>> tree, ConcurrentHashMap<String, Pair<ServletResourceProvider, ServiceReference<?>>> providers, List<Pair<ServletResourceProvider, ServiceReference<?>>> registrations) {
-        for (Pair<ServletResourceProvider, ServiceReference<?>> reference : registrations) {
-            for (String path : reference.getLeft().getServletPaths()) {
+    private void index(
+            ConcurrentHashMap<String, Set<String>> tree,
+            ConcurrentHashMap<String, Map.Entry<ServletResourceProvider, ServiceReference<?>>> providers,
+            List<Map.Entry<ServletResourceProvider, ServiceReference<?>>> registrations) {
+        for (Map.Entry<ServletResourceProvider, ServiceReference<?>> reference : registrations) {
+            for (String path : reference.getKey().getServletPaths()) {
                 StringBuilder currentBuilder = new StringBuilder();
                 for (String part : path.split("/")) {
-                    Set<String> childs = tree.computeIfAbsent(currentBuilder.toString(), k -> Collections.synchronizedSet(new LinkedHashSet<>()));
+                    Set<String> childs = tree.computeIfAbsent(
+                            currentBuilder.toString(), k -> Collections.synchronizedSet(new LinkedHashSet<>()));
                     currentBuilder.append("/").append(part);
                     String cleanedCurrent = currentBuilder.toString().trim().replace("//", "/");
                     // replace the buffer with the cleaned string
@@ -102,11 +109,11 @@ public class MergingServletResourceProvider extends ResourceProvider<Object> {
                     childs.add(currentBuilder.toString());
                 }
 
-                Pair<ServletResourceProvider, ServiceReference<?>> old = providers.get(path);
+                Map.Entry<ServletResourceProvider, ServiceReference<?>> old = providers.get(path);
                 if (old == null) {
                     providers.put(path, reference);
                 } else {
-                    if (reference.getRight().compareTo(old.getRight()) > 0) {
+                    if (reference.getValue().compareTo(old.getValue()) > 0) {
                         providers.put(path, reference);
                     }
                 }
@@ -129,7 +136,11 @@ public class MergingServletResourceProvider extends ResourceProvider<Object> {
     }
 
     @Override
-    public @Nullable Resource getResource(@NotNull ResolveContext<Object> resolveContext, @NotNull String s, @NotNull ResourceContext resourceContext, @Nullable Resource resource) {
+    public @Nullable Resource getResource(
+            @NotNull ResolveContext<Object> resolveContext,
+            @NotNull String s,
+            @NotNull ResourceContext resourceContext,
+            @Nullable Resource resource) {
         return getResource(resolveContext, s);
     }
 
@@ -138,25 +149,27 @@ public class MergingServletResourceProvider extends ResourceProvider<Object> {
         Resource wrapped = null;
         final ResourceProvider<?> parentProvider = resolveContext.getParentResourceProvider();
         if (parentProvider != null) {
-            wrapped = parentProvider.getResource(resolveContext.getParentResolveContext(), path, ResourceContext.EMPTY_CONTEXT, null);
+            wrapped = parentProvider.getResource(
+                    resolveContext.getParentResolveContext(), path, ResourceContext.EMPTY_CONTEXT, null);
         }
         Resource result;
-        Pair<ServletResourceProvider, ServiceReference<?>> provider = providers.get().get(path);
+        Map.Entry<ServletResourceProvider, ServiceReference<?>> provider =
+                providers.get().get(path);
 
         if (provider != null) {
-            result = provider.getLeft().getResource(resolveContext, path, null, null);
+            result = provider.getKey().getResource(resolveContext, path, null, null);
             if (result instanceof ServletResource) {
                 ((ServletResource) result).setWrappedResource(wrapped);
             }
-        }
-        else {
+        } else {
             if (wrapped != null && !(wrapped instanceof NonExistingResource)) {
                 result = wrapped;
             } else {
                 result = null;
             }
             if (result == null && tree.get().containsKey(path)) {
-                result = new SyntheticResource(resolveContext.getResourceResolver(), path, ResourceProvider.RESOURCE_TYPE_SYNTHETIC);
+                result = new SyntheticResource(
+                        resolveContext.getResourceResolver(), path, ResourceProvider.RESOURCE_TYPE_SYNTHETIC);
             } else {
                 return wrapped;
             }
@@ -166,36 +179,130 @@ public class MergingServletResourceProvider extends ResourceProvider<Object> {
     }
 
     @SuppressWarnings("unchecked")
-    public Iterator<Resource> listChildren(@SuppressWarnings("rawtypes") final ResolveContext ctx, final Resource parent) {
-        Map<String, Resource> result = new LinkedHashMap<>();
-
+    public Iterator<Resource> listChildren(
+            @SuppressWarnings("rawtypes") final ResolveContext ctx, final Resource parent) {
         final ResourceProvider<?> parentProvider = ctx.getParentResourceProvider();
-        if (parentProvider != null) {
-            for (Iterator<Resource> iter = parentProvider.listChildren(ctx.getParentResolveContext(), parent); iter != null && iter.hasNext(); ) {
-                Resource resource = iter.next();
-                result.put(resource.getPath(), resource);
-            }
+        final Iterator<Resource> parentIterator =
+                parentProvider == null ? null : parentProvider.listChildren(ctx.getParentResolveContext(), parent);
+
+        // Indexed servlet paths under this parent (from tree). Snapshot to array for stable iteration.
+        final Set<String> paths = tree.get().get(parent.getPath());
+        final String[] pathArray = paths == null ? new String[0] : paths.toArray(new String[0]);
+        // LinkedHashSet preserves order; iterator yields overlay-only paths after parent iteration.
+        final Set<String> pendingPaths = new LinkedHashSet<>(Arrays.asList(pathArray));
+        final Iterator<String> overlayIterator = pendingPaths.iterator();
+
+        final ConcurrentHashMap<String, Map.Entry<ServletResourceProvider, ServiceReference<?>>> localProviders =
+                providers.get();
+
+        return new MergingChildrenIterator(parentIterator, ctx, parent, pendingPaths, overlayIterator, localProviders);
+    }
+
+    private static final class MergingChildrenIterator implements Iterator<Resource> {
+
+        private final Iterator<Resource> parentIterator;
+        private final ResolveContext<?> ctx;
+        private final Resource parent;
+        private final Set<String> pendingPaths;
+        private final Set<String> processedPaths = new HashSet<>();
+        private final Iterator<String> overlayIterator;
+        private final ConcurrentHashMap<String, Map.Entry<ServletResourceProvider, ServiceReference<?>>> localProviders;
+
+        private Resource next;
+        private boolean nextComputed;
+
+        MergingChildrenIterator(
+                Iterator<Resource> parentIterator,
+                ResolveContext<?> ctx,
+                Resource parent,
+                Set<String> pendingPaths,
+                Iterator<String> overlayIterator,
+                ConcurrentHashMap<String, Map.Entry<ServletResourceProvider, ServiceReference<?>>> localProviders) {
+            this.parentIterator = parentIterator;
+            this.ctx = ctx;
+            this.parent = parent;
+            this.pendingPaths = pendingPaths;
+            this.overlayIterator = overlayIterator;
+            this.localProviders = localProviders;
         }
-        Set<String> paths = tree.get().get(parent.getPath());
 
-        if (paths != null) {
-            for (String path : paths.toArray(new String[0])) {
-                Pair<ServletResourceProvider, ServiceReference<?>> provider = providers.get().get(path);
+        @Override
+        public boolean hasNext() {
+            if (!nextComputed) {
+                next = fetchNext();
+                nextComputed = true;
+            }
+            return next != null;
+        }
 
-                if (provider != null) {
-                    Resource resource = provider.getLeft().getResource(ctx, path, null, parent);
-                    if (resource != null) {
-                        Resource wrapped = result.put(path, resource);
-                        if (resource instanceof ServletResource) {
-                            ((ServletResource) resource).setWrappedResource(wrapped);
-                        }
+        @Override
+        public Resource next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            Resource result = next;
+            next = null;
+            nextComputed = false;
+            return result;
+        }
+
+        /**
+         * Returns the next merged child, or null when exhausted, either from parent iterator or
+         * from overlay paths not yet processed.
+         */
+        private Resource fetchNext() {
+            Resource fromParent = tryNextFromParent();
+            if (fromParent != null) {
+                return fromParent;
+            }
+            return tryNextFromOverlay();
+        }
+
+        /** advance parent iterator; emit overlay replacement or parent child per path. */
+        @SuppressWarnings("unchecked")
+        private Resource tryNextFromParent() {
+            if (parentIterator == null || !parentIterator.hasNext()) {
+                return null;
+            }
+            Resource parentChild = parentIterator.next();
+            String path = parentChild.getPath();
+            if (!pendingPaths.contains(path)) {
+                return parentChild;
+            }
+            processedPaths.add(path);
+            Map.Entry<ServletResourceProvider, ServiceReference<?>> provider = localProviders.get(path);
+            if (provider != null) {
+                Resource resource = provider.getKey().getResource((ResolveContext<Object>) ctx, path, null, parent);
+                if (resource != null) {
+                    if (resource instanceof ServletResource) {
+                        ((ServletResource) resource).setWrappedResource(parentChild);
                     }
-                } else {
-                    result.computeIfAbsent(path, key -> new SyntheticResource(ctx.getResourceResolver(), key, 
-                            ResourceProvider.RESOURCE_TYPE_SYNTHETIC));
+                    return resource;
                 }
             }
+            return parentChild;
         }
-        return result.values().iterator();
+
+        /** emit overlay-only paths (not already processed) as servlet or synthetic. */
+        @SuppressWarnings("unchecked")
+        private Resource tryNextFromOverlay() {
+            while (overlayIterator.hasNext()) {
+                String path = overlayIterator.next();
+                if (processedPaths.contains(path)) {
+                    continue;
+                }
+                Map.Entry<ServletResourceProvider, ServiceReference<?>> provider = localProviders.get(path);
+                if (provider != null) {
+                    Resource resource = provider.getKey().getResource((ResolveContext<Object>) ctx, path, null, parent);
+                    if (resource != null) {
+                        return resource;
+                    }
+                } else {
+                    return new SyntheticResource(
+                            ctx.getResourceResolver(), path, ResourceProvider.RESOURCE_TYPE_SYNTHETIC);
+                }
+            }
+            return null;
+        }
     }
 }

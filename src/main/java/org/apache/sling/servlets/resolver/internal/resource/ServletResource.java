@@ -18,14 +18,13 @@
  */
 package org.apache.sling.servlets.resolver.internal.resource;
 
+import javax.servlet.Servlet;
+
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.servlet.Servlet;
-
-import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.AbstractResource;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceMetadata;
@@ -56,15 +55,18 @@ public class ServletResource extends AbstractResource {
         this(resourceResolver, servlet, path, null);
     }
 
-    ServletResource(final ResourceResolver resourceResolver,
-                    final Servlet servlet,
-                    final String path,
-                    final String resourceSuperType) {
+    ServletResource(
+            final ResourceResolver resourceResolver,
+            final Servlet servlet,
+            final String path,
+            final String resourceSuperType) {
         this.resourceResolver = resourceResolver;
         this.servlet = servlet;
         this.path = path;
         this.resourceType = ServletResourceProviderFactory.ensureServletNameExtension(path);
-        this.resourceSuperType = StringUtils.isEmpty(resourceSuperType) ? DEFAULT_RESOURCE_SUPER_TYPE : resourceSuperType;
+        this.resourceSuperType = (resourceSuperType == null || resourceSuperType.isEmpty())
+                ? DEFAULT_RESOURCE_SUPER_TYPE
+                : resourceSuperType;
         this.metadata = new ResourceMetadata();
         this.metadata.put("sling.servlet.resource", "true");
     }
@@ -116,6 +118,13 @@ public class ServletResource extends AbstractResource {
         return servletName;
     }
 
+    private BundledScriptServlet isBundledScriptServlet() {
+        if (servlet instanceof BundledScriptServlet) {
+            return (BundledScriptServlet) servlet;
+        }
+        return null;
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public <T> T adaptTo(Class<T> type) {
@@ -123,15 +132,15 @@ public class ServletResource extends AbstractResource {
         if (type == Servlet.class && servlet != null) {
             return (T) servlet; // unchecked cast
         }
-        if (type == InputStream.class && servlet instanceof BundledScriptServlet) {
-            InputStream result = ((BundledScriptServlet) servlet).getInputStream();
+        if (type == InputStream.class && isBundledScriptServlet() != null) {
+            InputStream result = isBundledScriptServlet().getInputStream();
             if (result != null) {
                 return (T) result;
             }
         }
 
-        if (type == BundledRenderUnit.class && servlet instanceof BundledScriptServlet) {
-            return (T) ((BundledScriptServlet) servlet).getBundledRenderUnit();
+        if (type == BundledRenderUnit.class && isBundledScriptServlet() != null) {
+            return (T) isBundledScriptServlet().getBundledRenderUnit();
         }
 
         if (wrappedResource != null) {
@@ -141,7 +150,7 @@ public class ServletResource extends AbstractResource {
             }
         }
 
-        if ( type == ValueMap.class ) {
+        if (type == ValueMap.class) {
             final Map<String, Object> props = new HashMap<>();
             props.put("sling:resourceType", this.getResourceType());
             props.put("sling:resourceSuperType", this.getResourceSuperType());
@@ -158,7 +167,6 @@ public class ServletResource extends AbstractResource {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + ", servlet=" + this.getServletName()
-            + ", path=" + getPath();
+        return getClass().getSimpleName() + ", servlet=" + this.getServletName() + ", path=" + getPath();
     }
 }

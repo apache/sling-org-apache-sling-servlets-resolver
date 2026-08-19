@@ -25,7 +25,7 @@ import org.apache.sling.api.resource.ResourceWrapper;
  * The <code>WeightedResource</code> is a <code>Resource</code> which is
  * attributed with weight values to make it a <code>Comparable</code> to be
  * used to build the result collection returned by
- * {@link ResourceCollector#getServlets(Resource)}.
+ * {@link AbstractResourceCollector#getServlets(org.apache.sling.api.resource.ResourceResolver, java.util.List)}.
  * <p>
  * The order amongst <code>WeightedResource</code> instances is defined as
  * follows and implemented in the {@link #compareTo(WeightedResource)} method:
@@ -40,8 +40,7 @@ import org.apache.sling.api.resource.ResourceWrapper;
  * instance with the higher ordinal number.</li>
  * </ol>
  */
-final class WeightedResource extends ResourceWrapper implements
-        Comparable<WeightedResource> {
+final class WeightedResource extends ResourceWrapper implements Comparable<WeightedResource> {
 
     /**
      * Weight value assigned to an instance just bearing request method name
@@ -80,8 +79,7 @@ final class WeightedResource extends ResourceWrapper implements
 
     private final int methodPrefixWeight;
 
-    WeightedResource(int ordinal, Resource resource, int numSelectors,
-            int methodPrefixWeight) {
+    WeightedResource(int ordinal, Resource resource, int numSelectors, int methodPrefixWeight) {
         super(resource);
 
         this.ordinal = ordinal;
@@ -114,8 +112,8 @@ final class WeightedResource extends ResourceWrapper implements
     @Override
     public final String toString() {
         return getClass().getSimpleName() + "[" + getOrdinal() + "]: "
-            + getResource() + ", #selectors=" + getNumSelectors()
-            + ", methodPrefixWeight=" + getMethodPrefixWeight();
+                + getResource() + ", #selectors=" + getNumSelectors()
+                + ", methodPrefixWeight=" + getMethodPrefixWeight();
     }
 
     public final int compareTo(WeightedResource o) {

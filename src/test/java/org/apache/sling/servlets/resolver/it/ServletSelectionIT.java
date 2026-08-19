@@ -34,83 +34,81 @@ public class ServletSelectionIT extends ServletResolverTestSupport {
     @Before
     public void setupTestServlets() throws Exception {
 
-        new TestServlet("FooPathServlet")
-        .with(P_PATHS, "/foo")
-        .register(bundleContext);
+        new TestServlet("FooPathServlet").with(P_PATHS, "/foo").register(bundleContext);
 
         new TestServlet("AllExceptPathsIgnored")
-        .with(P_PATHS, "/allprops")
-        .with(P_RESOURCE_TYPES, "allresource")
-        .with(P_METHODS, "allmethod")
-        .with(P_EXTENSIONS, "allext")
-        .with(P_SELECTORS, "allsel")
-        .register(bundleContext);
+                .with(P_PATHS, "/allprops")
+                .with(P_RESOURCE_TYPES, "allresource")
+                .with(P_METHODS, "allmethod")
+                .with(P_EXTENSIONS, "allext")
+                .with(P_SELECTORS, "allsel")
+                .register(bundleContext);
 
         new TestServlet("ExtServlet")
-        .with(P_RESOURCE_TYPES, RT_DEFAULT)
-        .with(P_METHODS, M_GET)
-        .with(P_EXTENSIONS, "testext")
-        .register(bundleContext);
+                .with(P_RESOURCE_TYPES, RT_DEFAULT)
+                .with(P_METHODS, M_GET)
+                .with(P_EXTENSIONS, "testext")
+                .register(bundleContext);
 
         new TestServlet("ExtPostServlet")
-        .with(P_RESOURCE_TYPES, RT_DEFAULT)
-        .with(P_METHODS, M_POST)
-        .with(P_EXTENSIONS, "testext")
-        .register(bundleContext);
+                .with(P_RESOURCE_TYPES, RT_DEFAULT)
+                .with(P_METHODS, M_POST)
+                .with(P_EXTENSIONS, "testext")
+                .register(bundleContext);
 
         new TestServlet("ExtSelServlet")
-        .with(P_RESOURCE_TYPES, RT_DEFAULT)
-        .with(P_METHODS, M_GET)
-        .with(P_EXTENSIONS, "testext")
-        .with(P_SELECTORS, "testsel")
-        .register(bundleContext);
+                .with(P_RESOURCE_TYPES, RT_DEFAULT)
+                .with(P_METHODS, M_GET)
+                .with(P_EXTENSIONS, "testext")
+                .with(P_SELECTORS, "testsel")
+                .register(bundleContext);
 
         new TestServlet("ExtPaths")
-        .with(P_PATHS, "/extpaths")
-        .with(P_STRICT_PATHS, "true")
-        .with(P_METHODS, "POST")
-        .with(P_EXTENSIONS, "extPathsExt")
-        .with(P_SELECTORS, "extPathsSel")
-        .register(bundleContext);
+                .with(P_PATHS, "/extpaths")
+                .with(P_STRICT_PATHS, "true")
+                .with(P_METHODS, "POST")
+                .with(P_EXTENSIONS, "extPathsExt")
+                .with(P_SELECTORS, "extPathsSel")
+                .register(bundleContext);
 
         new TestServlet("ExtPathsMultipleSelectors")
-        .with(P_PATHS, "/extpaths_multiple")
-        .with(P_STRICT_PATHS, "true")
-        .with(P_SELECTORS, new String[] { "one", "two" })
-        .register(bundleContext);
+                .with(P_PATHS, "/extpaths_multiple")
+                .with(P_STRICT_PATHS, "true")
+                .with(P_SELECTORS, new String[] {"one", "two"})
+                .register(bundleContext);
 
         new TestServlet("EmptySelectors")
-        .with(P_PATHS, "/emptySel")
-        .with(P_STRICT_PATHS, "true")
-        .with(P_SELECTORS, new String[] { ".EMPTY." })
-        .register(bundleContext);
+                .with(P_PATHS, "/emptySel")
+                .with(P_STRICT_PATHS, "true")
+                .with(P_SELECTORS, new String[] {".EMPTY."})
+                .register(bundleContext);
 
         new TestServlet("EmptyExtensions")
-        .with(P_PATHS, "/emptyExt")
-        .with(P_STRICT_PATHS, "true")
-        .with(P_EXTENSIONS, new String[] { ".EMPTY." })
-        .register(bundleContext);
+                .with(P_PATHS, "/emptyExt")
+                .with(P_STRICT_PATHS, "true")
+                .with(P_EXTENSIONS, new String[] {".EMPTY."})
+                .register(bundleContext);
 
         new TestServlet("EmptyExtensionsAndSelectors")
-        .with(P_PATHS, "/emptyExtSel")
-        .with(P_STRICT_PATHS, "true")
-        .with(P_SELECTORS, new String[] { ".EMPTY." })
-        .with(P_EXTENSIONS, new String[] { ".EMPTY." })
-        .register(bundleContext);
+                .with(P_PATHS, "/emptyExtSel")
+                .with(P_STRICT_PATHS, "true")
+                .with(P_SELECTORS, new String[] {".EMPTY."})
+                .with(P_EXTENSIONS, new String[] {".EMPTY."})
+                .register(bundleContext);
 
         new TestServlet("DuplicateA")
-        .with(P_PATHS, "/duplicate")
-        .with(P_STRICT_PATHS, "true")
-        .with(P_SELECTORS, new String[] { "dup", "licate" })
-        .with(P_EXTENSIONS, new String[] { "json" })
-        .register(bundleContext);
+                .with(P_PATHS, "/duplicate")
+                .with(P_STRICT_PATHS, "true")
+                .with(P_SELECTORS, new String[] {"dup", "licate"})
+                .with(P_EXTENSIONS, new String[] {"json"})
+                .register(bundleContext);
 
         new TestServlet("DuplicateB")
-        .with(P_PATHS, "/duplicate")
-        .with(P_STRICT_PATHS, "true")
-        .with(P_SELECTORS, new String[] { "dup", "licate" })
-        .with(P_EXTENSIONS, new String[] { "json" })
-        .register(bundleContext);
+                .with(P_PATHS, "/duplicate")
+                .with(P_STRICT_PATHS, "true")
+                .with(P_SELECTORS, new String[] {"dup", "licate"})
+                .with(P_EXTENSIONS, new String[] {"json"})
+                .register(bundleContext);
     }
 
     @Test

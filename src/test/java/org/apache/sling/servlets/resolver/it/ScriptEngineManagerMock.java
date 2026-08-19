@@ -16,32 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sling.servlets.resolver.jmx;
+package org.apache.sling.servlets.resolver.it;
 
-import org.osgi.annotation.versioning.ProviderType;
+import javax.script.ScriptEngineManager;
 
-/**
- * This is the management interface for the SlingServletResolver's cache.
- */
-@ProviderType
-public interface SlingServletResolverCacheMBean {
+import org.osgi.service.component.annotations.Component;
 
-    /**
-     * Get the current size of the servlet resolver cache
-     *
-     * @return the cache size
-     */
-    int getCacheSize();
+@Component(service = ScriptEngineManager.class)
+public class ScriptEngineManagerMock extends ScriptEngineManager {
 
-    /**
-     * Get the maximum configured size of the servlet resolver cache
-     *
-     * @return the maximum configured size
-     */
-    int getMaximumCacheSize();
-
-    /**
-     * Flush the servlet resolver cache.
-     */
-    void flushCache();
+    // nothing to do
 }

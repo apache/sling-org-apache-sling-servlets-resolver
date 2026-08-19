@@ -1,21 +1,21 @@
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- ~ Licensed to the Apache Software Foundation (ASF) under one
- ~ or more contributor license agreements.  See the NOTICE file
- ~ distributed with this work for additional information
- ~ regarding copyright ownership.  The ASF licenses this file
- ~ to you under the Apache License, Version 2.0 (the
- ~ "License"); you may not use this file except in compliance
- ~ with the License.  You may obtain a copy of the License at
- ~
- ~   http://www.apache.org/licenses/LICENSE-2.0
- ~
- ~ Unless required by applicable law or agreed to in writing,
- ~ software distributed under the License is distributed on an
- ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- ~ KIND, either express or implied.  See the License for the
- ~ specific language governing permissions and limitations
- ~ under the License.
- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.apache.sling.servlets.resolver.internal.bundle;
 
 import java.util.Collections;
@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.api.resource.type.ResourceType;
 import org.apache.sling.api.servlets.ServletResolverConstants;
 import org.apache.sling.scripting.spi.bundle.BundledRenderUnitCapability;
@@ -36,7 +35,7 @@ import org.osgi.framework.wiring.BundleCapability;
 import org.osgi.util.converter.Converters;
 import org.osgi.util.converter.TypeReference;
 
-class BundledRenderUnitCapabilityImpl  implements BundledRenderUnitCapability {
+class BundledRenderUnitCapabilityImpl implements BundledRenderUnitCapability {
 
     private final Set<ResourceType> resourceTypes;
     private final String path;
@@ -47,19 +46,24 @@ class BundledRenderUnitCapabilityImpl  implements BundledRenderUnitCapability {
     private final String scriptEngineName;
     private final String scriptExtension;
 
-    private BundledRenderUnitCapabilityImpl(@NotNull Set<ResourceType> resourceTypes, @Nullable String path,
-                                            @NotNull List<String> selectors,
-                                        @Nullable String extension, @Nullable String method,
-                                        @Nullable String extendedResourceType, @Nullable String scriptEngineName,
-                                        @Nullable String scriptExtension) {
+    private BundledRenderUnitCapabilityImpl(
+            @NotNull Set<ResourceType> resourceTypes,
+            @Nullable String path,
+            @NotNull List<String> selectors,
+            @Nullable String extension,
+            @Nullable String method,
+            @Nullable String extendedResourceType,
+            @Nullable String scriptEngineName,
+            @Nullable String scriptExtension) {
         this.resourceTypes = resourceTypes;
-        this.path = path;
+        this.path = path != null && path.isEmpty() ? null : path;
         this.selectors = selectors;
-        this.extension = extension;
-        this.method = method;
-        this.extendedResourceType = extendedResourceType;
-        this.scriptEngineName = scriptEngineName;
-        this.scriptExtension = scriptExtension;
+        this.extension = extension != null && extension.isEmpty() ? null : extension;
+        this.method = method != null && method.isEmpty() ? null : method;
+        this.extendedResourceType =
+                extendedResourceType != null && extendedResourceType.isEmpty() ? null : extendedResourceType;
+        this.scriptEngineName = scriptEngineName != null && scriptEngineName.isEmpty() ? null : scriptEngineName;
+        this.scriptExtension = scriptExtension != null && scriptExtension.isEmpty() ? null : scriptExtension;
     }
 
     @Override
@@ -112,7 +116,15 @@ class BundledRenderUnitCapabilityImpl  implements BundledRenderUnitCapability {
 
     @Override
     public int hashCode() {
-        return Objects.hash(resourceTypes, path, selectors, extension, method, extendedResourceType, scriptEngineName, scriptExtension);
+        return Objects.hash(
+                resourceTypes,
+                path,
+                selectors,
+                extension,
+                method,
+                extendedResourceType,
+                scriptEngineName,
+                scriptExtension);
     }
 
     @Override
@@ -122,12 +134,14 @@ class BundledRenderUnitCapabilityImpl  implements BundledRenderUnitCapability {
         }
         if (obj instanceof BundledRenderUnitCapability) {
             BundledRenderUnitCapability other = (BundledRenderUnitCapability) obj;
-            return Objects.equals(resourceTypes, other.getResourceTypes()) && Objects.equals(path, other.getPath()) &&
-                    Objects.equals(selectors, other.getSelectors()) &&
-                    Objects.equals(extension, other.getExtension()) && Objects.equals(method, other.getMethod()) &&
-                    Objects.equals(extendedResourceType, other.getExtendedResourceType()) &&
-                    Objects.equals(scriptEngineName, other.getScriptEngineName()) &&
-                    Objects.equals(scriptExtension, other.getScriptExtension());
+            return Objects.equals(resourceTypes, other.getResourceTypes())
+                    && Objects.equals(path, other.getPath())
+                    && Objects.equals(selectors, other.getSelectors())
+                    && Objects.equals(extension, other.getExtension())
+                    && Objects.equals(method, other.getMethod())
+                    && Objects.equals(extendedResourceType, other.getExtendedResourceType())
+                    && Objects.equals(scriptEngineName, other.getScriptEngineName())
+                    && Objects.equals(scriptExtension, other.getScriptExtension());
         }
         return false;
     }
@@ -136,28 +150,48 @@ class BundledRenderUnitCapabilityImpl  implements BundledRenderUnitCapability {
     public String toString() {
         StringBuilder sb = new StringBuilder(BundledRenderUnitCapability.class.getSimpleName()).append("[");
         if (!resourceTypes.isEmpty()) {
-            sb.append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES).append("=").append(resourceTypes);
+            sb.append(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES)
+                    .append("=")
+                    .append(resourceTypes);
         }
         if (!selectors.isEmpty()) {
-            sb.append("; ").append(ServletResolverConstants.SLING_SERVLET_SELECTORS).append("=").append(selectors);
+            sb.append("; ")
+                    .append(ServletResolverConstants.SLING_SERVLET_SELECTORS)
+                    .append("=")
+                    .append(selectors);
         }
-        if (StringUtils.isNotEmpty(extension)) {
-            sb.append("; ").append(ServletResolverConstants.SLING_SERVLET_EXTENSIONS).append("=").append(extension);
+        if (extension != null) {
+            sb.append("; ")
+                    .append(ServletResolverConstants.SLING_SERVLET_EXTENSIONS)
+                    .append("=")
+                    .append(extension);
         }
-        if (StringUtils.isNotEmpty(method)) {
-            sb.append("; ").append(ServletResolverConstants.SLING_SERVLET_METHODS).append("=").append(method);
+        if (method != null) {
+            sb.append("; ")
+                    .append(ServletResolverConstants.SLING_SERVLET_METHODS)
+                    .append("=")
+                    .append(method);
         }
-        if (StringUtils.isNotEmpty(path)) {
-            sb.append("; ").append(ServletResolverConstants.SLING_SERVLET_PATHS).append("=").append(path);
+        if (path != null) {
+            sb.append("; ")
+                    .append(ServletResolverConstants.SLING_SERVLET_PATHS)
+                    .append("=")
+                    .append(path);
         }
-        if (StringUtils.isNotEmpty(extendedResourceType)) {
+        if (extendedResourceType != null) {
             sb.append("; ").append(BundledScriptTracker.AT_EXTENDS).append("=").append(extendedResourceType);
         }
-        if (StringUtils.isNotEmpty(scriptEngineName)) {
-            sb.append("; ").append(BundledScriptTracker.AT_SCRIPT_ENGINE).append("=").append(scriptEngineName);
+        if (scriptEngineName != null) {
+            sb.append("; ")
+                    .append(BundledScriptTracker.AT_SCRIPT_ENGINE)
+                    .append("=")
+                    .append(scriptEngineName);
         }
-        if (StringUtils.isNotEmpty(scriptExtension)) {
-            sb.append("; ").append(BundledScriptTracker.AT_SCRIPT_EXTENSION).append("=").append(scriptExtension);
+        if (scriptExtension != null) {
+            sb.append("; ")
+                    .append(BundledScriptTracker.AT_SCRIPT_EXTENSION)
+                    .append("=")
+                    .append(scriptExtension);
         }
         sb.append("]");
         return sb.toString();
@@ -166,8 +200,9 @@ class BundledRenderUnitCapabilityImpl  implements BundledRenderUnitCapability {
     public static BundledRenderUnitCapability fromBundleCapability(@NotNull BundleCapability capability) {
         Map<String, Object> attributes = capability.getAttributes();
         Set<ResourceType> resourceTypes = new LinkedHashSet<>();
-        String[] capabilityResourceTypes =
-                Converters.standardConverter().convert(attributes.get(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES)).to(String[].class);
+        String[] capabilityResourceTypes = Converters.standardConverter()
+                .convert(attributes.get(ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES))
+                .to(String[].class);
         Version version = (Version) attributes.get(BundledScriptTracker.AT_VERSION);
         for (String rt : capabilityResourceTypes) {
             if (version == null) {
@@ -179,13 +214,14 @@ class BundledRenderUnitCapabilityImpl  implements BundledRenderUnitCapability {
         return new BundledRenderUnitCapabilityImpl(
                 resourceTypes,
                 (String) attributes.get(ServletResolverConstants.SLING_SERVLET_PATHS),
-                Converters.standardConverter().convert(attributes.get(ServletResolverConstants.SLING_SERVLET_SELECTORS)).to(new TypeReference<List<String>>() {}),
+                Converters.standardConverter()
+                        .convert(attributes.get(ServletResolverConstants.SLING_SERVLET_SELECTORS))
+                        .to(new TypeReference<List<String>>() {}),
                 (String) attributes.get(ServletResolverConstants.SLING_SERVLET_EXTENSIONS),
                 (String) attributes.get(ServletResolverConstants.SLING_SERVLET_METHODS),
                 (String) attributes.get(BundledScriptTracker.AT_EXTENDS),
                 (String) attributes.get(BundledScriptTracker.AT_SCRIPT_ENGINE),
-                (String) attributes.get(BundledScriptTracker.AT_SCRIPT_EXTENSION)
-        );
+                (String) attributes.get(BundledScriptTracker.AT_SCRIPT_EXTENSION));
     }
 
     public static Builder builder() {
@@ -255,8 +291,15 @@ class BundledRenderUnitCapabilityImpl  implements BundledRenderUnitCapability {
         }
 
         public BundledRenderUnitCapability build() {
-            return new BundledRenderUnitCapabilityImpl(resourceTypes, path, selectors, extension, method, extendedResourceType,
-                    scriptEngineName, scriptExtension);
+            return new BundledRenderUnitCapabilityImpl(
+                    resourceTypes,
+                    path,
+                    selectors,
+                    extension,
+                    method,
+                    extendedResourceType,
+                    scriptEngineName,
+                    scriptExtension);
         }
     }
 }

@@ -18,8 +18,9 @@
  */
 package org.apache.sling.servlets.resolver.internal;
 
-import java.util.Iterator;
 import javax.servlet.http.HttpServletRequest;
+
+import java.util.Iterator;
 
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceDecorator;
@@ -33,7 +34,7 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
-@Component
+@Component(service = ResourceDecorator.class)
 public class ScriptResourceDecorator implements ResourceDecorator {
     private final MergingServletResourceProvider provider;
 
@@ -43,7 +44,7 @@ public class ScriptResourceDecorator implements ResourceDecorator {
     }
 
     @Override
-    public Resource decorate(Resource resource) {
+    public Resource decorate(final Resource resource) {
         String path = ResourceUtil.normalize(resource.getPath());
         if (this.provider.isRootOf(path)) {
             String resolutionPath = resource.getResourceMetadata().getResolutionPath();
@@ -62,8 +63,7 @@ public class ScriptResourceDecorator implements ResourceDecorator {
             }
 
             return script;
-        }
-        else {
+        } else {
             return resource;
         }
     }
@@ -73,37 +73,43 @@ public class ScriptResourceDecorator implements ResourceDecorator {
         return decorate(resource);
     }
 
-    private Resource getResource(Resource resource, String path) {
-        return provider.getResource(new ResolveContext<Void>() {
-            @Override
-            public ResourceResolver getResourceResolver() {
-                return new ScriptResourceResolver(resource.getResourceResolver(), () -> provider);
-            }
-
-            @Override
-            public Void getProviderState() {
-                return null;
-            }
-
-            @Override
-            public ResolveContext<?> getParentResolveContext() {
-                return null;
-            }
-
-            @Override
-            public ResourceProvider<?> getParentResourceProvider() {
-                return new ResourceProvider<Object>() {
+    private Resource getResource(final Resource resource, final String path) {
+        return provider.getResource(
+                new ResolveContext<Void>() {
                     @Override
-                    public Resource getResource(ResolveContext<Object> ctx, String path, ResourceContext resourceContext, Resource parent) {
-                        return resource;
+                    public ResourceResolver getResourceResolver() {
+                        return new ScriptResourceResolver(resource.getResourceResolver(), () -> provider);
                     }
 
                     @Override
-                    public Iterator<Resource> listChildren(ResolveContext<Object> ctx, Resource parent) {
+                    public Void getProviderState() {
                         return null;
                     }
-                };
-            }
-        }, path);
+
+                    @Override
+                    public ResolveContext<?> getParentResolveContext() {
+                        return null;
+                    }
+
+                    @Override
+                    public ResourceProvider<?> getParentResourceProvider() {
+                        return new ResourceProvider<Object>() {
+                            @Override
+                            public Resource getResource(
+                                    ResolveContext<Object> ctx,
+                                    String path,
+                                    ResourceContext resourceContext,
+                                    Resource parent) {
+                                return resource;
+                            }
+
+                            @Override
+                            public Iterator<Resource> listChildren(ResolveContext<Object> ctx, Resource parent) {
+                                return null;
+                            }
+                        };
+                    }
+                },
+                path);
     }
 }
