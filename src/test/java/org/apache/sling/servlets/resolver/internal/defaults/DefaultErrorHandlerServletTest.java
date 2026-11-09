@@ -88,10 +88,11 @@ public class DefaultErrorHandlerServletTest {
         final SlingHttpServletRequest request =
                 Builders.newRequestBuilder(resource).build();
 
-        // mock a request that accepts a json response
-        MockErrorSlingHttpServletRequest req =
-                new MockErrorSlingHttpServletRequest(request, "application/json,*/*;q=0.9");
-        assertJsonErrorResponse(req);
+        for (String accept : new String[] {
+            "application/json,*/*;q=0.9", "application/json,text/html", "application/json;q=0.5,*/*;q=0"
+        }) {
+            assertJsonErrorResponse(new MockErrorSlingHttpServletRequest(request, accept));
+        }
     }
 
     /**
@@ -120,13 +121,21 @@ public class DefaultErrorHandlerServletTest {
 
     @Test
     public void testHtmlErrorResponse() throws IOException, ServletException {
+        for (String accept : new String[] {
+            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "text/html;q=0.8,application/json;q=0.2",
+            "text/html;q=0.2,text/*;q=0.1,application/json;q=0.15"
+        }) {
+            assertHtmlErrorResponse(accept);
+        }
+    }
+
+    private void assertHtmlErrorResponse(String accept) throws IOException, ServletException {
         final Resource resource = Mockito.mock(Resource.class);
         final SlingHttpServletRequest request =
                 Builders.newRequestBuilder(resource).build();
 
-        // mock a request that accepts an html response
-        SlingHttpServletRequest req = new MockErrorSlingHttpServletRequest(
-                request, "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        SlingHttpServletRequest req = new MockErrorSlingHttpServletRequest(request, accept);
         MockErrorSlingHttpServletResponse res = new MockErrorSlingHttpServletResponse(
                 Builders.newResponseBuilder().build(), false);
 
@@ -146,6 +155,50 @@ public class DefaultErrorHandlerServletTest {
                 Pattern.MULTILINE);
         assertTrue("Expected error message", regex.matcher(responseOutput).find());
         assertTrue(responseOutput.contains("Test Exception"));
+    }
+
+    @Test
+    public void testEmptyErrorResponseClearsBufferedBody() throws IOException, ServletException {
+        final Resource resource = Mockito.mock(Resource.class);
+        final SlingHttpServletRequest request =
+                Builders.newRequestBuilder(resource).build();
+        MockErrorSlingHttpServletResponse res = new MockErrorSlingHttpServletResponse(
+                Builders.newResponseBuilder().build(), false);
+        res.setContentLength(123);
+        res.getWriter().write("incomplete response");
+
+        DefaultErrorHandlerServlet errorServlet = new DefaultErrorHandlerServlet();
+        errorServlet.init(new MockServletConfig());
+        errorServlet.service(
+                JavaxToJakartaRequestWrapper.toJakartaRequest(
+                        new MockErrorSlingHttpServletRequest(request, "text/plain")),
+                JavaxToJakartaResponseWrapper.toJakartaResponse(res));
+
+        assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, res.getStatus());
+        assertEquals("", res.getOutput().toString());
+        assertEquals("0", res.getHeader("Content-Length"));
+    }
+
+    @Test
+    public void testCommittedUnacceptableResponseIsNotChanged() throws IOException, ServletException {
+        final Resource resource = Mockito.mock(Resource.class);
+        final SlingHttpServletRequest request =
+                Builders.newRequestBuilder(resource).build();
+        MockErrorSlingHttpServletResponse res = new MockErrorSlingHttpServletResponse(
+                Builders.newResponseBuilder().build(), true);
+        res.setContentType("text/plain");
+        res.getWriter().write("committed response");
+
+        DefaultErrorHandlerServlet errorServlet = new DefaultErrorHandlerServlet();
+        errorServlet.init(new MockServletConfig());
+        errorServlet.service(
+                JavaxToJakartaRequestWrapper.toJakartaRequest(
+                        new MockErrorSlingHttpServletRequest(request, "text/plain")),
+                JavaxToJakartaResponseWrapper.toJakartaResponse(res));
+
+        assertEquals(HttpServletResponse.SC_OK, res.getStatus());
+        assertEquals("text/plain", res.getContentType());
+        assertEquals("committed response", res.getOutput().toString());
     }
 
     /**
@@ -183,7 +236,7 @@ public class DefaultErrorHandlerServletTest {
     private static final class MockErrorSlingHttpServletResponse extends SlingHttpServletResponseWrapper {
 
         private PrintWriter writer;
-        private StringWriter strWriter;
+        private final StringWriter strWriter = new StringWriter();
         private boolean committed;
 
         public MockErrorSlingHttpServletResponse(final SlingHttpServletResponse response, final boolean committed) {
@@ -198,7 +251,20 @@ public class DefaultErrorHandlerServletTest {
 
         @Override
         public void reset() {
-            // no-op
+            super.reset();
+            strWriter.getBuffer().setLength(0);
+        }
+
+        @Override
+        public void resetBuffer() {
+            super.resetBuffer();
+            strWriter.getBuffer().setLength(0);
+        }
+
+        @Override
+        public void setContentLength(int length) {
+            super.setContentLength(length);
+            setIntHeader("Content-Length", length);
         }
 
         @Override
@@ -207,8 +273,6 @@ public class DefaultErrorHandlerServletTest {
             //   the flush() calls, so we can't use it to verify
             //   content in the response.
             if (this.writer == null) {
-                strWriter = new StringWriter();
-                this.strWriter.getBuffer();
                 this.writer = new PrintWriter(strWriter);
             }
             return this.writer;
