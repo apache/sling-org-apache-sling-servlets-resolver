@@ -46,9 +46,9 @@ import org.slf4j.LoggerFactory;
  *
  * This is the default error handler servlet registered at the end of the
  * global search path.
- * 
+ *
  * See also the DefaultErrorHandler in Sling Engine.
- * 
+ *
  */
 @SuppressWarnings("serial")
 @Component(
