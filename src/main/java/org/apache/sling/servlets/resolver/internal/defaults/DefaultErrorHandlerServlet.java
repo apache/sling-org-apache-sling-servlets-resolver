@@ -96,7 +96,6 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
             // statuscode; do not output anything.
             res.resetBuffer();
             ((HttpServletResponse) res).setStatus(statusCode);
-            res.setContentLength(0);
         } else {
             log.warn("Response already committed, unable to change status to {} or clear response body", statusCode);
         }

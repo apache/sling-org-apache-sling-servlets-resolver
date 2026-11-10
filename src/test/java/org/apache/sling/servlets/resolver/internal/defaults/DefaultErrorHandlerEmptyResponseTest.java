@@ -78,8 +78,8 @@ public class DefaultErrorHandlerEmptyResponseTest {
 
     /**
      * Returns an empty Jakarta response when Accept negotiation selects neither HTML nor JSON,
-     * even if the response content type is already HTML. Sets the error status and zero content
-     * length without obtaining a writer.
+     * even if the response content type is already HTML. Sets the error status without explicitly
+     * setting the content length or obtaining a writer.
      */
     @Test
     public void testEmptyErrorResponse() throws IOException {
@@ -95,12 +95,11 @@ public class DefaultErrorHandlerEmptyResponseTest {
 
         assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, response.getStatus());
         assertEquals("", response.getOutputAsString());
-        assertEquals(0, response.getContentLength());
         Mockito.verify(response, Mockito.never()).getWriter();
     }
 
     /**
-     * Verifies the same empty-body, error-status, and content-length behavior through the
+     * Verifies the same empty-body, error-status behavior through the
      * javax-to-Jakarta wrappers, without obtaining a response writer.
      */
     @Test
@@ -119,7 +118,6 @@ public class DefaultErrorHandlerEmptyResponseTest {
 
         assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, response.getStatus());
         assertEquals("", response.getOutputAsString());
-        assertEquals(0, response.getContentLength());
         Mockito.verify(response, Mockito.never()).getWriter();
     }
 }

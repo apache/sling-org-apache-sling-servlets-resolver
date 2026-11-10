@@ -157,7 +157,6 @@ public class DefaultErrorHandlerJakartaServletTest {
                 Builders.newRequestBuilder(resource).buildJakartaRequest();
         MockErrorSlingHttpServletResponse res = new MockErrorSlingHttpServletResponse(
                 Builders.newResponseBuilder().buildJakartaResponseResult(), false);
-        res.setContentLength(123);
         res.getWriter().write("incomplete response");
 
         DefaultErrorHandlerServlet errorServlet = new DefaultErrorHandlerServlet();
@@ -166,7 +165,6 @@ public class DefaultErrorHandlerJakartaServletTest {
 
         assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, res.getStatus());
         assertEquals("", res.getOutput().toString());
-        assertEquals("0", res.getHeader("Content-Length"));
     }
 
     @Test
