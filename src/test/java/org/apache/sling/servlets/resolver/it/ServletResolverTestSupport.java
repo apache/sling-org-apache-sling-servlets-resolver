@@ -41,6 +41,7 @@ import org.osgi.framework.ServiceReference;
 
 import static org.apache.sling.testing.paxexam.SlingOptions.eventadmin;
 import static org.apache.sling.testing.paxexam.SlingOptions.scr;
+import static org.apache.sling.testing.paxexam.SlingOptions.versionResolver;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -90,6 +91,10 @@ public class ServletResolverTestSupport extends TestSupport {
         if (jacocoOpt != null && !jacocoOpt.isEmpty()) {
             jacocoCommand = vmOption(jacocoOpt);
         }
+
+        // SPI Fly 1.3.8 includes ASM support for Java 25 class files.
+        versionResolver.setVersion(
+                "org.apache.aries.spifly", "org.apache.aries.spifly.dynamic.framework.extension", "1.3.8");
 
         final int httpPort = findFreePort();
         return options(composite(
