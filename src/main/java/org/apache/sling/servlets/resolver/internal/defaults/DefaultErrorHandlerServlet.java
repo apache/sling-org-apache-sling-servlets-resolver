@@ -45,7 +45,10 @@ import org.slf4j.LoggerFactory;
  * The <code>DefaultErrorHandlerServlet</code>
  *
  * This is the default error handler servlet registered at the end of the
- * global search path
+ * global search path.
+ *
+ * See also the DefaultErrorHandler in Sling Engine.
+ *
  */
 @SuppressWarnings("serial")
 @Component(
@@ -77,14 +80,24 @@ public class DefaultErrorHandlerServlet extends GenericServlet {
             statusMessage = statusToString(statusCode);
         }
 
-        // properly consider the 'Accept' header conditions to decide whether to send json or html back
-        if (req instanceof HttpServletRequest
-                && JSON_CONTENT_TYPE.equals(new JakartaMediaRangeList((HttpServletRequest) req)
-                        .prefer(HTML_CONTENT_TYPE, JSON_CONTENT_TYPE))) {
+        // parse the accept header to retrieve the preferred content-type and decide on the error handler
+        String contentType = HTML_CONTENT_TYPE;
+        if (req instanceof HttpServletRequest) {
+            contentType =
+                    new JakartaMediaRangeList((HttpServletRequest) req).prefer(HTML_CONTENT_TYPE, JSON_CONTENT_TYPE);
+        }
+
+        if (JSON_CONTENT_TYPE.equals(contentType)) {
             renderJson(req, res, statusMessage, requestUri, servletName, statusCode);
-        } else {
-            // default to HTML rendering
+        } else if (HTML_CONTENT_TYPE.equals(contentType)) {
             renderHtml(req, res, statusMessage, requestUri, servletName, statusCode);
+        } else if (!res.isCommitted()) {
+            // for all non-committed requests which are not JSON or HTML just clear the buffer and set the
+            // statuscode; do not output anything.
+            res.resetBuffer();
+            ((HttpServletResponse) res).setStatus(statusCode);
+        } else {
+            log.warn("Response already committed, unable to change status to {} or clear response body", statusCode);
         }
     }
 

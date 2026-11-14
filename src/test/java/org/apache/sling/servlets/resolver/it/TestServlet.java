@@ -48,7 +48,9 @@ public class TestServlet extends HttpServlet {
 
     @Override
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        resp.sendError(IM_A_TEAPOT, SERVED_BY_PREFIX + name);
+        resp.setStatus(IM_A_TEAPOT);
+        resp.setContentType("text/plain");
+        resp.getWriter().write(SERVED_BY_PREFIX + name);
     }
 
     @Override
